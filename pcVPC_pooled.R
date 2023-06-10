@@ -21,8 +21,8 @@ Number_of_simulations_performed <- 1000 ## Used as 'samples' argument in PsN vpc
 #########################################
 # Set the prediction intervals
 
-PI <- 95 #specify prediction interval in percentage. Common is 80% interval (10-90%)
-CI <- 95 #specify confidence interval in percentage. Common is 95
+PI <- 95 #specify prediction interval in percentage. Common is 95% interval (2.5-97.5%)
+CI <- 95 #specify confidence interval in percentage. Common is 95%
 
 # Make a vector for upper and lower percentile
 perc_PI <- c(0+(1-PI/100)/2, 1-(1-PI/100)/2)
@@ -2297,30 +2297,36 @@ CI_VPC_lin_mod_pooled <- ggplot() +
         geom_point(data = Obs_mod_pooled,aes(x=TAD,y=PCDV),color='black',alpha=0.3)+
         
         
+        ###### Set x & y axis limit, and their labels
+        scale_x_continuous(limits = c(0, 72.24216), breaks = seq(0, 72.24216, by = 10), name = "Time since last dose (hours)", 
+                           expand = c(0.01,0)) +
+        scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                           expand = c(0.01,0)) +
+        
+        
         ####### Set ggplot2 theme and settings
         theme_bw()+
-        theme(axis.title=element_text(size=12.0),
+        theme(axis.title=element_text(size=12),
               axis.text = element_text(size = 12))+
         theme(strip.background = element_blank(),
               strip.text.x = element_blank(),legend.position="none") +
         
         
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
         # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
+        geom_vline(xintercept = 0, linetype="dashed", size=1) #+
         
         
         # Set axis
         #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))#+
+        #scale_x_continuous(expand=c(0.01,0))#+
 
 
 ## Add title and subtitle
 #ggtitle("VPC 01")
 
 ### save vpc overall
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_pooled")
-ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 12, height = 7)
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_pooled")
+#ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 12, height = 7)
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
+ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
