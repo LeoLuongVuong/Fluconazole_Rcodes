@@ -1,0 +1,2453 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyr)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(xpose4)
+library(vpc)
+library(tidyverse)
+library(readxl)
+library(glmulti)
+library(nlme)
+library(ggpubr)
+library(data.table)
+library(mefa)
+library(binom)
+library(nlme)
+library(pROC)
+library(binom)
+library(ggpubr)
+library(truncnorm)
+
+```
+
+```{r}
+input_file_data <-"DS_cov.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+#input_file_data <-"sdtab000Sim_300_300.csv"
+#input_file_data <-"sdtab000Sim_3003_300.csv"
+#input_file_data <-"sdtab000Sim_3003_400.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_400.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_400.csv"
+#input_file_data <-"sdtab000Sim_300_population.csv"
+#input_file_data <-"sdtab000Sim_population.csv"
+#input_file_data <-"sdtab000Sim_300_300_population.csv"
+
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM2 <- subset (SIM, TROUGH==1)
+SIM2 <- SIM2 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM2<- SIM2 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+```
+
+
+
+##################Trough conc Target attainment 
+
+```{r}
+### Day 1 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY1<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 1 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 1 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY1tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 1 Trough- toxicty 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 1 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY1window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 1 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 1 AUC  
+analysis <- SIM2 %>% filter(DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY1AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 1 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==1 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+
+```{r}
+### Day 2 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY2<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 2 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 2 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY2tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 2 Trough- toxicty 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 2 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY2window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 2 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 2 AUC  
+analysis <- SIM2 %>% filter(DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY2AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 2 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 3 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY3<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 3 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 3 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY3tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 3 Trough- toxicty 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 3 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY3window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 3 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 3 AUC  
+analysis <- SIM2 %>% filter(DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY3AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 3 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==3 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 4 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY4<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 4 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 4 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY4tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 4 Trough- toxicty 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 4 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY4window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 4 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 4 AUC  
+analysis <- SIM2 %>% filter(DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY4AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 4 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==4 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 5 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY5<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 5 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 5 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY5tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 5 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 5 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY5window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 5 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 5 AUC  
+analysis <- SIM2 %>% filter(DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY5AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 5 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==5 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+```{r}
+### Day 6 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY6<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 6 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 6 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY6tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 6 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 6 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY6window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 6 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 6 AUC  
+analysis <- SIM2 %>% filter(DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY6AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 6 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==6 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+
+```{r}
+### Day 7 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY7<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 7 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 7 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY7tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 7 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 7 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY7window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 7 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 7 AUC  
+analysis <- SIM2 %>% filter(DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY7AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 7 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 8 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==8 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY8<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 8 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==8 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 8 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==8 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY8tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 8 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==8) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 8 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==8) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY8window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 8 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==8 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 8 AUC  
+analysis <- SIM2 %>% filter(DAY==8 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY8AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 8 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==8) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 9 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==9 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY9<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 9 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==9 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 9 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==9 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY9tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 9 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==9) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 9 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==9) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY9window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 9 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==9 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 9 AUC  
+analysis <- SIM2 %>% filter(DAY==9 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY9AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 9 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==9) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 10 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==10 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY10<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 10 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==10 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 10 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==10 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY10tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 10 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==10) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 10 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==10 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY10window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 10 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==10 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 10 AUC  
+analysis <- SIM2 %>% filter(DAY==10 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY10AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 10 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==10) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+```{r}
+### Day 11 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY11<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 11 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 11 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY11tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 11 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==11) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 11 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY11window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 11 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 11 AUC  
+analysis <- SIM2 %>% filter(DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY11AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 11 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==11 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+```{r}
+### Day 12 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY12<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 12 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 12 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY12tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 12 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==12) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 12 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY12window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 12 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 12 AUC  
+analysis <- SIM2 %>% filter(DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY12AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 12 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==12 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+
+```{r}
+### Day 13 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY13<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 13 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 13 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY13tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 13 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==13) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 13 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY13window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 13 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 13 AUC  
+analysis <- SIM2 %>% filter(DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY13AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 13 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==13 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+
+
+
+
+
+
+
+```{r}
+### Day 14 Trough -treament
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY14<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 14 Trough-treatment 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 14 Trough-Toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+DAY14tox<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 14 Trough- toxicity 
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 14 Trough-Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+DAY14window<-analysis %>%group_by(ID) %>% summarise(PTA= 100*sum(TA)/n())
+```
+
+```{r}
+### Day 14 Trough- Window
+analysis <- SIM %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >=1 & DV<= 3.75, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+### Day 14 AUC  
+analysis <- SIM2 %>% filter(DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+DAY14AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 14 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 30, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+DAY1<-list(DAY1,DAY1tox,DAY1window,DAY1AUC)
+DAY1<-DAY1 %>% reduce(full_join, by='ID')
+DAY2<-list(DAY2,DAY2tox,DAY2window,DAY2AUC)
+DAY2<-DAY2 %>% reduce(full_join, by='ID')
+DAY3<-list(DAY3,DAY3tox,DAY3window,DAY3AUC)
+DAY3<-DAY3 %>% reduce(full_join, by='ID')
+DAY4<-list(DAY4,DAY4tox,DAY4window,DAY4AUC)
+DAY4<-DAY4 %>% reduce(full_join, by='ID')
+DAY5<-list(DAY5,DAY5tox,DAY5window,DAY5AUC)
+DAY5<-DAY5 %>% reduce(full_join, by='ID')
+DAY6<-list(DAY6,DAY6tox,DAY6window,DAY6AUC)
+DAY6<-DAY6 %>% reduce(full_join, by='ID')
+DAY7<-list(DAY7,DAY7tox,DAY7window,DAY7AUC)
+DAY7<-DAY7 %>% reduce(full_join, by='ID')
+DAY8<-list(DAY8,DAY8tox,DAY8window,DAY8AUC)
+DAY8<-DAY8 %>% reduce(full_join, by='ID')
+DAY9<-list(DAY9,DAY9tox,DAY9window,DAY9AUC)
+DAY9<-DAY9 %>% reduce(full_join, by='ID')
+DAY10<-list(DAY10,DAY10tox,DAY10window,DAY10AUC)
+DAY10<-DAY10 %>% reduce(full_join, by='ID')
+DAY11<-list(DAY11,DAY11tox,DAY11window,DAY11AUC)
+DAY11<-DAY11 %>% reduce(full_join, by='ID')
+DAY12<-list(DAY12,DAY12tox,DAY12window,DAY12AUC)
+DAY12<-DAY12 %>% reduce(full_join, by='ID')
+DAY13<-list(DAY13,DAY13tox,DAY13window,DAY13AUC)
+DAY13<-DAY13 %>% reduce(full_join, by='ID')
+DAY14<-list(DAY14,DAY14tox,DAY14window,DAY14AUC)
+DAY14<-DAY14 %>% reduce(full_join, by='ID')
+R300_300<- rbind(DAY1, DAY2, DAY3, DAY4, DAY5, DAY6, DAY7, DAY8, DAY9, DAY10, DAY11, DAY12, DAY13,DAY14)
+#write.csv(R300_300, file="REGIMEN1.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN2.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN3.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN4.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN5.csv", quote=F, na="-99", row.names = F)
+write.csv(R300_300, file="REGIMEN6.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN_pop_std.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN_pop_300.csv", quote=F, na="-99", row.names = F)
+```
+
+############## AUC 25
+
+########## AUC 25
+
+```{r}
+input_file_data <-"DS_cov.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+#input_file_data <-"sdtab000Sim_300_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_400.csv"
+input_file_data <-"sdtab000Sim_3003_3003_400.csv"
+#input_file_data <-"sdtab000Sim_300_population.csv"
+#input_file_data <-"sdtab000Sim_population.csv"
+#input_file_data <-"sdtab000Sim_300_300_population.csv"
+
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM2 <- subset (SIM, TROUGH==1)
+SIM2 <- SIM2 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM2<- SIM2 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+```
+
+```{r}
+### Day 2 AUC  
+analysis <- SIM2 %>% filter(DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+DAY2AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 2 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==2 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 7 AUC  
+analysis <- SIM2 %>% filter(DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+DAY7AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 7 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==7 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+### Day 14 AUC  
+analysis <- SIM2 %>% filter(DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+DAY14AUC<-analysis %>%group_by(ID) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+```{r}
+### Day 14 AUC 
+analysis <- SIM2 %>% filter(TROUGH == 1 & DAY==14 ) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW, AUCD) %>% 
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+analysis %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+
+```{r}
+R300_300<- rbind(DAY2AUC, DAY7AUC, DAY14AUC)
+#write.csv(R300_300, file="REGIMENAUC1.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMENAUC2.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMENAUC3.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMENAUC4.csv", quote=F, na="-99", row.names = F)
+write.csv(R300_300, file="REGIMENAUC5.csv", quote=F, na="-99", row.names = F)
+
+```
+
+
+
+############################################################################################################
+
+
+PTA vs BW
+
+
+```{r}
+#for figures
+#input_file_data <-"PTA_BW_DAY1.csv"
+input_file_data <-"PTA_BW_DAY2.csv"
+#input_file_data <-"PTA_BW_DAY3.csv"
+#input_file_data <-"PTA_BW_DAY4.csv"
+#input_file_data <-"PTA_BW_DAY5.csv"
+#input_file_data <-"PTA_BW_DAY6.csv"
+#input_file_data <-"PTA_BW_DAY7.csv"
+#input_file_data <-"PTA_BW_DAY7_FIL.csv"
+#input_file_data <-"PTA_BW_DAY14.csv"
+#input_file_data <-"PTA_BW_DAY14_FIL.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+DS$DR<-as.character(DS$DR)
+#DS <- subset (DS, DR==1)
+#DS <- subset (DS, DR==2)
+#DS <- subset (DS, DR==3)
+#DS <- subset (DS, DR==4)
+#DS <- subset (DS, DR==5)
+#DS <- subset (DS,DR!=2& DR!=3& DR!=6 & DR!=7)
+DS <- subset (DS, DR!=6 & DR!=7)
+```
+
+
+
+
+```{r}
+ggplot (data = DS, aes(x=BW, y=PTAauc,linetype=DR,color=DR)) +
+  #choose:
+  #geom_point(colour='dodgerblue', shape=1, size=3) + 
+  geom_line(aes(colour = DR),size=1,alpha=0.8)+
+  #geom_point(shape=1, size=1) 
+  scale_linetype_manual(values = c("solid", "dashed","dashed","solid","solid")) +
+  #scale_linetype_manual(values = c("solid","solid","solid")) +
+  scale_color_manual(values = c("red", "steelblue1", "darkseagreen", "steelblue1","darkseagreen")) + 
+   #scale_color_manual(values = c("darkseagreen", "steelblue1","red")) + 
+  #choose
+
+  xlab('Bodyweight (kg)') +
+  #ylab(bquote(Probabilty~of~C[min]~treatment~target~attainment))+
+  ylab(bquote(Probabilty~of~AUC[0-24]~treatment~target~attainment))+
+  #xlab('Population predicted posaconazole concentration (mmol/L)') +
+  #ylab('Probability of treatment target attainment (%)') +
+  #ylab('Probability of therapeutic window attainment (%)') +
+  #ylab('Probability of toxic levels (%)') +
+  geom_hline(yintercept = 90, linetype = "dashed") +  
+    geom_vline(xintercept = 100, linetype = "dotted") +
+  #choose
+  #scale_x_continuous(breaks = seq(0, 0.006, by = 0.001)) +
+  scale_x_continuous(breaks = seq(50, 150, by = 10)) +
+  #scale_x_continuous(breaks = seq(100, 140, by = 5)) +
+    #scale_x_continuous(breaks = seq(55, 95, by = 5)) +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, by = 10)) +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+```
+
+######################################
+
+PTA vs Days
+
+```{r}
+input_file_data <-"PTA_POP.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+DS <- subset (DS, DR!=3)
+DS$DR<-as.character(DS$DR)
+
+#DS$DAY<-as.character(DS$DAY)
+```
+
+```{r}
+ggplot (data = DS, aes(x=DAY, y=PTATox,linetype=DR,color=DR)) +
+  #choose:
+  #geom_point(colour='dodgerblue', shape=1, size=3) +
+  #geom_point(shape=1, size=1)+ 
+  geom_line(aes(colour = DR),size=1,alpha=0.8)+
+  scale_linetype_manual(values = c("solid","solid","solid")) +
+  scale_color_manual(values = c("red","darkseagreen", "steelblue1")) + 
+  
+  #choose
+  xlab('Time (Days)') +
+  #ylab(bquote(Probabilty~of~C[min]~treatment~target~attainment))+
+  #ylab(bquote(Probabilty~of~AUC[0-24]~treatment~target~attainment))+
+  #ylab('Probability of treatment target attainment (%)') +
+  #ylab('Probability of therapeutic window attainment (%)') +
+  #ylab(bquote(Probabilty~of~C[min]~expression(=>)~3.75~mg/L)) +
+  #ylab(expression(paste("Probability of C[", min, "] ", " \u2265 ", "3.75 mg/L (%)")))+
+  #ylab(bquote("Probability of C[min] 3.75 mg/L (%)"))+
+  #ylab(expression(paste("Probability of C[",min, "] ", "\u2265", " 3.75 mg/L (%)")))+
+  ylab(expression(paste("Probability of C"[min], " ", "\u2265 3.75 mg/L (%)")))+ 
+ 
+  #geom_hline(yintercept = 90, linetype = "dashed") +  
+  #choose
+  #scale_x_continuous(breaks = seq(0, 0.006, by = 0.001)) +
+  scale_x_continuous(breaks = seq(1, 14, by = 1)) +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, by = 10)) +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+```
+
+########## DV vs TIME 
+
+```{r}
+input_file_data <-"DS_cov.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+#input_file_data <-"sdtab000Sim_300_population.csv"
+#input_file_data <-"sdtab000Sim_population.csv" ###stnd dosing
+#input_file_data <-"sdtab000Sim_300_300_population.csv"  #### The overal population simulation 
+#####Std dosing
+input_file_data <-"sdtabSim_population_std_rich.csv"
+SIM_std<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM_std <- subset (SIM_std, MDV==0)
+SIM_std <- subset (SIM_std, BW>100)
+#SIM_std <- subset (SIM_std, TROUGH==1)
+SIM_std<-as.data.frame(SIM_std)
+
+
+####opt dosing
+input_file_data <-"sdtabSim_opt_population_rich.csv"
+SIM_opt<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM_opt <- subset (SIM_opt, MDV==0)
+SIM_opt <- subset (SIM_opt, BW<100)
+#SIM_std <- subset (SIM_std, TROUGH==1)
+SIM_opt<-as.data.frame(SIM_opt)
+
+####opt dosing with 300 main
+input_file_data <-"sdtabSim_opt_population_rich_300.csv"
+SIM_opt_300<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM_opt_300 <- subset (SIM_opt_300, MDV==0)
+SIM_opt_300<-as.data.frame(SIM_opt_300)
+
+```
+
+
+
+```{r}
+#####std dosing
+data_summary_std <- SIM_std %>%
+  group_by(TIME) %>%
+  summarize(median= median(IPRED),
+            min= quantile(IPRED, 0.05),
+            max= quantile(IPRED, 0.95),
+            .groups = 'drop')
+
+# Round the values to 2 decimal places
+data_summary_std <- data_summary_std %>%
+  mutate(across(everything(), ~ round(., 2)))
+
+#####opt dosing
+data_summary_opt <- SIM_opt %>%
+  group_by(TIME) %>%
+  summarize(median= median(IPRED),
+            min= quantile(IPRED, 0.05),
+            max= quantile(IPRED, 0.95),
+            .groups = 'drop')
+
+# Round the values to 2 decimal places
+data_summary_opt <- data_summary_opt %>%
+  mutate(across(everything(), ~ round(., 2)))
+
+#####opt dosing_300
+data_summary_opt_300 <- SIM_opt_300 %>%
+  group_by(TIME) %>%
+  summarize(median= median(IPRED),
+            min= quantile(IPRED, 0.05),
+            max= quantile(IPRED, 0.95),
+            .groups = 'drop')
+
+# Round the values to 2 decimal places
+data_summary_opt_300 <- data_summary_opt_300 %>%
+  mutate(across(everything(), ~ round(., 2)))
+```
+
+
+
+
+
+```{r}
+###STD dosing graph
+ggplot (data = data_summary_std, aes(x=TIME/24, y=median)) +
+   geom_ribbon(aes(ymin = min, ymax = max), fill = "red",alpha=0.2)+ geom_line(color="red")+
+  #choose:
+  #geom_point(shape=1, size=3, color="red") +
+  #stat_boxplot(aes(group=DAY),color="red",geom = "errorbar") + 
+ #geom_boxplot(aes(group=DAY),color="red")+
+  #geom_jitter(shape=1, size=1,color="steelblue1")+
+  #choose
+  xlab('Time (days)') +
+  #ylab(bquote(Posaconazole~C[min]~concentration))+
+  ylab('Posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+  #coord_cartesian(expand = TRUE, xlim = c(0, NA), ylim = c(0, NA))+
+    #geom_hline(yintercept = 3.75) +
+  #choose
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0,14, by =1)) +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0,10, by =1)) +
+  #geom_smooth(se = F, aes(colour = "blue"), method = "loess") +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+```{r}
+###opt dosing graph
+ggplot (data = data_summary_opt, aes(x=TIME/24, y=median)) +
+   geom_ribbon(aes(ymin = min, ymax = max), fill = "darkseagreen",alpha=0.3)+ geom_line(color="darkseagreen")+
+  #choose:
+  #geom_point(shape=1, size=3, color="red") +
+  #stat_boxplot(aes(group=DAY),color="red",geom = "errorbar") + 
+ #geom_boxplot(aes(group=DAY),color="red")+
+  #geom_jitter(shape=1, size=1,color="steelblue1")+
+  #choose
+  xlab('Time (days)') +
+  #ylab(bquote(Posaconazole~C[min]~concentration))+
+  ylab('Posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+    #geom_hline(yintercept = 3.75) +
+  #choose
+  scale_x_continuous(breaks = seq(0, 14, by = 1)) +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0,10, by =1)) +
+  #geom_smooth(se = F, aes(colour = "blue"), method = "loess") +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+
+```{r}
+###opt dosing graph
+ggplot (data = data_summary_opt_300, aes(x=TIME, y=median)) +
+   geom_ribbon(aes(ymin = min, ymax = max), fill = "steelblue1",alpha=0.3)+ geom_line(color="steelblue1")+
+  #choose:
+  #geom_point(shape=1, size=3, color="red") +
+  #stat_boxplot(aes(group=DAY),color="red",geom = "errorbar") + 
+ #geom_boxplot(aes(group=DAY),color="red")+
+  #geom_jitter(shape=1, size=1,color="steelblue1")+
+  #choose
+  xlab('Time (hours)') +
+  #ylab(bquote(Posaconazole~C[min]~concentration))+
+  ylab('Posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+    #geom_hline(yintercept = 3.75) +
+  #choose
+  scale_x_continuous(breaks = seq(0, 336, by = 24)) +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0,10, by =1)) +
+  #geom_smooth(se = F, aes(colour = "blue"), method = "loess") +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+```{r}
+###opt dosing graph
+ggplot () +
+  geom_ribbon(data = data_summary_std,aes(ymin = min, ymax = max, x=TIME), fill = "red",alpha=0.2)+
+  geom_line(data = data_summary_std, aes(x = TIME, y = median), color="red")+
+  geom_ribbon(data = data_summary_opt,aes(ymin = min, ymax = max, x=TIME), fill = "darkseagreen",alpha=0.2)+
+  geom_line(data = data_summary_opt, aes(x = TIME, y = median), color="darkseagreen")+
+  #choose:
+  #geom_point(shape=1, size=3, color="red") +
+  #stat_boxplot(aes(group=DAY),color="red",geom = "errorbar") + 
+ #geom_boxplot(aes(group=DAY),color="red")
+  #geom_jitter(shape=1, size=1,color="steelblue1")+
+  #choose
+  xlab('Time (hours)') +
+  #ylab(bquote(Posaconazole~C[min]~concentration))+
+  ylab('Posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+    #geom_hline(yintercept = 3.75) +
+  #choose
+  scale_x_continuous(breaks = seq(0, 336, by = 24)) +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0,10, by =1)) +
+  #geom_smooth(se = F, aes(colour = "blue"), method = "loess") +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+```{r}
+ggplot (data = SIM, aes(x=AUCD, y=DV)) +
+  #choose:
+  geom_point(colour='blue', shape=1, size=1) +
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  #geom_point(shape=1, size=3) +
+  #choose
+  xlab('AUC') +
+  ylab('Posaconazole simulated concentration (mg/L)') +
+  geom_vline(xintercept = 25) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  scale_x_continuous(breaks = seq(0, 250, by =25 )) +
+  scale_y_continuous(limits = c(0, 8), breaks = seq(0,8, by =1)) +
+  geom_smooth(se = F, method = "loess") +
+  theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+
+######### ROC curve Doing it Erwin's way and Nada's way 
+
+```{r}
+### Nada's way
+
+
+#####For oreccomeded dosing
+
+input_file_data <-"sdtab000Sim_population.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, TROUGH==1)
+
+
+
+analysis <- SIM%>% filter(EVID == 0 & DAY==2) %>% select(ID, TIME,DAY, DV, IPRED, BW,AUC) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+mutate(TA = ifelse(AUC >= 30, 1, 0))
+#mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis %>% group_by(DAY) %>% summarise(PTA = 100*sum(TA)/n())
+binom.confint(x = sum(analysis$TA[analysis$DAY == 2]), n = 21000, methods = "agresti-coull", conf.level = 0.95)
+
+
+ROC_AUC_BW <- pROC::roc(analysis$TA,
+                           analysis$BW,
+                           auc.polygon=F, max.auc.polygon=F,grid=F,
+                           ci=T, boot.n=1000, ci.alpha=0.95, stratified=T,
+                           plot=T, print.auc=T,print.auc.x=0.2,print.auc.y=0.3,
+                           show.thres=T)
+
+AUC_AUC_BW <-  pROC::auc(ROC_AUC_BW,conf.level=0.95, ci.alpha=0.95, method="bootstrap", boot.n=1000,stratified = T)
+AUC_firstpart_AUC_BW  <- round(as.numeric(sub(".*(: *)","\\1",AUC_AUC_BW)),3)
+CI_AUC_AUC_BW          <-  pROC::ci.auc(ROC_AUC_BW,conf.level=0.95, ci.alpha=0.95, method="bootstrap",boot.n=1000,stratified = T)
+AUC_anotherpart_AUC_BW <- sub(".*(: *)","\\1",CI_AUC_AUC_BW)
+AUC_secondpart_AUC_BW   <- as.numeric(substr(AUC_anotherpart_AUC_BW[1],1,5))
+AUC_thirdpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[3],1,5))
+AUC_label_AUC_BW <- paste0("AUC:",AUC_firstpart_AUC_BW,"(",AUC_secondpart_AUC_BW, "-",AUC_thirdpart_AUC_BW,")",sep="")
+
+
+Characteristics_ROC_AUC_BW  <- round(pROC::coords(ROC_AUC_BW, "b", ret=c("t", "sensitivity", "specificity", "ppv", "npv", "tn", "tp", "fn", "fp"), best.method="closest.topleft"), 1)
+Threshold_ROC_AUC_BW  <- round(as.numeric(Characteristics_ROC_AUC_BW[1,1]),3)
+Coordinates_ROC_AUC_BW  <- pROC::coords(ROC_AUC_BW, x=Threshold_ROC_AUC_BW, input="threshold",best.method="closest.topleft", transpose = FALSE)
+Specificity_ROC_AUC_BW  <- round(as.numeric(Coordinates_ROC_AUC_BW[1,2]),3)
+Sensitivity_ROC_AUC_BW  <- round(as.numeric(Coordinates_ROC_AUC_BW[1,3]),3)
+Treshold_label_AUC_BW <- paste0("Threshold:",Threshold_ROC_AUC_BW,"(",Specificity_ROC_AUC_BW,"-",Sensitivity_ROC_AUC_BW,")",sep="")
+
+
+TN_ROC_AUC_BW  <- nrow(analysis %>% filter(BW < Threshold_ROC_AUC_BW & TA == 0))
+# TN = true negative: Number of virtual patients with BW below threshold who NOT reach the AUC target.
+TP_ROC_AUC_BW  <- nrow(analysis %>% filter(BW >= Threshold_ROC_AUC_BW & TA == 1))
+# TP = true positive: Number of virtual patients with BMI equal to the threshold or higher who DO reach the AUC target.
+FN_ROC_AUC_BW  <- nrow(analysis %>% filter(BW < Threshold_ROC_AUC_BW & TA == 1))
+# FN = false negative: Number of virtual patients with BMI below threshold  who DO reach the AUC target.
+FP_ROC_AUC_BW  <- nrow(analysis %>% filter(BW >= Threshold_ROC_AUC_BW & TA == 0))
+# FP = false positive:  Number of virtual patients with BMI equal to the threshold or higher who NOT reach the AUC target.
+Verification_Characteristics_ROC_AUC_BW<- c(Threshold_ROC_AUC_BW,TN_ROC_AUC_BW,TP_ROC_AUC_BW,FN_ROC_AUC_BW,FP_ROC_AUC_BW)
+Verification_Characteristics_ROC_AUC_BW
+Characteristics_ROC_AUC_BW
+
+Plt_ROC_AUC_BW <-
+  pROC::ggroc(ROC_AUC_BW, alpha = 0.5, colour = "darkgreen", linetype ="solid", size = 1) +
+  theme_minimal() + 
+  theme(plot.title= element_text(hjust=0.01, size=15),
+        text= element_text(size=15),
+        panel.border= element_rect(color = "black",fill = NA,size = 1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour="black"),
+        legend.position="none",
+        legend.title = element_blank(),
+        legend.text = element_text(size=15))+
+  labs(y = "Sensitivity",x = "Specificity") +
+  #ggtitle("24 hours area under the curve")+
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), color="grey", linetype="solid")+
+  annotate(geom="text",x=0.40,parse=T,y=0.20,size=5.5,label=AUC_label_AUC_BW)#+
+   #geom_point(aes(x = Specificity_ROC_AUC_BW, y = Sensitivity_ROC_AUC_BW), color="red", size = 3)
+  # annotate(geom="text",x=0.40,parse=T,y=0.25,size=5.5,label=Treshold_label_AUC_BMI)
+Plt_ROC_AUC_BW
+
+```
+
+
+```{r}
+### Nada's way
+#For standard  dosing
+
+input_file_data <-"sdtab000Sim_300_population.csv"
+SIM1<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM1 <- subset (SIM1, MDV==0)
+SIM1 <- subset (SIM1, TROUGH==1)
+
+
+
+analysis1 <- SIM1%>% filter(EVID == 0 & DAY==2) %>% select(ID, TIME,DAY, DV, IPRED, BW,AUC) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+mutate(TA = ifelse(AUC >= 30, 1, 0))
+#mutate(TA = ifelse(DV >= 1, 1, 0))
+analysis1 %>% group_by(DAY) %>% summarise(PTA = 100*sum(TA)/n())
+binom.confint(x = sum(analysis1$TA[analysis1$DAY == 2]), n = 21000, methods = "agresti-coull", conf.level = 0.95)
+
+
+ROC_AUC_BW1 <- pROC::roc(analysis1$TA,
+                           analysis1$BW,
+                           auc.polygon=F, max.auc.polygon=F,grid=F,
+                           ci=T, boot.n=1000, ci.alpha=0.95, stratified=T,
+                           plot=T, print.auc=T,print.auc.x=0.2,print.auc.y=0.3,
+                           show.thres=T)
+
+AUC_AUC_BW1 <-  pROC::auc(ROC_AUC_BW1,conf.level=0.95, ci.alpha=0.95, method="bootstrap", boot.n=1000,stratified = T)
+AUC_firstpart_AUC_BW1  <- round(as.numeric(sub(".*(: *)","\\1",AUC_AUC_BW1)),3)
+CI_AUC_AUC_BW1          <-  pROC::ci.auc(ROC_AUC_BW1,conf.level=0.95, ci.alpha=0.95, method="bootstrap",boot.n=1000,stratified = T)
+AUC_anotherpart_AUC_BW1 <- sub(".*(: *)","\\1",CI_AUC_AUC_BW1)
+AUC_secondpart_AUC_BW1   <- as.numeric(substr(AUC_anotherpart_AUC_BW1[1],1,5))
+AUC_thirdpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[3],1,5))
+AUC_label_AUC_BW1 <- paste0("AUC:",AUC_firstpart_AUC_BW1,"(",AUC_secondpart_AUC_BW1, "-",AUC_thirdpart_AUC_BW1,")",sep="")
+
+
+Characteristics_ROC_AUC_BW1  <- round(pROC::coords(ROC_AUC_BW1, "b", ret=c("t", "sensitivity", "specificity", "ppv", "npv", "tn", "tp", "fn", "fp"), best.method="closest.topleft"), 1)
+Threshold_ROC_AUC_BW1  <- round(as.numeric(Characteristics_ROC_AUC_BW1[1,1]),3)
+Coordinates_ROC_AUC_BW1  <- pROC::coords(ROC_AUC_BW1, x=Threshold_ROC_AUC_BW1, input="threshold",best.method="closest.topleft", transpose = FALSE)
+Specificity_ROC_AUC_BW1  <- round(as.numeric(Coordinates_ROC_AUC_BW1[1,2]),3)
+Sensitivity_ROC_AUC_BW1  <- round(as.numeric(Coordinates_ROC_AUC_BW1[1,3]),3)
+Treshold_label_AUC_BW1 <- paste0("Threshold:",Threshold_ROC_AUC_BW1,"(",Specificity_ROC_AUC_BW1,"-",Sensitivity_ROC_AUC_BW1,")",sep="")
+
+
+TN_ROC_AUC_BW1  <- nrow(analysis1 %>% filter(BW < Threshold_ROC_AUC_BW1 & TA == 0))
+# TN = true negative: Number of virtual patients with BW below threshold who NOT reach the AUC target.
+TP_ROC_AUC_BW1  <- nrow(analysis1 %>% filter(BW >= Threshold_ROC_AUC_BW1 & TA == 1))
+# TP = true positive: Number of virtual patients with BMI equal to the threshold or higher who DO reach the AUC target.
+FN_ROC_AUC_BW1  <- nrow(analysis1 %>% filter(BW < Threshold_ROC_AUC_BW1 & TA == 1))
+# FN = false negative: Number of virtual patients with BMI below threshold  who DO reach the AUC target.
+FP_ROC_AUC_BW1  <- nrow(analysis1 %>% filter(BW >= Threshold_ROC_AUC_BW1 & TA == 0))
+# FP = false positive:  Number of virtual patients with BMI equal to the threshold or higher who NOT reach the AUC target.
+Verification_Characteristics_ROC_AUC_BW1<- c(Threshold_ROC_AUC_BW1,TN_ROC_AUC_BW1,TP_ROC_AUC_BW1,FN_ROC_AUC_BW1,FP_ROC_AUC_BW1)
+Verification_Characteristics_ROC_AUC_BW1
+Characteristics_ROC_AUC_BW1
+
+Plt_ROC_AUC_BW1 <-
+  pROC::ggroc(ROC_AUC_BW1, alpha = 0.5, colour = "red", linetype ="solid", size = 1) +
+  theme_minimal() + 
+  theme(plot.title= element_text(hjust=0.01, size=15),
+        text= element_text(size=15),
+        panel.border= element_rect(color = "black",fill = NA,size = 1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour="black"),
+        legend.position="none",
+        legend.title = element_blank(),
+        legend.text = element_text(size=15))+
+  labs(y = "Sensitivity",x = "Specificity") +
+  #ggtitle("24 hours area under the curve")+
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), color="grey", linetype="solid")+
+  annotate(geom="text",x=0.40,parse=T,y=0.20,size=5.5,label=AUC_label_AUC_BW1)#+
+   #geom_point(aes(x = Specificity_ROC_AUC_BW, y = Sensitivity_ROC_AUC_BW), color="red", size = 3)
+  # annotate(geom="text",x=0.40,parse=T,y=0.25,size=5.5,label=Treshold_label_AUC_BMI)
+Plt_ROC_AUC_BW1
+
+```
+
+```{r}
+#combining both AUCroc in one plot
+rocs <- list()
+rocs[["BMISD"]] <- ROC_AUC_BW1 
+rocs[["BMIID"]] <- ROC_AUC_BW
+
+
+Plot_ROC_AUC_BMI <-
+  pROC::ggroc(rocs,alpha = 0.5, linetype ="solid", size=1)+ 
+  scale_color_manual(values=c("red", "darkgreen")) +
+  theme_minimal() + labs(y = "Sensitivity",x = "Specificity") +
+  theme(plot.title= element_text(hjust=0.01, size=15),
+        text= element_text(size=15),
+        panel.border= element_rect(color = "black",fill = NA,size = 1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour="black"),
+        legend.position="none",
+        legend.title = element_blank(),  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14))+
+  
+  #ggtitle("24 hours area under the curve")+
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), color="black", linetype="solid")+
+  annotate(geom="text",x=0.40,parse=T,y=0.20,size=5.5,label=AUC_label_AUC_BW1,color="red")+
+  annotate(geom="text",x=0.40,parse=T,y=0.10,size=5.5,label=AUC_label_AUC_BW,color="darkgreen")#+
+  #geom_point(aes(x=Specificity_ROC_AUC_BMI_SD,y=Sensitivity_ROC_AUC_BMI_SD), color="red", size=4)+
+  #annotate(geom="text",label=paste0(Threshold_ROC_AUC_BMI_SD),x=Specificity_ROC_AUC_BMI_SD-0.05,y=Sensitivity_ROC_AUC_BMI_SD-0.05, colour="red", size=8)+
+  #geom_point(aes(x=Specificity_ROC_AUC_BMI_ID,y=Sensitivity_ROC_AUC_BMI_ID), color="red", size=4)+
+  #annotate(geom="text",label=paste0(Threshold_ROC_AUC_BMI_ID),x=Specificity_ROC_AUC_BMI_ID-0.05,y=Sensitivity_ROC_AUC_BMI_ID-0.05, colour="red", size=8)
+Plot_ROC_AUC_BMI
+```
+
+
+
+#### Erwin's way
+```{r}
+# ROC analysis - BW
+input_file_data <-"sdtab000Sim_300_population.csv"
+#input_file_data <-"sdtab000Sim_population.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, TROUGH==1)
+analysis <- SIM %>% filter(EVID == 0) %>% select(ID, TIME, DV,DAY,IPRED, BW) %>%
+  mutate(TA = ifelse(DV>= 1, 1, 0))
+analysis %>% group_by(DAY) %>% summarise(PTA = 100*sum(TA)/n())
+roc <- analysis %>% mutate(TA2 = ifelse(TA == 1, "yes", "no")) %>% filter(DAY == 2)
+```
+
+```{r}
+rocobj <- auc(roc$TA2, roc$BW, smooth=FALSE, plot=TRUE)
+    summary(rocobj)
+    ci.auc(rocobj)
+rocobj <- roc(roc$TA, roc$BW, smooth=FALSE, plot=TRUE)
+    summary(rocobj)
+      ci.auc(rocobj)
+    ci.sp.obj <- ci.sp(roc$TA, roc$BW, sensitivities=seq(0, 1, .01), boot.n=1000)
+    plot(ci.sp.obj, type="shape", col="grey88")
+    #plot(rocobj, print.thres="best", print.thres.best.method="youden", add=TRUE)
+    plot(rocobj, print.thres="best", print.thres.best.method="closest.topleft", add=TRUE)
+```
+
+########################################################################################################
+Density plots
+
+```{r}
+#input_file_data <-"sdtab000Sim_population.csv" 
+input_file_data <-"sdtab000Sim_300_population.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, TROUGH==1)
+
+analysis <- SIM%>% filter(EVID == 0 & DAY==2) %>% select(ID, TIME,DAY, DV, IPRED, BW) %>% 
+mutate(TA = ifelse(DV >= 1, T, F))
+
+```
+
+```{r}
+d<- ggplot(analysis, aes(BW, fill = TA, colour = TA)) +
+  geom_density(alpha = 0.1)+ 
+  
+#choose
+  xlab('Bodyweight (kg)') +
+   ylab('Density') +
+    geom_vline(xintercept = 100, linetype = "dotted") +
+  #choose
+  scale_x_continuous(breaks = seq(50, 150, by = 10)) +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+d
+```
+
+########################################################################
+Figures of PTA vs BW
+
+
+
+
+
+
+
+```{r}
+input_file_data <-"sdtab000Sim_300_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_400.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_400.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM$AUC2<- SIM$AMT/SIM$CL
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, TROUGH==1)
+SIM <- SIM %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM<- SIM %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+#SIM <- subset (SIM, DAY==2)
+SIM <- subset (SIM, DAY==7)
+
+```
+
+
+
+```{r}
+ggplot (data = SIM, aes(x=AUCD, y=DV)) +
+  #choose:
+  geom_point(colour='blue', shape=1, size=1) +
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  #geom_point(shape=1, size=3) +
+  #choose
+  xlab('AUC') +
+  ylab('Posaconazole simulated concentration (mg/L)') +
+  geom_vline(xintercept = 25) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  scale_x_continuous(breaks = seq(0, 250, by =25 )) +
+  scale_y_continuous(limits = c(0, 8), breaks = seq(0,8, by =1)) +
+  geom_smooth(se = F, method = "loess") +
+  theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+
+
+```{r}
+#R300_300<- rbind(DAY1, DAY2, DAY3, DAY4, DAY5, DAY6, DAY7)
+R300_300<- rbind(DAY1, DAY2, DAY3, DAY4, DAY5, DAY6, DAY7,DAY14)
+#Regimen300_14<- rbind(DAY2,DAY7,DAY14)
+#Regimenno_IOV<- rbind(DAY2,DAY7)
+#write.csv(R300_300, file="REGIMEN1.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN1_AUC.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN2_AUC.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN3_AUC.csv", quote=F, na="-99", row.names = F)
+#write.csv(R300_300, file="REGIMEN4_AUC.csv", quote=F, na="-99", row.names = F)
+write.csv(R300_300, file="REGIMEN5_AUC.csv", quote=F, na="-99", row.names = F)
+
+```
+
+
+```{r}
+###### To plot V2 vs BW per day
+##CHOSE 1
+#input_file_data <-"sdtab000Sim_300_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+#Choose 1
+#SIM <- subset (SIM, OCC==2)#Not for the third
+#SIM <- subset (SIM, OCC==3)#not for the second regimen 
+#SIM <- subset (SIM, OCC==4) #not for the third
+#SIM <- subset (SIM, OCC==5)#not for the third
+#SIM <- subset (SIM, OCC==6)
+#SIM <- subset (SIM, OCC==7)
+#SIM <- subset (SIM, OCC==8)
+#SIM <- subset (SIM, OCC==9)
+#SIM <- subset (SIM, OCC==10)
+SIM <- subset (SIM, OCC==11)
+```
+
+```{r}
+ggplot (data = SIM, aes(x=BW, y=V2)) +
+  #choose:
+  geom_point(colour='blue', shape=1, size=1) +
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  #geom_point(shape=1, size=3) +
+  #choose
+  xlab('Bodyweight (Kg)') +
+  ylab('Perephiral volume (L)') +
+  #geom_hline(yintercept = 1) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  scale_x_continuous(breaks = seq(50, 150, by =10 )) +
+  scale_y_continuous(limits = c(0, 1400), breaks = seq(0,1400, by =200)) +
+  geom_smooth(se = F, method = "loess") +
+  theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+```{r}
+###### To plot V2 Density by BW factor
+##CHOSE 1
+#input_file_data <-"sdtab000Sim_300_300.csv"
+input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM$WT[SIM$BW %in% c(55:65)] <- 1
+SIM$WT[SIM$BW %in% c(70:80)] <- 2
+SIM$WT[SIM$BW %in% c(85:95)] <- 3
+SIM$WT[SIM$BW %in% c(100:110)] <- 4
+SIM$WT[SIM$BW %in% c(115:125)] <- 5
+SIM$WT[SIM$BW %in% c(130:145)] <- 6
+
+#Choose 1
+#SIM <- subset (SIM, OCC==2)#Not for the third
+#SIM <- subset (SIM, OCC==3)#not for the second regimen 
+#SIM <- subset (SIM, OCC==4) #not for the third
+#SIM <- subset (SIM, OCC==5)#not for the third
+#SIM <- subset (SIM, OCC==6)
+#SIM <- subset (SIM, OCC==7)
+#SIM <- subset (SIM, OCC==8)
+SIM <- subset (SIM, OCC==9)
+#SIM <- subset (SIM, OCC==10)
+#SIM <- subset (SIM, OCC==11)
+```
+
+
+```{r}
+ggplot (data = SIM, aes(V2,color=as.character(WT))) +
+  #choose:
+  #geom_point(colour='blue', shape=1, size=1) +
+  geom_density()+
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  #geom_point(shape=1, size=3) +
+  #choose
+  xlab('V2') +
+  ylab('density') +
+  #geom_hline(yintercept = 1) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  scale_x_continuous(breaks = seq(0, 1600, by =200 )) +
+  #scale_y_continuous(limits = c(0, 1400), breaks = seq(0,1400, by =200)) +
+  #geom_smooth(se = F, method = "loess") +
+  theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+```{r}
+#input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+input_file_data <-"sdtab000Sim_trial2.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, CMT==1)
+SIM$WT<-ifelse(SIM$BW>95,2,1)
+#SIM$WT<-ifelse(SIM$BW>70,2,1)
+#SIM <- subset (SIM, BW<75)
+
+#SIM <- subset (SIM, ID>9)
+#SIM <- subset (SIM, ID<10)
+
+```
+
+```{r}
+#Median <- SIM %>% group_by(TIME) %>% summarise(median(DV))
+#Median$
+#SIM<- merge(SIM,Median,by="TIME")
+#SIM$
+
+```
+
+
+```{r}
+ggplot (data = SIM, aes(x=TIME, y=DV, color=as.character(WT))) +
+  #choose:
+  #geom_point(colour=factor, shape=1, size=3) +
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  geom_point(shape=1, size=3) +
+  #choose
+  xlab('Time (hrs)') +
+  ylab('Simulated posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  scale_x_continuous(breaks = seq(0, 168, by = 24)) +
+  scale_y_continuous(limits = c(0, 15), breaks = seq(0,16, by =2)) +
+  geom_smooth(se = F, method = "loess") +
+  theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+
+```{r}
+#SIM <- subset (SIM, TIME==23.9)
+SIM <- subset (SIM, TIME==167.9)
+SIM$WT <-as.character(SIM$WT)
+```
+
+
+```{r}
+ggplot (data = SIM, aes(x=WT, y=DV)) + geom_boxplot(aes(colour = as.character(WT)))+
+  #choose:
+  #geom_point(colour=factor, shape=1, size=3) +
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(aes(colour = as.character(WT)), shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  #geom_point(aes(colour = as.character(DVTYPE)), shape=1, size=3) +
+  #choose
+  xlab('Weight') +
+  #xlab('Time (hrs)') +
+  ylab('Simulated posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  #scale_x_continuous(breaks = seq(0, 168, by = 24)) +
+  #scale_y_continuous(limits = c(0, 15), breaks = seq(0,16, by =2)) +
+  #geom_smooth(se = F, aes(colour = "red"), method = "loess") +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+########## Regimen BW vs conc
+```{r}
+###### To plot DV vs BW per day 2 and day 7
+##CHOSE 1
+#input_file_data <-"sdtab000Sim_300_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_300.csv"
+#input_file_data <-"sdtab000Sim_3002_3002_400.csv"
+#input_file_data <-"sdtab000Sim_3003_3003_300.csv"
+input_file_data <-"sdtab000Sim_3003_3003_400.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+#Choose 1
+SIM <- subset (SIM, DAY==1)
+#SIM <- subset (SIM, DAY==2) 
+#SIM <- subset (SIM, DAY==3)
+#SIM <- subset (SIM, DAY==4)
+#SIM <- subset (SIM, DAY==5) 
+#SIM <- subset (SIM, DAY==6)
+#SIM <- subset (SIM, DAY==7)
+#SIM <- subset (SIM, DAY==14)
+
+```
+
+```{r}
+ggplot (data = SIM, aes(x=BW, y=DV, color=as.character(TROUGH))) + 
+  #choose:
+  geom_point(shape=1, size=3) +
+    #geom_point(aes(colour = as.character(WT)), shape=1, size=3)+
+ #geom_jitter(aes(colour = as.character(WT)), shape=1, size=1)+
+  #geom_line(data = SIM, aes(x=TIME, y=`median(DV)`))+
+  #geom_point(aes(colour = as.character(DVTYPE)), shape=1, size=3) +
+  #choose
+  xlab('Weight') +
+  #xlab('Time (hrs)') +
+  ylab('Simulated posaconazole concentration (mg/L)') +
+  geom_hline(yintercept = 1) +
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+  scale_x_continuous(breaks = seq(50, 150, by = 10)) +
+  scale_y_continuous(breaks = seq(0, 20, by = 1)) +
+  #scale_y_continuous(limits = c(0, 15), breaks = seq(0,15, by =1)) +
+  geom_smooth(se = F, method = "loess") +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+```
+
+########## PTA vs Regimen TA 
+```{r}
+#for figures
+#input_file_data <-"PTA_BW_DAY1.csv"
+#input_file_data <-"PTA_BW_DAY2.csv"
+#input_file_data <-"PTA_BW_DAY2_AUC.csv"
+#input_file_data <-"PTA_BW_DAY3.csv"
+#input_file_data <-"PTA_BW_DAY4.csv"
+#input_file_data <-"PTA_BW_DAY5.csv"
+#input_file_data <-"PTA_BW_DAY6.csv"
+#input_file_data <-"PTA_BW_DAY7.csv"
+#input_file_data <-"PTA_BW_DAY7_AUC.csv"
+#input_file_data <-"PTA_BW_DAY14.csv"
+input_file_data <-"PTA_BW_DAY14_AUC.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+DS$DR<-as.character(DS$DR)
+#DS <- subset (DS, DR==1)
+#DS <- subset (DS, DR==2)
+#DS <- subset (DS, DR==3)
+#DS <- subset (DS, DR==4)
+#DS <- subset (DS, DR==5)
+DS <- subset (DS, DR!=3 & DR!=4 &DR!=5 )
+```
+
+
+```{r}
+ggplot (data = DS, aes(x=BW, y=PTA,linetype=DR,color=DR)) +
+  #choose:
+  #geom_point(colour='dodgerblue', shape=1, size=3) +
+  geom_point(shape=1, size=1) + geom_line(aes(colour = DR),size=1)+
+  scale_linetype_manual(values = c("solid","solid","solid", "solid","dashed")) +
+  scale_color_manual(values = c("darkseagreen", "steelblue1", "red", "darkseagreen","darkseagreen")) + 
+  
+  #choose
+  xlab('Bodyweight (kg)') +
+  #xlab('Population predicted posaconazole concentration (mmol/L)') +
+  ylab('Probabilty of target attainment (%)') +
+  geom_hline(yintercept = 90, linetype = "dashed") +  
+    geom_vline(xintercept = 85, linetype = "dotted") +
+  #choose
+  #scale_x_continuous(breaks = seq(0, 0.006, by = 0.001)) +
+  scale_x_continuous(breaks = seq(30, 150, by = 10)) +
+  #scale_x_continuous(breaks = seq(100, 140, by = 5)) +
+    #scale_x_continuous(breaks = seq(55, 95, by = 5)) +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, by = 10)) +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+```
+
+
+######################## Population figure exploration 
+
+```{r}
+###### merging all simulation in one file to plot DV vs AUC at days 2,7 and 14
+##### not gonna be used every figure change
+input_file_data1 <-"sdtab000Sim_population_1.csv"
+input_file_data2 <-"sdtab000Sim_population_2.csv"
+input_file_data3 <-"sdtab000Sim_population_3.csv"
+input_file_data4 <-"sdtab000Sim_population_4.csv"
+input_file_data5 <-"sdtab000Sim_population_5.csv"
+input_file_data6 <-"sdtab000Sim_population_6.csv"
+input_file_data7 <-"sdtab000Sim_population_7.csv"
+input_file_data8 <-"sdtab000Sim_population_8.csv"
+input_file_data9 <-"sdtab000Sim_population_9.csv"
+input_file_data10 <-"sdtab000Sim_population_10.csv"
+
+SIM1<- read.csv(input_file_data1,header=T,as.is=T,sep=",",na.strings= ".")
+SIM1 <- subset (SIM1, MDV==0)
+SIM1 <- subset (SIM1, TROUGH==1)
+SIM1 <- SIM1 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM1<- SIM1 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM2<- read.csv(input_file_data2,header=T,as.is=T,sep=",",na.strings= ".")
+SIM2 <- subset (SIM2, MDV==0)
+SIM2 <- subset (SIM2, TROUGH==1)
+SIM2 <- SIM2 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM2<- SIM2 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM3<- read.csv(input_file_data3,header=T,as.is=T,sep=",",na.strings= ".")
+SIM3 <- subset (SIM3, MDV==0)
+SIM3 <- subset (SIM3, TROUGH==1)
+SIM3 <- SIM3 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM3<- SIM3 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM4<- read.csv(input_file_data4,header=T,as.is=T,sep=",",na.strings= ".")
+SIM4 <- subset (SIM4, MDV==0)
+SIM4 <- subset (SIM4, TROUGH==1)
+SIM4 <- SIM4 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM4<- SIM4 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM5<- read.csv(input_file_data5,header=T,as.is=T,sep=",",na.strings= ".")
+SIM5 <- subset (SIM5, MDV==0)
+SIM5 <- subset (SIM5, TROUGH==1)
+SIM5 <- SIM5 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM5<- SIM5 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM6<- read.csv(input_file_data6,header=T,as.is=T,sep=",",na.strings= ".")
+SIM6 <- subset (SIM6, MDV==0)
+SIM6 <- subset (SIM6, TROUGH==1)
+SIM6 <- SIM6 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM6<- SIM6 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM7<- read.csv(input_file_data7,header=T,as.is=T,sep=",",na.strings= ".")
+SIM7 <- subset (SIM7, MDV==0)
+SIM7 <- subset (SIM7, TROUGH==1)
+SIM7 <- SIM7 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM7<- SIM7 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM8<- read.csv(input_file_data8,header=T,as.is=T,sep=",",na.strings= ".")
+SIM8 <- subset (SIM8, MDV==0)
+SIM8 <- subset (SIM8, TROUGH==1)
+SIM8 <- SIM8 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM8<- SIM8 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM9<- read.csv(input_file_data9,header=T,as.is=T,sep=",",na.strings= ".")
+SIM9 <- subset (SIM9, MDV==0)
+SIM9 <- subset (SIM9, TROUGH==1)
+SIM9 <- SIM9 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM9<- SIM9 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM10<- read.csv(input_file_data10,header=T,as.is=T,sep=",",na.strings= ".")
+SIM10 <- subset (SIM10, MDV==0)
+SIM10 <- subset (SIM10, TROUGH==1)
+SIM10 <- SIM10 %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM10<- SIM10 %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+
+SIM_pop<- rbind(SIM1, SIM2,SIM3, SIM4,SIM5, SIM6,SIM7, SIM8,SIM9, SIM10)
+
+write.csv(SIM_pop, file="SIM_merge.csv", quote=F, na="-99", row.names = F)
+```
+
+```{r}
+input_file_data <-"SIM_merge.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, DAY==2)
+#SIM <- subset (SIM, DAY==7)
+#SIM <- subset (SIM, DAY==14)
+```
+
+
+
+```{r}
+
+#input_file_data <-"sdtab000Sim_300_population.csv"
+input_file_data <-"sdtab000Sim_population.csv"
+#input_file_data <-"sdtab000Sim_300_300_population.csv"
+
+
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, TROUGH==1)
+
+SIM <- SIM %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM<- SIM %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+SIM <- subset (SIM, DAY!=1)
+```
+
+
+
+
+
+
+```{r}
+ggplot (data = SIM, aes(x=DV, y=AUCD)) +
+  #choose:
+  geom_point(colour='darkseagreen', shape=1, size=1,alpha = 40/100) +
+  #choose
+  xlab(bquote(Posaconazole~C[min]~concentration~(mg/L)))+
+  ylab(bquote(Posaconazole~AUC[0-24]~("mg×h/L")))+
+  #xlab('Posaconazole trough concentration (mg/L)') +
+  #ylab('AUC (0-24)') +
+#geom_vline(xintercept = 1) +
+  geom_segment(aes(x = 0, y = 37, xend = 1, yend = 37))+
+   geom_segment(aes(x = 1, y = 37, xend = 1, yend = 0))+
+  coord_cartesian(expand = FALSE, xlim = c(0, NA), ylim = c(0, NA))+
+  #geom_hline(yintercept = median(SIM$DV), color="red")+
+  #choose
+ scale_y_continuous(limits = c(0, 300), breaks = seq(0,300, by =25),minor_breaks = seq(0, 300, 5)) +
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0,14, by =1),minor_breaks = seq(0, 14, 0.5)) +
+  geom_smooth(method = "lm",color='blue',se=F, size=0.8) +
+  theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  #panel.grid.major = element_blank(),
+  panel.grid.major=   element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 2),
+#panel.grid.minor = element_blank(),
+  panel.grid.minor= element_line(color = "grey",
+                                          size = 0.1,
+                                          linetype = 3),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  #legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+
+##,formula=y~x+0
+```
+
+
+```{r}
+ggplot (data = SIM, aes(x=DV, y=AUCD)) +
+  geom_point() +
+    geom_smooth(level=0.95,se=TRUE)
+```
+
+
+####### population target attainment AUC and trough several days.
+
+```{r}
+input_file_data <-"sdtab000Sim_population_10.csv"
+SIM<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+SIM <- subset (SIM, MDV==0)
+SIM <- subset (SIM, TROUGH==1)
+SIM <- SIM %>% group_by(ID) %>% mutate(AUCD = AUC - lag(AUC, default = AUC[1]))%>%ungroup()
+SIM<- SIM %>% mutate(AUCD = ifelse(DAY == "1", AUC,AUCD))
+
+```
+##################Trough conc Target attainment 
+
+```{r}
+
+analysis <- SIM %>% filter(TROUGH == 1) %>% select(ID,OCC,TIME,TAD.1, DV, IPRED, BW,AUCD,DAY) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(DV >= 1, 1, 0))
+DAY<-analysis %>%group_by(DAY) %>% summarise(PTA = 100*sum(TA)/n())
+```
+
+```{r}
+write.csv(DAY, file="TA_pop_10_Trough.csv", quote=F, na="-99", row.names = F)
+```
+
+##################AUC24 Target attainment 
+
+```{r}
+### Occasion two after 24 hrs, for different body weights, for the three different doses based on selection 
+analysis <- SIM %>% filter(TROUGH == 1) %>% select(ID,OCC,TIME,TAD.1, DV,AUCD, IPRED,DAY, BW) %>% #, YUANPRED) %>% # Select unbound concentrations!! Use DV (not IPRED)!! # YUANPRED only present in that DS
+  mutate(TA = ifelse(AUCD >= 25, 1, 0))
+DAY<-analysis %>%group_by(DAY) %>% summarise(PTA = 100*sum(TA)/n()) 
+```
+
+
+
+```{r}
+write.csv(DAY, file="TA_pop_10_AUC.csv", quote=F, na="-99", row.names = F)
+```
+
+
+
+######## Plot of Days vs target attainment 
+
+
+########## PTA vs Regimen TA (different figures for different TAs (auc/Troughg))
+```{r}
+input_file_data <-"PTA_POP.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+DS$SIM<-as.character(DS$SIM)
+```
+
+
+```{r}
+ggplot (data = DS, aes(x=DAY, y=PTAUC), color=SIM) +
+  #choose:
+  #geom_point(colour='dodgerblue', shape=1, size=3) +
+  geom_point(shape=1, size=1) + geom_line(size=1)+
+  #geom_smooth()+
+  #choose
+  xlab('Time (days)') +
+  #xlab('Population predicted posaconazole concentration (mmol/L)') +
+  ylab('Probabilty of target attainment (%)') +
+  geom_hline(yintercept = 90, linetype = "dashed") +
+  #choose
+  #scale_x_continuous(breaks = seq(0, 0.006, by = 0.001)) +
+  scale_x_continuous(breaks = seq(0, 14, by = 1)) +
+  #scale_x_continuous(breaks = seq(100, 140, by = 5)) +
+    #scale_x_continuous(breaks = seq(55, 95, by = 5)) +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, by = 10)) +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+```
+
+
+
+#####one figure for all
+
+########## PTA vs Regimen TA (different figures for different TAs (auc/Troughg))
+```{r}
+input_file_data <-"PTA_POP_trans.csv"
+DS<- read.csv(input_file_data,header=T,as.is=T,sep=",",na.strings= ".")
+DS$SIM<-as.character(DS$SIM)
+DS$TYPE<-as.character(DS$TYPE)
+```
+
+
+```{r}
+ggplot (data = DS, aes(x=DAY, y=PTA,linetype=TYPE,color=TYPE)) +
+  #choose:
+  #geom_point(colour='dodgerblue', shape=1, size=3) +
+  geom_point(shape=1, size=1) + geom_line(size=1)+
+  scale_linetype_manual(values = c("solid","dashed")) +
+  scale_color_manual(values = c("steelblue1", "darkseagreen")) + 
+  #geom_smooth()+
+  #choose
+  xlab('Time (days)') +
+  #xlab('Population predicted posaconazole concentration (mmol/L)') +
+  ylab('Probabilty of target attainment (%)') +
+  geom_hline(yintercept = 90, linetype = "dashed") +
+  #choose
+  #scale_x_continuous(breaks = seq(0, 0.006, by = 0.001)) +
+  scale_x_continuous(breaks = seq(0, 14, by = 1)) +
+  #scale_x_continuous(breaks = seq(100, 140, by = 5)) +
+    #scale_x_continuous(breaks = seq(55, 95, by = 5)) +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0, 100, by = 10)) +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 18))+  theme(
+  #Remove panel border
+  panel.border = element_blank(),  
+  # Remove panel grid lines
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Remove panel background
+  panel.background = element_blank(),
+  # Add axis line
+  axis.line = element_line(colour = "grey"),
+  plot.title = element_text(hjust = 0.5),
+  legend.position = "none",
+  axis.title = element_text(size = 18),
+   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
+```
