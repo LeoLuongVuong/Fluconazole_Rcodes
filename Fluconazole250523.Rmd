@@ -615,8 +615,12 @@ combined_std <- grid.arrange(textGrob("(a)", x = 0.05, y = 0.95, just = c("left"
 combined_plots <- grid.arrange(combined_std, combined_opt, ncol = 1)
 
 # Save the combined plots
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
-ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+# For my PAGE poster 100623
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
+ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 26, height = 26.14, units = "cm", limitsize = FALSE)
 
 
 ```

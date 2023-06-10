@@ -2328,5 +2328,6 @@ CI_VPC_lin_mod_pooled <- ggplot() +
 #setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_pooled")
 #ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 12, height = 7)
 
+### save vpc overall for my PAGE poster 100623
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
 ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
