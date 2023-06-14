@@ -615,12 +615,13 @@ combined_std <- grid.arrange(textGrob("(a)", x = 0.05, y = 0.95, just = c("left"
 combined_plots <- grid.arrange(combined_std, combined_opt, ncol = 1)
 
 # Save the combined plots
-#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
 #ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+ggsave("auc&dv_1406.png", combined_plots, dpi = 300, width = 22, height = 22, units = "cm", limitsize = FALSE)
 
 # For my PAGE poster 100623
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
-ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 26, height = 26.14, units = "cm", limitsize = FALSE)
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
+#ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 26, height = 26.14, units = "cm", limitsize = FALSE)
 
 
 ```
@@ -2686,12 +2687,7 @@ PTA_CRRT200_DAY1<- PTA_overall %>%
   filter(CRRT == 1, DAY == 1, BW<150,Regimen %in% c(1, 3, 5, 9, 23, 24, 19, 6, 7)) %>%
   mutate(Regimen = factor(Regimen, levels = c(1, 3, 5, 9, 23, 24, 19, 6, 7))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("red", "blue", "green", "orange", "purple", "brown", "gray","pink","black"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1)", "1000 mg q24h (day 1)",
-                                "800 mg + 400 mg q12h (day 1)", "1200 mg q24h (day 1)","1400 mg q24h (day 1)","1600 mg q24h (day 1)",
-                                "1800 mg q24h (day 1)","12 mg/kg q24h (day 1)","18 mg/kg q24h (day 1)")) +
-                scale_shape_manual(values = c(16, 17, 15, 5, 25, 22, 8, 2, 11),name = "Dosing regimen",
                      labels = c("800 mg q24h (day 1)", "1000 mg q24h (day 1)",
                                 "800 mg + 400 mg q12h (day 1)", "1200 mg q24h (day 1)","1400 mg q24h (day 1)","1600 mg q24h (day 1)",
                                 "1800 mg q24h (day 1)","12 mg/kg q24h (day 1)","18 mg/kg q24h (day 1)")) +
@@ -2712,10 +2708,15 @@ PTA_CRRT200_DAY1<- PTA_overall %>%
         geom_vline(xintercept = 55, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 80, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 100, linetype = "dashed", color = "gray50",size=1) +
-        geom_vline(xintercept = 120, linetype = "dashed", color = "gray50",size=1) +
+        geom_vline(xintercept = 120, linetype = "dashed", color = "gray50",size=1) #+
+        scale_shape_manual(values = c(16, 17, 15, 5, 25, 22, 8, 2, 11),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1)", "1000 mg q24h (day 1)",
+                                "800 mg + 400 mg q12h (day 1)", "1200 mg q24h (day 1)","1400 mg q24h (day 1)","1600 mg q24h (day 1)",
+                                "1800 mg q24h (day 1)","12 mg/kg q24h (day 1)","18 mg/kg q24h (day 1)")) +
+                geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_CRRT200_DAY1 #1000 55kg - 1200 80kg - 1400 100kg - 1600 120kg - 1800 rest
-
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -2728,12 +2729,7 @@ PTA_NOCRRT200_DAY1<- PTA_overall %>%
   filter(CRRT == 0, DAY == 1,BW<150, Regimen %in% c(1, 25, 5, 26, 27, 28, 18, 6, 7)) %>%
   mutate(Regimen = factor(Regimen, levels = c(1, 25, 5, 26, 27, 28, 18, 6, 7))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("red", "blue", "green", "orange", "purple", "brown", "gray","pink","black"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1)", "1000 mg q24h (day 1)",
-                                "800 mg + 400 mg q12h (day 1)", "1200 mg q24h (day 1)","1400 mg q24h (day 1)","1600 mg q24h (day 1)",
-                                "1800 mg q24h (day 1)","12 mg/kg q24h (day 1)","18 mg/kg q24h (day 1)")) +
-                scale_shape_manual(values = c(16, 17, 15, 5, 25, 22, 8, 2, 11),name = "Dosing regimen",
                      labels = c("800 mg q24h (day 1)", "1000 mg q24h (day 1)",
                                 "800 mg + 400 mg q12h (day 1)", "1200 mg q24h (day 1)","1400 mg q24h (day 1)","1600 mg q24h (day 1)",
                                 "1800 mg q24h (day 1)","12 mg/kg q24h (day 1)","18 mg/kg q24h (day 1)")) +
@@ -2754,9 +2750,15 @@ PTA_NOCRRT200_DAY1<- PTA_overall %>%
         geom_vline(xintercept = 50, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 75, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 95, linetype = "dashed", color = "gray50",size=1) +
-        geom_vline(xintercept = 115, linetype = "dashed", color = "gray50",size=1) +
+        geom_vline(xintercept = 115, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
+        scale_shape_manual(values = c(16, 17, 15, 5, 25, 22, 8, 2, 11),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1)", "1000 mg q24h (day 1)",
+                                "800 mg + 400 mg q12h (day 1)", "1200 mg q24h (day 1)","1400 mg q24h (day 1)","1600 mg q24h (day 1)",
+                                "1800 mg q24h (day 1)","12 mg/kg q24h (day 1)","18 mg/kg q24h (day 1)")) +        
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_NOCRRT200_DAY1 #800 50kg - 1000 75kg - 1200 95kg - 1400 115kg - 1600 rest
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -2771,12 +2773,7 @@ PTA_CRRT200_DAY7<- PTA_overall %>%
   filter(CRRT == 1, DAY == 7,BW<150, Regimen %in% c(1, 2, 3, 5, 8, 9, 17, 19)) %>%
   mutate(Regimen = factor(Regimen, levels = c(1, 2, 3, 5, 8, 9, 17, 19))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("red", "green", "blue", "brown", "purple", "orange", "pink","gray"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 600 mg q24h", "1000 mg q24h (day 1) / 800 mg q24h",
-                                "800 mg first 12h / 400 mg q12h", "1200 mg q24h (day 1) / 600 mg q24h","1200 mg q24h (day 1) / 800 mg q24h",
-                                "1800 mg q24h (day 1) / 600 mg  q24h", "1800 mg q24h (day 1) / 800 mg q24h")) +
-                scale_shape_manual(values = c(16, 15, 17, 25, 22, 5, 2, 8),name = "Dosing regimen",
                      labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 600 mg q24h", "1000 mg q24h (day 1) / 800 mg q24h",
                                 "800 mg first 12h / 400 mg q12h", "1200 mg q24h (day 1) / 600 mg q24h","1200 mg q24h (day 1) / 800 mg q24h",
                                 "1800 mg q24h (day 1) / 600 mg  q24h", "1800 mg q24h (day 1) / 800 mg q24h")) +
@@ -2793,9 +2790,15 @@ PTA_CRRT200_DAY7<- PTA_overall %>%
         legend.text = element_text(size = 6),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
-        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
+            scale_shape_manual(values = c(16, 15, 17, 25, 22, 5, 2, 8),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 600 mg q24h", "1000 mg q24h (day 1) / 800 mg q24h",
+                                "800 mg first 12h / 400 mg q12h", "1200 mg q24h (day 1) / 600 mg q24h","1200 mg q24h (day 1) / 800 mg q24h",
+                                "1800 mg q24h (day 1) / 600 mg  q24h", "1800 mg q24h (day 1) / 800 mg q24h")) +    
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_CRRT200_DAY7
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -2808,12 +2811,7 @@ PTA_NOCRRT200_DAY7<- PTA_overall %>%
   filter(CRRT == 0, DAY == 7,BW<150, Regimen %in% c(1, 2, 3, 5, 8, 9, 18, 20)) %>%
   mutate(Regimen = factor(Regimen, levels = c(1, 2, 3, 5, 8, 9, 18, 20))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("red", "blue", "green", "orange", "purple", "brown", "pink","gray"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 600 mg q24h", "1000 mg q24h (day 1) / 800 mg q24h",
-                                "800 mg first 12h / 400 mg q12h", "1200 mg q24h (day 1) / 600 mg q24h","1200 mg q24h (day 1) / 800 mg q24h",
-                                "1800 mg q24h (day 1) / 200 mg  q24h", "1800 mg q24h (day 1) / 400 mg q24h")) +
-                scale_shape_manual(values = c(16, 17, 15, 25, 22, 5, 2, 8),name = "Dosing regimen",
                      labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 600 mg q24h", "1000 mg q24h (day 1) / 800 mg q24h",
                                 "800 mg first 12h / 400 mg q12h", "1200 mg q24h (day 1) / 600 mg q24h","1200 mg q24h (day 1) / 800 mg q24h",
                                 "1800 mg q24h (day 1) / 200 mg  q24h", "1800 mg q24h (day 1) / 400 mg q24h")) +
@@ -2830,9 +2828,15 @@ PTA_NOCRRT200_DAY7<- PTA_overall %>%
         legend.text = element_text(size = 6),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
-        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
+        scale_shape_manual(values = c(16, 17, 15, 25, 22, 5, 2, 8),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 600 mg q24h", "1000 mg q24h (day 1) / 800 mg q24h",
+                                "800 mg first 12h / 400 mg q12h", "1200 mg q24h (day 1) / 600 mg q24h","1200 mg q24h (day 1) / 800 mg q24h",
+                                "1800 mg q24h (day 1) / 200 mg  q24h", "1800 mg q24h (day 1) / 400 mg q24h")) +
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_NOCRRT200_DAY7
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -2847,12 +2851,7 @@ PTA_CRRT200_DAY2<- PTA_overall %>%
   filter(CRRT == 1, DAY == 2,BW<150, Regimen %in% c(3, 9, 23, 24, 19)) %>%
   mutate(Regimen = factor(Regimen, levels = c(3, 9, 23, 24, 19))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("blue", "orange", "purple", "brown", "gray"),name = "Dosing regimen",
-                     labels = c("1000 mg q24h (day 1) / 800 mg q24h", "1200 mg q24h (day 1) / 800 mg q24h", "1400 mg q24h (day 1) / 800 mg q24h",
-                                "1600 mg q24h (day 1) / 800 mg q24h",
-                                "1800 mg q24h (day 1) / 800 mg  q24h")) +
-                scale_shape_manual(values = c(17, 5, 25, 22, 8),name = "Dosing regimen",
                      labels = c("1000 mg q24h (day 1) / 800 mg q24h", "1200 mg q24h (day 1) / 800 mg q24h", "1400 mg q24h (day 1) / 800 mg q24h",
                                 "1600 mg q24h (day 1) / 800 mg q24h",
                                 "1800 mg q24h (day 1) / 800 mg  q24h")) +
@@ -2873,9 +2872,15 @@ PTA_CRRT200_DAY2<- PTA_overall %>%
         geom_vline(xintercept = 55, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 80, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 100, linetype = "dashed", color = "gray50",size=1) +
-        geom_vline(xintercept = 120, linetype = "dashed", color = "gray50",size=1) +
+        geom_vline(xintercept = 120, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
+                scale_shape_manual(values = c(17, 5, 25, 22, 8),name = "Dosing regimen",
+                     labels = c("1000 mg q24h (day 1) / 800 mg q24h", "1200 mg q24h (day 1) / 800 mg q24h", "1400 mg q24h (day 1) / 800 mg q24h",
+                                "1600 mg q24h (day 1) / 800 mg q24h",
+                                "1800 mg q24h (day 1) / 800 mg  q24h")) +
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_CRRT200_DAY2
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -2887,12 +2892,7 @@ PTA_NOCRRT200_DAY2<- PTA_overall %>%
   filter(CRRT == 0, DAY == 2, BW<150, Regimen %in% c(1, 25, 26, 27, 28)) %>%
   mutate(Regimen = factor(Regimen, levels = c(1, 25, 26, 27, 28))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("red","blue", "orange", "purple", "brown"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 400 mg q24h", "1200 mg q24h (day 1) / 400 mg q24h",
-                                "1400 mg q24h (day 1) / 400 mg q24h",
-                                "1600 mg q24h (day 1) / 400 mg  q24h")) +
-                scale_shape_manual(values = c(16, 17, 5, 25, 22),name = "Dosing regimen",
                      labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 400 mg q24h", "1200 mg q24h (day 1) / 400 mg q24h",
                                 "1400 mg q24h (day 1) / 400 mg q24h",
                                 "1600 mg q24h (day 1) / 400 mg  q24h")) +
@@ -2913,9 +2913,15 @@ PTA_NOCRRT200_DAY2<- PTA_overall %>%
         geom_vline(xintercept = 50, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 75, linetype = "dashed", color = "gray50",size=1) +
         geom_vline(xintercept = 95, linetype = "dashed", color = "gray50",size=1) +
-        geom_vline(xintercept = 115, linetype = "dashed", color = "gray50",size=1) +
+        geom_vline(xintercept = 115, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
+        scale_shape_manual(values = c(16, 17, 5, 25, 22),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 400 mg q24h", "1200 mg q24h (day 1) / 400 mg q24h",
+                                "1400 mg q24h (day 1) / 400 mg q24h",
+                                "1600 mg q24h (day 1) / 400 mg  q24h")) +       
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_NOCRRT200_DAY2
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -2929,12 +2935,7 @@ PTA_CRRT200_DAY14<- PTA_overall %>%
   filter(CRRT == 1, DAY == 14,BW<150, Regimen %in% c(3, 9, 23, 24, 19)) %>%
   mutate(Regimen = factor(Regimen, levels = c(3, 9, 23, 24, 19))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("blue", "orange", "purple", "brown", "gray"),name = "Dosing regimen",
-                     labels = c("1000 mg q24h (day 1) / 800 mg q24h", "1200 mg q24h (day 1) / 800 mg q24h", "1400 mg q24h (day 1) / 800 mg q24h",
-                                "1600 mg q24h (day 1) / 800 mg q24h",
-                                "1800 mg q24h (day 1) / 800 mg  q24h")) +
-                scale_shape_manual(values = c(17, 5, 25, 22, 8),name = "Dosing regimen",
                      labels = c("1000 mg q24h (day 1) / 800 mg q24h", "1200 mg q24h (day 1) / 800 mg q24h", "1400 mg q24h (day 1) / 800 mg q24h",
                                 "1600 mg q24h (day 1) / 800 mg q24h",
                                 "1800 mg q24h (day 1) / 800 mg  q24h")) +
@@ -2951,9 +2952,15 @@ PTA_CRRT200_DAY14<- PTA_overall %>%
         legend.text = element_text(size = 6),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
-        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
+                scale_shape_manual(values = c(17, 5, 25, 22, 8),name = "Dosing regimen",
+                     labels = c("1000 mg q24h (day 1) / 800 mg q24h", "1200 mg q24h (day 1) / 800 mg q24h", "1400 mg q24h (day 1) / 800 mg q24h",
+                                "1600 mg q24h (day 1) / 800 mg q24h",
+                                "1800 mg q24h (day 1) / 800 mg  q24h")) +
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_CRRT200_DAY14
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
