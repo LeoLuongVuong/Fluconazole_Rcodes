@@ -6368,7 +6368,7 @@ table1(~ DV|HOSPITAL, data=trough,render.continuous=
 #### Imputed dataset
 ###################################
 
-FlucTotIVimputedimputedimputed <- read.csv("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazole/Databanken/Totaal/Imputed dataset/DatabankFluc_Tot_IV_nonmem_finaal.csv", na = "-99")
+FlucTotIVimputed <- read.csv("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazole/Databanken/Totaal/Imputed dataset/DatabankFluc_Tot_IV_nonmem_finaal.csv", na = "-99")
 
 #Summarise dataset
 head(FlucTotIVimputed)

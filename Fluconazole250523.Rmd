@@ -392,7 +392,7 @@ pop_10_trough <-sdtab_pop_10_trough%>%select(ID, DAY, fAUC)
 library(ggplot2)
 
 # Calculate the percentile
-percentiles <- pop_10_trough %>%
+percentiles_opt <- pop_10_trough %>%
 group_by(DAY) %>%
 summarize(p5 = quantile(fAUC, 0.05),
 p25 = quantile(fAUC, 0.25),
@@ -403,8 +403,8 @@ p95 = quantile(fAUC, 0.95))
 # box plot
 pop_auc_opt <- ggplot(pop_10_trough, aes(x = factor(DAY), y = fAUC)) +
   geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
-  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
-  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
   geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
   ylab(expression(atop("Fluconazole area under the", "unbound concentration time curve (mgxh/L)"))) +
   xlab("DAY") +
@@ -446,7 +446,7 @@ pop_std_10_trough <-sdtab_pop_std_10_trough%>%select(ID, DAY, fAUC)
 library(ggplot2)
 
 # Calculate the percentile
-percentiles <- pop_std_10_trough %>%
+percentiles_std <- pop_std_10_trough %>%
 group_by(DAY) %>%
 summarize(p5 = quantile(fAUC, 0.05),
 p25 = quantile(fAUC, 0.25),
@@ -457,8 +457,8 @@ p95 = quantile(fAUC, 0.95))
 # box plot
 pop_auc_std <- ggplot(pop_std_10_trough, aes(x = factor(DAY), y = fAUC)) +
   geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
-  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
-  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_std, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_std, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
   geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
   ylab(expression(atop("Fluconazole area under the", "unbound concentration time curve (mgxh/L)"))) +
   xlab("DAY") +
@@ -600,7 +600,7 @@ library(grid)
 library(gridExtra)
 
 # Combine pop_sim_opt and pop_auc_opt horizontally
-combined_opt <- grid.arrange(pop_sim_opt, pop_auc_opt, ncol = 2, top=textGrob("Optimised dosing regimen", gp = gpar(fontsize = 14, fontface = "bold")))
+combined_opt <- grid.arrange(pop_sim_opt, pop_auc_std, ncol = 2, top=textGrob("Optimised dosing regimen", gp = gpar(fontsize = 14, fontface = "bold")))
 
 # Add annotation "(b)" on the top left corner
 combined_opt <- grid.arrange(textGrob("(b)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 14)), combined_opt, ncol = 1, heights = c(0.05, 0.95))
@@ -623,6 +623,59 @@ ggsave("auc&dv_1406.png", combined_plots, dpi = 300, width = 22, height = 22, un
 #setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
 #ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 26, height = 26.14, units = "cm", limitsize = FALSE)
 
+#Adjust plot for defence slides 170623
+left_title <- textGrob("Fluconazole area under the unbound concentration time curve (mgxh/L)",
+                       gp = gpar(fontsize = 8))
+left_title_rotated <- grobTree(left_title, vp = viewport(angle = 90))
+library(grid)
+library(gridExtra)
+combined_plots <- grid.arrange(pop_auc_std, pop_auc_opt, ncol = 1,top=textGrob("Standard vs Optimised dosing regimen", gp = gpar(fontsize = 12, fontface = "bold")),left=left_title_rotated,bottom=textGrob("DAY", gp = gpar(fontsize = 9))) #reducing the top font size from 14 (as in manuscript) to 12 #170623
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("auc&dv_1706.png", combined_plots, dpi = 300, width = 11.22, height = 11.22, units = "cm", limitsize = FALSE)
+
+# box plot std
+pop_auc_std <- ggplot(pop_std_10_trough, aes(x = factor(DAY), y = fAUC)) +
+  geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
+  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
+  coord_cartesian(ylim = c(0, 1200)) +
+  scale_y_continuous(breaks = seq(0, 1200, by = 100)) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "left",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7)
+  )
+
+# box plot opt
+pop_auc_opt <- ggplot(pop_10_trough, aes(x = factor(DAY), y = fAUC)) +
+  geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
+  coord_cartesian(ylim = c(0, 1200)) +
+  scale_y_continuous(breaks = seq(0, 1200, by = 100)) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7)
+  )
 
 ```
 
@@ -2972,12 +3025,7 @@ PTA_NOCRRT200_DAY14<- PTA_overall %>%
   filter(CRRT == 0, DAY == 14, BW<150, Regimen %in% c(1, 25, 26, 27, 28)) %>%
   mutate(Regimen = factor(Regimen, levels = c(1, 25, 26, 27, 28))) %>%
   ggplot() +  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)),size = 1) + 
-        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) + 
         scale_color_manual(values = c("red","blue", "orange", "purple", "brown"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 400 mg q24h", "1200 mg q24h (day 1) / 400 mg q24h",
-                                "1400 mg q24h (day 1) / 400 mg q24h",
-                                "1600 mg q24h (day 1) / 400 mg  q24h")) +
-                scale_shape_manual(values = c(16, 17, 5, 25, 22),name = "Dosing regimen",
                      labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 400 mg q24h", "1200 mg q24h (day 1) / 400 mg q24h",
                                 "1400 mg q24h (day 1) / 400 mg q24h",
                                 "1600 mg q24h (day 1) / 400 mg  q24h")) +
@@ -2994,9 +3042,15 @@ PTA_NOCRRT200_DAY14<- PTA_overall %>%
         legend.text = element_text(size = 6),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
-        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+        geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) #+
+        geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
+                scale_shape_manual(values = c(16, 17, 5, 25, 22),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1) / 400 mg q24h", "1000 mg q24h (day 1) / 400 mg q24h", "1200 mg q24h (day 1) / 400 mg q24h",
+                                "1400 mg q24h (day 1) / 400 mg q24h",
+                                "1600 mg q24h (day 1) / 400 mg  q24h")) +
         guides(shape = guide_legend(title = "Dosing regimen"), color = guide_legend(title = "Dosing regimen"))
 PTA_NOCRRT200_DAY14
+#on 140623 I eliminated the shape and point to have the plot in my thesis defence presentation
 
 ```
 
@@ -3015,6 +3069,9 @@ title <- ggdraw() +
 # Arrange the title and grid using plot_grid()
 CRRT_pooled <- plot_grid(title, CRRT_pooled, ncol = 1, rel_heights = c(0.02, 1))
 
+#This plot is in the presentation 140623
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots/Thesis_defence_plot")
+#ggsave("CRRT_pooled.png", CRRT_pooled, dpi = 300, width = 17.15, height = 8.86, unit = "cm",limitsize=FALSE)
 ggsave("CRRT_pooled.png", CRRT_pooled, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -3032,7 +3089,59 @@ title <- ggdraw() +
 # Arrange the title and grid using plot_grid()
 noCRRT_pooled <- plot_grid(title, noCRRT_pooled, ncol = 1, rel_heights = c(0.02, 1))
 
+#This plot is in the presentation 140623
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots/Thesis_defence_plot")
 ggsave("noCRRT_pooled.png", noCRRT_pooled, dpi = 300, width = 16, height = 8.27)
+
+```
+
+#### Preparing plots for thesis defence presentation 150623. I need to modify the code for appendix plots a little.
+##### Adjusting the code of PTA for each day
+
+```{r reducing legend text size}
+#Day 1
+PTA_CRRT200_DAY1<-PTA_CRRT200_DAY1+
+        theme(plot.title = element_text(hjust = 0.5, size = 8,face="bold"),
+        axis.title = element_text(size = 6),legend.title = element_text(size = 6),
+        axis.text = element_text(size = 6),
+        legend.text = element_text(size = 4))
+#Day 2
+PTA_CRRT200_DAY2<-PTA_CRRT200_DAY2 +
+        theme(plot.title = element_text(hjust = 0.5, size = 8,face="bold"),
+        axis.title = element_text(size = 6),legend.title = element_text(size = 6),
+        axis.text = element_text(size = 6),
+        legend.text = element_text(size = 4))
+#Day 7
+PTA_CRRT200_DAY7<-PTA_CRRT200_DAY7 +
+        theme(plot.title = element_text(hjust = 0.5, size = 8,face="bold"),
+        axis.title = element_text(size = 6),legend.title = element_text(size = 6),
+        axis.text = element_text(size = 6),
+        legend.text = element_text(size = 4))
+#Day 14
+PTA_CRRT200_DAY14<-PTA_CRRT200_DAY14 +
+        theme(plot.title = element_text(hjust = 0.5, size = 8,face="bold"),
+        axis.title = element_text(size = 6),legend.title = element_text(size = 6),
+        axis.text = element_text(size = 6),
+        legend.text = element_text(size = 4))
+
+```
+
+##### Adjusting the code for combining these plots
+
+```{r reducing title text size}
+library(cowplot)
+
+CRRT_pooled <- plot_grid(PTA_CRRT200_DAY1, PTA_CRRT200_DAY7, PTA_CRRT200_DAY2, PTA_CRRT200_DAY14, nrow = 2, align = "v")
+
+title <- ggdraw() + 
+  draw_label("Probability of target attainment of fAUC 200 mgxh/L", fontface = "bold", size = 10)
+
+# Arrange the title and grid using plot_grid()
+CRRT_pooled <- plot_grid(title, CRRT_pooled, ncol = 1, rel_heights = c(0.05, 1))
+
+#This plot is in the presentation 150623
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots/Thesis_defence_plot")
+ggsave("CRRT_pooled.png", CRRT_pooled, dpi = 300, width = 17.15, height = 8.86, unit = "cm",limitsize=FALSE)
 
 ```
 
@@ -5003,3 +5112,102 @@ lower_bound_PropErr
 upper_bound_PropErr
 
 ```
+
+#### Checking VPC 200623
+##### Identify all patients IDs having trough concentration   
+
+```{r sorting dataset}
+library(dplyr)
+
+sorted_data <- FlucTotIV_clean %>%
+  arrange(ID, OCC, AMT, TIME)
+View(sorted_data)
+```
+
+##### Check the summary of the dosing intervals
+
+```{r FlucTotIV_clean_int dataset}
+FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
+FlucTotIV_clean_int <- FlucTotIV_clean[!is.na(FlucTotIV_clean$AMT), ]
+
+```
+##### Calculating dosing intervals per patient
+
+```{r}
+library(dplyr)
+
+dosing_intervals <- FlucTotIV_clean_int %>%
+  arrange(ID, TIME) %>%
+  group_by(ID) %>%
+  mutate(dosing_interval = TIME - lag(TIME)) 
+
+summary(dosing_intervals$dosing_interval)
+
+library(dplyr)
+
+dosing_intervals<-ungroup(dosing_intervals)
+dosing_intervals <- dosing_intervals[!is.na(dosing_intervals$dosing_interval), ]
+percentage <- dosing_intervals %>%
+  filter((dosing_interval < 13 & dosing_interval > 11) | (dosing_interval < 25 & dosing_interval > 23)) %>%
+  summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
+percentage
+# 86.34713% dosing interval are within 12 hours or 24 hours	
+
+```
+##### Identify patients with high concentration
+
+```{r }
+library(dplyr)
+
+selected_rows <- FlucTotIV_clean %>%
+  filter(TAD >= 23, TAD <= 25, DV > 50) %>%
+  distinct(ID)
+#5 patient IDs 117 122 126 139 144
+
+FlucTotIV_clean$DV <- as.numeric(FlucTotIV_clean$DV)
+FlucTotIV_clean$TAD <- as.numeric(FlucTotIV_clean$TAD)
+
+# Creating CKDEPI2 column
+FlucTotIV_clean$CKDEPI2 <- ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT2 < 0.9,(142) * ((FlucTotIV_clean$CREAT2/0.9)^-0.302) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT2 >= 0.9,(142) * ((FlucTotIV_clean$CREAT2/0.9)^-1.200) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 2 & FlucTotIV_clean$CREAT2 < 0.7, (142) * ((FlucTotIV_clean$CREAT2/0.7)^-0.241) * (0.9938^FlucTotIV_clean$AGE)*1.012, (142) * ((FlucTotIV_clean$CREAT2/0.7)^-1.200) * (0.9938^FlucTotIV_clean$AGE)*1.012)))
+```
+
+##### Plot high concentration patients
+```{r}
+library(ggplot2)
+library(tidyverse)
+
+# Filter rows for the selected patients
+selected_patients <- c(117, 122, 126, 139, 144)
+selected_data <- FlucTotIV_clean %>%
+  filter(ID %in% selected_patients)
+
+# Remove NAs from DV column
+selected_data <- selected_data %>%
+  drop_na(DV)
+selected_data$CRRT<-as.factor(selected_data$CRRT)
+
+# Create line plots with geom_points
+plots <- lapply(selected_patients, function(patient_id) {
+  data <- selected_data %>%
+    filter(ID == patient_id)
+
+  # Set different shape for CRRT values
+  shape_mapping <- ifelse(data$CRRT == 1, 19, 17)
+
+  ggplot(data, aes(x = TAD)) +
+    geom_line(aes(y = DV), color = "blue") +
+    geom_line(aes(y = AMT), color = "red") +
+    geom_line(aes(y = CKDEPI2), color = "green") +
+    geom_point(aes(y = DV, shape = factor(CRRT)), size = 3) +
+    scale_shape_manual(values = shape_mapping) +
+    labs(title = paste("Patient ID:", patient_id),
+         x = "TAD", y = "Value") +
+    theme_bw()
+})
+
+# Arrange the plots in a grid
+gridExtra::grid.arrange(grobs = plots, nrow = 2, ncol = 3)
+
+
+```
+
