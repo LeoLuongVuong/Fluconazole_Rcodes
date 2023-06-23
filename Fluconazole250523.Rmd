@@ -5156,39 +5156,55 @@ percentage
 ```
 ##### Identify patients with high concentration
 
-```{r }
+```{r identifying high concentration patients}
 library(dplyr)
 
-selected_rows <- FlucTotIV_clean %>%
-  filter(TAD >= 23, TAD <= 25, DV > 50) %>%
+FlucTotIV_clean$TAD<-as.numeric(FlucTotIV_clean$TAD)
+FlucTotIV_clean$DV<-as.numeric(FlucTotIV_clean$DV)
+FlucTotIV_clean$HOSPITAL<-as.factor(FlucTotIV_clean$HOSPITAL)
+
+high_rows <- FlucTotIV_clean %>% #identify patients with high trough concentration
+  filter(TAD >= 23, TAD <= 25.5, DV > 50) %>% #regardless of 25 or 25.5, the results remain the same
   distinct(ID)
 #5 patient IDs 117 122 126 139 144
+
+long_rows <- FlucTotIV_clean %>% #identify patients with >25.5 TAD trough concentration
+  filter(TAD > 25.5, DV>0) %>%
+  distinct(ID)
+#18 patient IDs, 9 from HOSPITAL 2, 1 from HOS 5, 1 from HOS 7 & 7 from HOS 8
 
 FlucTotIV_clean$DV <- as.numeric(FlucTotIV_clean$DV)
 FlucTotIV_clean$TAD <- as.numeric(FlucTotIV_clean$TAD)
 
 # Creating CKDEPI2 column
 FlucTotIV_clean$CKDEPI2 <- ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT2 < 0.9,(142) * ((FlucTotIV_clean$CREAT2/0.9)^-0.302) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT2 >= 0.9,(142) * ((FlucTotIV_clean$CREAT2/0.9)^-1.200) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 2 & FlucTotIV_clean$CREAT2 < 0.7, (142) * ((FlucTotIV_clean$CREAT2/0.7)^-0.241) * (0.9938^FlucTotIV_clean$AGE)*1.012, (142) * ((FlucTotIV_clean$CREAT2/0.7)^-1.200) * (0.9938^FlucTotIV_clean$AGE)*1.012)))
+
+# Exporting FlucTotIV_clean_full, which is FlucTotIV_clean with additional CKDEPI2 column - 230623
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes")
+write.csv(FlucTotIV_clean,"FlucTotIV_clean_full.csv",quote=F,row.names=FALSE)
+
 ```
 
 ##### Plot high concentration patients
-```{r}
+
+```{r plotting high concentration patients}
 library(ggplot2)
 library(tidyverse)
 
-# Filter rows for the selected patients
-selected_patients <- c(117, 122, 126, 139, 144)
-selected_data <- FlucTotIV_clean %>%
-  filter(ID %in% selected_patients)
+# Filter rows for the high concentration patients
+high_patients <- c(117, 122, 126, 139, 144)
+high_data <- FlucTotIV_clean %>%
+  filter(ID %in% high_patients)
 
 # Remove NAs from DV column
-selected_data <- selected_data %>%
+high_data <- high_data %>%
   drop_na(DV)
-selected_data$CRRT<-as.factor(selected_data$CRRT)
+high_data$CRRT<-as.factor(high_data$CRRT)
 
 # Create line plots with geom_points
-plots <- lapply(selected_patients, function(patient_id) {
-  data <- selected_data %>%
+plots <- lapply(high_patients, function(patient_id) {
+  data <- high_data %>%
     filter(ID == patient_id)
 
   # Set different shape for CRRT values
@@ -5211,3 +5227,328 @@ gridExtra::grid.arrange(grobs = plots, nrow = 2, ncol = 3)
 
 ```
 
+#### Identifying centers that have imputed CREAT before sending datasets to us - 230623
+
+```{r identifying centers already imputed CREAT}
+# Impute 09
+# Get unique IDs with CRRT == 1 only
+setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes/Plots/Creat_nonimpute_org")
+library(dplyr)
+FlucTotIV <- FlucTotIV %>%filter(!HOSPITAL%in%c(3,4))
+crrt_1_ids <- unique(FlucTotIV$ID[FlucTotIV$CRRT == 1 & !FlucTotIV$ID %in% FlucTotIV$ID[FlucTotIV$CRRT == 0]]) #ids of those who have CRRT all the time 
+
+library(ggplot2)
+
+# Select 5 random patients from crrt_IDs
+set.seed(123) # set seed for reproducibility
+crrt_IDs_1 <- sample(crrt_1_ids, size = 5, replace = FALSE)
+
+# Create a subset of the original data frame with the selected patients
+CRRT_subset_1 <- FlucTotIV %>% 
+        filter(ID %in% crrt_IDs_1)
+CRRT_subset_2 <- FlucTotIV %>% 
+        filter(ID %in% crrt_1_ids) %>% 
+        filter(!(ID %in% crrt_IDs_1))
+
+# First plot
+creat_time_crrt_01<-ggplot() +
+        geom_line(data = CRRT_subset_1, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_subset_1, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(17)) +
+        scale_color_manual(values = c("red")) +
+        labs(title = "CREAT over Time for 5 Random Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_subset_1[CRRT_subset_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("creat_time_crrt_01.png", plot = creat_time_crrt_01, dpi = 300, width = 10, height = 5)
+
+# Second plot
+creat_time_crrt_02<-ggplot() +
+        geom_line(data = CRRT_subset_2, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_subset_2, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(17)) +
+        scale_color_manual(values = c("red")) +
+        labs(title = "CREAT over Time for 5 remaing Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_subset_2[CRRT_subset_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("creat_time_crrt_02.png", plot = creat_time_crrt_02, dpi = 300, width = 10, height = 5)
+
+
+#### I make the same plot for those who are on CRRT on & off on the whole treatment period
+
+# First selecting the ID of those who have CRRT non-missing and CRRT on and off
+library(dplyr)
+miscel_IDs <- FlucTotIV %>%
+        group_by(ID) %>% 
+        summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
+        filter(has_both_crrt) %>% 
+        pull(ID) #equal 16
+miscel_IDs<-as.character(miscel_IDs)
+
+#library(ggplot2)
+# Select 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_1 <- FlucTotIV %>% 
+        filter(ID %in% miscel_IDs_1)
+
+# First plot
+creat_time_miscel_01<-ggplot() +
+        geom_line(data = CRRT_miscel_1, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_1, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for Patients with CRRT on and off 01", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_1[CRRT_miscel_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("creat_time_miscel_01.png", plot = creat_time_miscel_01, dpi = 300, width = 10, height = 5)
+
+# Select another 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_2 <- sample(setdiff(miscel_IDs, miscel_IDs_1), size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_2 <- FlucTotIV %>% 
+        filter(ID %in% miscel_IDs_2)
+
+# Second plot
+creat_time_miscel_02<-ggplot() +
+        geom_line(data = CRRT_miscel_2, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_2, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for Patients with CRRT on and off 02", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_2[CRRT_miscel_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("creat_time_miscel_02.png", plot = creat_time_miscel_02, dpi = 300, width = 10, height = 5)
+
+## And finally, select the remaining 4 patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_3 <- setdiff(miscel_IDs, c(miscel_IDs_1,miscel_IDs_2))
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_3 <- FlucTotIV %>% 
+        filter(ID %in% miscel_IDs_3)
+
+# Third plot
+creat_time_miscel_03<-ggplot() +
+        geom_line(data = CRRT_miscel_3, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_3, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for Patients with CRRT on and off 03", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_3[CRRT_miscel_3$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("creat_time_miscel_03.png", plot = creat_time_miscel_03, dpi = 300, width = 10, height = 5)
+
+## After that, select IDs of those who don't have CRRT
+nonCRRT_IDs<-setdiff(unique(FlucTotIV$ID),c(crrt_1_ids,miscel_IDs))
+
+## I will plot per hospital because there might be similar patterns in the way they deal with missing CREAT
+## First of all, hospital 1
+library(dplyr)
+
+hospital_1 <- FlucTotIV %>% 
+        filter(HOSPITAL == 1) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_1_groups <- split(hospital_1, ceiling(seq_along(hospital_1)/4))
+
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+for (i in seq_along(hospital_1_groups)) {
+        nonCRRT_IDs_1 <- hospital_1_groups[[i]]
+        CRRT_non_1 <- FlucTotIV %>% 
+                filter(ID %in% nonCRRT_IDs_1)
+        creat_time_nonCRRT_01 <- ggplot() +
+                geom_line(data = CRRT_non_1, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+                geom_point(data = CRRT_non_1, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+                scale_shape_manual(values = c(16)) +
+                scale_color_manual(values = c("black")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 01 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_1[CRRT_non_1$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT"))
+        ggsave(paste0("creat_time_nonCRRT_hos1_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_01, dpi = 300, width = 10, height = 5)
+}
+
+## Second of all, hospital 2
+library(dplyr)
+
+hospital_2 <- FlucTotIV %>% 
+        filter(HOSPITAL == 2) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_2_groups <- split(hospital_2, ceiling(seq_along(hospital_2)/5))
+for (i in seq_along(hospital_2_groups)) {
+        nonCRRT_IDs_2 <- hospital_2_groups[[i]]
+        CRRT_non_2 <- FlucTotIV %>% 
+                filter(ID %in% nonCRRT_IDs_2)
+        creat_time_nonCRRT_02 <- ggplot() +
+                geom_line(data = CRRT_non_2, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+                geom_point(data = CRRT_non_2, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+                scale_shape_manual(values = c(16)) +
+                scale_color_manual(values = c("black")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 02 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_2[CRRT_non_2$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT"))
+        ggsave(paste0("creat_time_nonCRRT_hos2_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_02, dpi = 300, width = 10, height = 5)
+}
+
+## Third of all, hospital 5
+library(dplyr)
+
+hospital_5 <- FlucTotIV %>% 
+        filter(HOSPITAL == 5) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_5_groups <- split(hospital_5, ceiling(seq_along(hospital_5)/5))
+for (i in seq_along(hospital_5_groups)) {
+        nonCRRT_IDs_5 <- hospital_5_groups[[i]]
+        CRRT_non_5 <- FlucTotIV %>% 
+                filter(ID %in% nonCRRT_IDs_5)
+        creat_time_nonCRRT_05 <- ggplot() +
+                geom_line(data = CRRT_non_5, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+                geom_point(data = CRRT_non_5, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+                scale_shape_manual(values = c(16)) +
+                scale_color_manual(values = c("black")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 5 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_5[CRRT_non_5$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT"))
+        ggsave(paste0("creat_time_nonCRRT_hos5_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_05, dpi = 300, width = 10, height = 5)
+}
+
+## Fourth of all, hospital 6
+hospital_6 <- FlucTotIV %>% 
+        filter(HOSPITAL == 6) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_6_groups <- split(hospital_6, ceiling(seq_along(hospital_6)/6))
+for (i in seq_along(hospital_6_groups)) {
+        nonCRRT_IDs_6 <- hospital_6_groups[[i]]
+        CRRT_non_6 <- FlucTotIV %>% 
+                filter(ID %in% nonCRRT_IDs_6)
+        creat_time_nonCRRT_06 <- ggplot() +
+                geom_line(data = CRRT_non_6, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+                geom_point(data = CRRT_non_6, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+                scale_shape_manual(values = c(16)) +
+                scale_color_manual(values = c("black")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 6 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_6[CRRT_non_6$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT"))
+        ggsave(paste0("creat_time_nonCRRT_hos6_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_06, dpi = 300, width = 10, height = 5)
+}
+
+## Fifth of all, hospital 7
+hospital_7 <- FlucTotIV %>% 
+        filter(HOSPITAL == 7) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_7_groups <- split(hospital_7, ceiling(seq_along(hospital_7)/6))
+for (i in seq_along(hospital_7_groups)) {
+        nonCRRT_IDs_7 <- hospital_7_groups[[i]]
+        CRRT_non_7 <- FlucTotIV %>% 
+                filter(ID %in% nonCRRT_IDs_7)
+        creat_time_nonCRRT_07 <- ggplot() +
+                geom_line(data = CRRT_non_7, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+                geom_point(data = CRRT_non_7, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+                scale_shape_manual(values = c(16)) +
+                scale_color_manual(values = c("black")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 7 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_7[CRRT_non_7$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT"))
+        ggsave(paste0("creat_time_nonCRRT_hos7_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_07, dpi = 300, width = 10, height = 5)
+}
+
+## Sixth of all, hospital 8
+hospital_8 <- FlucTotIV %>% 
+        filter(HOSPITAL == 8) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_8_groups <- split(hospital_8, ceiling(seq_along(hospital_8)/6))
+for (i in seq_along(hospital_8_groups)) {
+        nonCRRT_IDs_8 <- hospital_8_groups[[i]]
+        CRRT_non_8 <- FlucTotIV %>% 
+                filter(ID %in% nonCRRT_IDs_8)
+        creat_time_nonCRRT_08 <- ggplot() +
+                geom_line(data = CRRT_non_8, aes(x = TIME, y = CREAT, group = ID, color = factor(CRRT)), size = 1) +
+                geom_point(data = CRRT_non_8, aes(x = TIME, y = CREAT, shape = factor(CRRT)), size = 2) +
+                scale_shape_manual(values = c(16)) +
+                scale_color_manual(values = c("black")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 8 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_8[CRRT_non_8$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT"))
+        ggsave(paste0("creat_time_nonCRRT_hos8_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_08, dpi = 300, width = 10, height = 5)
+}
+
+```
+
+##### The already imputed centers are: 2, 5, 6, 7 - 230623
