@@ -3513,10 +3513,10 @@ PTA_CRRT200_DAY1<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) +
@@ -3546,10 +3546,10 @@ PTA_NOCRRT200_DAY1<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) +
@@ -3579,10 +3579,10 @@ PTA_CRRT200_DAY7<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) 
@@ -3611,10 +3611,10 @@ PTA_NOCRRT200_DAY7<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) 
@@ -3643,10 +3643,10 @@ PTA_CRRT200_DAY2<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) +
@@ -3676,10 +3676,10 @@ PTA_NOCRRT200_DAY2<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) +
@@ -3709,10 +3709,10 @@ PTA_CRRT200_DAY14<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6)  
@@ -3741,10 +3741,10 @@ PTA_NOCRRT200_DAY14<- PTA_overall %>%
   theme_minimal(base_size = 12) +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 8),legend.title = element_text(size = 7),
-        axis.text = element_text(size = 7),
-        legend.text = element_text(size = 6),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 9.5),legend.title = element_text(size = 7.5),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 6.5),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
         geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 0.6) 
@@ -3762,12 +3762,12 @@ library(cowplot)
 CRRT_pooled <- plot_grid(PTA_CRRT200_DAY1, PTA_CRRT200_DAY7, PTA_CRRT200_DAY2, PTA_CRRT200_DAY14, nrow = 2, align = "v")
 
 title <- ggdraw() + 
-  draw_label("Probability of target attainment of fAUC 200 mgxh/L", fontface = "bold", size = 12)
+  draw_label("Probability of target attainment of fAUC 200 mgxh/L", fontface = "bold", size = 13)
 
 # Arrange the title and grid using plot_grid()
 CRRT_pooled <- plot_grid(title, CRRT_pooled, ncol = 1, rel_heights = c(0.05, 0.95))
 
-ggsave("CRRT_pooled.png", CRRT_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
+ggsave("CRRT_pooled.png", CRRT_pooled, dpi = 300, width = 27, height = 16,units = "cm", limitsize = FALSE)
 
 ```
 
@@ -3779,12 +3779,12 @@ library(cowplot)
 noCRRT_pooled <- plot_grid(PTA_NOCRRT200_DAY1, PTA_NOCRRT200_DAY7, PTA_NOCRRT200_DAY2, PTA_NOCRRT200_DAY14, nrow = 2, align = "v")
 
 title <- ggdraw() + 
-  draw_label("Probability of target attainment of fAUC 200 mgxh/L", fontface = "bold", size = 12)
+  draw_label("Probability of target attainment of fAUC 200 mgxh/L", fontface = "bold", size = 13)
 
 # Arrange the title and grid using plot_grid()
 noCRRT_pooled <- plot_grid(title, noCRRT_pooled, ncol = 1, rel_heights = c(0.05, 0.95))
 
-ggsave("noCRRT_pooled.png", noCRRT_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
+ggsave("noCRRT_pooled.png", noCRRT_pooled, dpi = 300, width = 27, height = 16,units = "cm", limitsize = FALSE)
 
 ```
 
