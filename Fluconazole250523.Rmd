@@ -3788,17 +3788,72 @@ ggsave("noCRRT_pooled.png", noCRRT_pooled, dpi = 300, width = 27, height = 16,un
 
 ```
 
-#### Creating datasets for population simulation 010623
+#### Creating datasets for population simulation 270623 - increase the percentage of CRRT to 50%
 
-```{r read pop_dosing dataset}
+##### Updating CRRT status
+
+```{r update CRRT status for pop_dosing}
 
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
 pop_dosing<-read.csv("pop_dosing.csv")
 
-# View the extracted rows
-summary(as.factor(pop_dosing$TAD))
+# Set the seed for reproducibility
+set.seed(123)
+
+# Randomly select 500 IDs
+selected_ids <- sample(unique(pop_dosing$ID), 500)
+
+# Assign CRRT = 1 to selected IDs and CRRT = 0 to the rest
+pop_dosing$CRRT <- ifelse(pop_dosing$ID %in% selected_ids, 1, 0)
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+pop_dosing_std<-read.csv("pop_dosing_std.csv")
+
+# Set the seed for reproducibility
+set.seed(123)
+
+# Randomly select 500 IDs
+selected_ids_std <- sample(unique(pop_dosing_std$ID), 500)
+
+# Assign CRRT = 1 to selected IDs std and CRRT = 0 to the rest
+pop_dosing_std$CRRT <- ifelse(pop_dosing_std$ID %in% selected_ids_std, 1, 0)
 
 ```
+
+##### Updating the dose for new CRRT status
+
+```{r update dose for new CRRT status}
+library(dplyr)
+pop_dosing <- pop_dosing %>%
+  mutate(
+    AMT = ifelse(TIME == 0 & BW > 120 & CRRT == 1, 1800,
+           ifelse(TIME == 0 & BW <= 120 & BW > 100 & CRRT == 1, 1600,
+           ifelse(TIME == 0 & BW <= 100 & BW > 80 & CRRT == 1, 1400,
+           ifelse(TIME == 0 & BW <= 80 & BW > 55 & CRRT == 1, 1200, 
+                  ifelse(TIME == 0 & BW <= 55 & CRRT == 1, 1000,
+                         ifelse(TIME == 0 & BW > 115 & CRRT == 0, 1600,
+                                ifelse(TIME == 0 & BW <= 115 & BW > 95 & CRRT == 0, 1400,
+                                       ifelse(TIME == 0 & BW <= 95 & BW > 75 & CRRT == 0, 1200,
+                                              ifelse(TIME == 0 & BW <= 75 & BW > 50 & CRRT == 0, 1000,
+                                                     ifelse(TIME == 0 & BW <= 50 & CRRT == 0, 800,
+                                                            ifelse(TIME > 0 & MDV==1 & CRRT == 1, 800,
+                                                                   ifelse(TIME > 0 & MDV==1 & CRRT == 0, 400,0
+                                                            
+                  ))))
+  )))
+))))))
+
+```
+
+##### Exporting datasets
+
+```{r exporting pop_dosing_upd & pop_dosing_std_upd}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+write.csv(pop_dosing,"pop_dosing_2706.csv",quote=F,row.names=FALSE)
+write.csv(pop_dosing_std,"pop_dosing_std_2706.csv",quote=F,row.names=FALSE)
+
+```
+
 
 ##### I create from scratch here (follow Fluconazole120423.Rmd file)
 
