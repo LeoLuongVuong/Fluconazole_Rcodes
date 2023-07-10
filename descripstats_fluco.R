@@ -175,38 +175,6 @@ dvtad<-ggplot(FlucTotIV_non_na, aes(x = TAD, y = DV)) +
 # Save DV vs TIME Plot to PNG file
 ggsave("dvtad.png", plot = dvtad, dpi = 300, width = 10, height = 8)
 
-### We subset data for multiple imputations #our variables of interest are height, body weight, CG so we should subset Age, Gender, Body weight, Height, CG ### 
-
-## Correlation coefficient between BW and LENGTH ## ## It might not be relevant now ##
-#cor(FlucTotIV$BW,FlucTotIV$LENGTH) 
-#account for the missing value
-#cor(FlucTotIV$BW[complete.cases(FlucTotIV$BW) & complete.cases(FlucTotIV$LENGTH)], 
-#FlucTotIV$LENGTH[complete.cases(FlucTotIV$BW) & complete.cases(FlucTotIV$LENGTH)])
-#another simpler way to do so
-#cor(na.omit(FlucTotIV$BW),na.omit(FlucTotIV$LENGTH)) 
-#scatter plot using ggplot2
-#ggplot(FlucTotIV, aes(LENGTH, BW)) + 
-#geom_point() +  scale_x_continuous(limits = c(1.3, 2)) +
-#scale_y_continuous(limits = c(50, 150))
-
-## Check if all the variables that need to be imputed are normally distributed ##
-#shapiro.test(FlucTotIV$BW)
-#shapiro.test(log(FlucTotIV$BW))
-#shapiro.test(FlucTotIV$LENGTH)
-#shapiro.test(log(FlucTotIV$LENGTH))
-#shapiro.test(FlucTotIV$CG)
-#shapiro.test(log(FlucTotIV$CG))
-#qqpnorm(log(FlucTotIV$CG))
-
-# Another way for doing so #
-#test_log <- FlucTotIV %>% ungroup() %>% select(ID, BW) %>% unique() %>% mutate(BW = log10(BW))
-#ggqqplot(test_log$BW)
-#shapiro.test(test_log$BW)
-#ggplot(data = test_log, mapping = aes(x = BW)) + geom_density()
-#test_log %>% summarise(mean = mean(BW, na.rm = T), sd = sd(BW, na.rm = T), min = min(BW), max = max(BW))
-
-## They are all not normal so maybe we should utilize pnm method in mice package for imputation ##
-
 ### Add a new column called EVENT to Test for IOV ###
 for (i in 1:length(FlucTotIV$TIME)){
         if (FlucTotIV$TIME[i]<=100){
@@ -360,7 +328,7 @@ for (i in 1:length(Fluc_NONMEM_MED$SEX)) {
         } 
 }
 
-### I also calculate BMI for those for are missing ###
+### I also calculate BMI for those who are missing ###
 
 Fluc_NONMEM_MED$BMI<-Fluc_NONMEM_MED$BW/(Fluc_NONMEM_MED$LENGTH)^2
 
@@ -431,62 +399,6 @@ median(Fluc_NONMEM_COM$CG_NoD[Fluc_NONMEM_COM$CG_NoD > 0]) #equals 107.59
 ####Here I make plot of CREAT over TIME for each individual patient 
 ####################################################################
 
-# Create a vector of ID's for the patients who have CRRT all the time when DV != "." #I will hide this part for a moment
-# Get unique IDs with CRRT == 1 only
-#FlucTotIV_subset <- FlucTotIV[FlucTotIV$DV != ".",]
-#crrt_1_ids <- unique(FlucTotIV_subset$ID[FlucTotIV_subset$CRRT == 1 & !FlucTotIV_subset$ID %in% FlucTotIV_subset$ID[FlucTotIV_subset$CRRT == 0]])
-
-#library(dplyr)
-#library(ggplot2)
-
-# Select 10 random patients from crrt_IDs
-#set.seed(123) # set seed for reproducibility
-#crrt_IDs_1 <- sample(crrt_1_ids, size = 10, replace = FALSE)
-
-# Create a subset of the original data frame with the selected patients
-#CRRT_subset_1 <- FlucTotIV %>% 
-        #filter(ID %in% crrt_IDs_1)
-#CRRT_subset_2 <- FlucTotIV %>% 
-        #filter(ID %in% crrt_1_ids) %>% 
-        #filter(!(ID %in% crrt_IDs_1))
-
-# Remove "." values in DV column
-#CRRT_subset_1 <- CRRT_subset_1[CRRT_subset_1$DV != ".", ]
-#CRRT_subset_1$DV <- as.numeric(CRRT_subset_1$DV)
-
-# Plot CREAT over time for the first 10 patients with CRRT on all the time when DV != "."
-#creat_time_crrt_1 <- ggplot(data = CRRT_subset_1, aes(x = TIME, y = CREAT, group = ID)) +
-        #geom_line(aes(color = "CRRT"))  +
-        #geom_point(size = 2) + 
-        #scale_shape_manual(values = c(16)) +
-        #labs(title = "CREAT over Time for 10 Random Patients with CRRT on all the time on sampling days", x = "Time", y = "CREAT") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_subset_1, aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-
-#ggsave("creat_time_crrt_1.png", plot = creat_time_crrt_1, dpi = 300, width = 10, height = 5)
-
-# Remove "." values in DV column
-#CRRT_subset_2 <- CRRT_subset_2[CRRT_subset_2$DV != ".", ]
-#CRRT_subset_2$DV <- as.numeric(CRRT_subset_2$DV)
-
-# Plot CREAT over time for the first 10 patients with CRRT on all the time when DV != "."
-#creat_time_crrt_2 <- ggplot(data = CRRT_subset_2, aes(x = TIME, y = CREAT, group = ID)) +
-        #geom_line(aes(color = factor(CRRT)))  +
-        #geom_point(size = 2) + 
-        #scale_shape_manual(values = c(16)) +
-        #labs(title = "CREAT over Time for 11 remaing Patients with CRRT on all the time on sampling days", x = "Time", y = "CREAT") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_subset_2, aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-
-#ggsave("creat_time_crrt_2.png", plot = creat_time_crrt_2, dpi = 300, width = 10, height = 5)
-
-
 # Here I plot all the the time points (dosing & sampling) of CREAT over time where CREAT equal -0.1 indicating that it's missing
 
 # Get unique IDs with CRRT == 1 only
@@ -512,23 +424,6 @@ CRRT_subset_2 <- FlucTotIV_clean_imputed %>%
         filter(!(ID %in% crrt_IDs_1))
 
 # Remove "." values in DV column
-#CRRT_subset_1 <- CRRT_subset_1[CRRT_subset_1$DV != ".", ]
-#CRRT_subset_1$DV <- as.numeric(CRRT_subset_1$DV)
-
-# Plot CREAT over time for the first 10 patients with CRRT on all the time when DV != "."
-#creat_time_crrt_01 <- ggplot(data = CRRT_subset_1, aes(x = TIME, y = CREAT, group = ID)) +
-        #geom_line(aes(color = factor(CRRT)))  +
-        #geom_point(size = 2) + 
-        #scale_shape_manual(values = c(16)) +
-        #labs(title = "CREAT over Time for 5 Random Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_subset_1, aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-
-#ggsave("creat_time_crrt_01.png", plot = creat_time_crrt_01, dpi = 300, width = 10, height = 5)
-
 # Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
 # Create data frame for patients with CREAT > 0
 CRRT_subset_1_pos <- CRRT_subset_1 %>% 
@@ -552,24 +447,6 @@ creat_time_crrt_01<-ggplot() +
         facet_wrap(~ ID, scales = "free") +
         guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
 ggsave("creat_time_crrt_01.png", plot = creat_time_crrt_01, dpi = 300, width = 10, height = 5)
-
-# Remove "." values in DV column
-#CRRT_subset_2 <- CRRT_subset_2[CRRT_subset_2$DV != ".", ]
-#CRRT_subset_2$DV <- as.numeric(CRRT_subset_2$DV)
-
-# Plot CREAT over time for the first 10 patients with CRRT on all the time when DV != "."
-#creat_time_crrt_02 <- ggplot(data = CRRT_subset_2, aes(x = TIME, y = CREAT, group = ID)) +
-        #geom_line(aes(color = factor(CRRT)))  +
-        #geom_point(size = 2) + 
-        #scale_shape_manual(values = c(16)) +
-        #labs(title = "CREAT over Time for 5 remaing Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_subset_2, aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-
-#ggsave("creat_time_crrt_02.png", plot = creat_time_crrt_02, dpi = 300, width = 10, height = 5)
 
 # Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
 # Create data frame for patients with CREAT > 0
@@ -597,24 +474,6 @@ ggsave("creat_time_crrt_02.png", plot = creat_time_crrt_02, dpi = 300, width = 1
 
 ### Here I counted the number of patients who had CRRT at least once ###
 
-#library(dplyr)
-#crrt_counts_once <- FlucTotIV %>% filter(!is.na(DV)) %>%
-        #filter(CRRT == 1) %>% 
-        #summarize(num_crrt_patients = n_distinct(ID))
-#crrt_counts_once #equals 31 #So there's 1 patient had CRRT on non-sampling day(s)
-
-### Then I counted the number of patients who had both 0 and 1 in there CRRT history, which means there were times when they had CRRT and there were times when they didn't ###
-
-#library(dplyr)
-#crrt_counts_miscel <- FlucTotIV %>% filter (DV!=".") %>% #here I extract the observations where DVs are not missing only since CREATs were only measured where DVs are present
-        #group_by(ID) %>% 
-        #summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
-        #filter(has_both_crrt) %>% 
-        #summarize(num_patients_with_both_crrt = n())
-#crrt_counts_miscel #equals 10
-
-
-
 #### I make the same plot for those who are on CRRT on & off on the whole treatment period
 
 # First selecting the ID of those who have CRRT non-missing and CRRT on and off
@@ -633,43 +492,6 @@ miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
 # create a subset of the original data frame with the 6 patients
 CRRT_miscel_1 <- FlucTotIV_clean_imputed %>% 
         filter(ID %in% miscel_IDs_1)
-
-# Plot these patients to see (hopefully) patterns
-# Skip this
-#library(ggplot2)
-
-#ggplot(CRRT_miscel_1, aes(x = TIME, y = CREAT)) +
-        #geom_point() +
-        #geom_rect(data = CRRT_miscel_1 %>% filter(CRRT == 1), 
-                  #aes(xmin = TIME, ymin = -Inf, xmax = lead(TIME), ymax = Inf), 
-                  #fill = "gray50", alpha = 0.5) +
-        #xlab("Time (hours)") +
-        #ylab("Creatinine (mg/dL)") +
-        #ggtitle("Creatinine vs. Time in CRRT patients with on/off history") 
-# Not so good plot #
-
-# That is what chatGPT suggested me to do
-#library(ggplot2)
-
-# Count number of patients who had CRRT in the first week
-#CRRT_first_week <- length(unique(FlucTotIV$ID[FlucTotIV$CRRT == 1 & FlucTotIV$TIME <= 168])) #29
-#CRRT_second_week<- length(unique(FlucTotIV$ID[FlucTotIV$CRRT == 1 & FlucTotIV$TIME > 168])) #16
-
-# Remove "." values in DV column
-#CRRT_miscel <- CRRT_miscel[CRRT_miscel$DV != ".", ]
-#CRRT_miscel$DV<-as.numeric(CRRT_miscel$DV)
-
-# Plot CREAT over time for the first 6 patients with CRRT on and off
-#creat_time_miscel_01<-ggplot(data = CRRT_miscel_1, aes(x = TIME, y = CREAT, group = ID,shape = factor(CRRT))) +
-        #geom_line(aes(color = factor(CRRT))) + 
-        #scale_color_manual(values = c("black", "red")) +  geom_point(size = 2) + scale_shape_manual(values = c(16, 17)) +
-        #labs(title = "CREAT over Time for Patients with CRRT on and off 01", x = "Time (hours)", y = "CREAT (mg/dL)") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_miscel_1[CRRT_miscel_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-#ggsave("creat_time_miscel_01.png", plot = creat_time_miscel_01, dpi = 300, width = 10, height = 5)
 
 # Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
 # Create data frame for patients with CREAT > 0
@@ -695,20 +517,6 @@ creat_time_miscel_01<-ggplot() +
         guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
 ggsave("creat_time_miscel_01.png", plot = creat_time_miscel_01, dpi = 300, width = 10, height = 5)
 
-
-
-# Plot DV over time for patients with CRRT on and off #Not needed for now so I'll hide it
-#dv_time_miscel_01<-ggplot(data = CRRT_miscel_1, aes(x = TIME, y = DV, group = ID,shape = factor(CRRT))) +
-        #geom_line(aes(color = factor(CRRT))) +
-        #scale_color_manual(values = c("black", "red")) + geom_point(size = 2) + scale_shape_manual(values = c(16, 17)) +
-        #labs(title = "DV over Time for Patients with CRRT on and off 01", x = "Time", y = "DV") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_miscel_1[CRRT_miscel_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-#ggsave("dv_time_miscel_01.png", plot = dv_time_miscel_01, dpi = 300, width = 10, height = 5)
-
 # Select another 6 random patients from miscel_IDs
 set.seed(123) # set seed for reproducibility
 miscel_IDs_2 <- sample(setdiff(miscel_IDs, miscel_IDs_1), size = 6, replace = FALSE)
@@ -716,18 +524,6 @@ miscel_IDs_2 <- sample(setdiff(miscel_IDs, miscel_IDs_1), size = 6, replace = FA
 # create a subset of the original data frame with the 6 patients
 CRRT_miscel_2 <- FlucTotIV_clean_imputed %>% 
         filter(ID %in% miscel_IDs_2)
-
-# Plot CREAT over time for the 2nd 6 patients with CRRT on and off
-#creat_time_miscel_02<-ggplot(data = CRRT_miscel_2, aes(x = TIME, y = CREAT, group = ID,shape = factor(CRRT))) +
-        #geom_line(aes(color = factor(CRRT))) + 
-        #scale_color_manual(values = c("black", "red")) +  geom_point(size = 2) + scale_shape_manual(values = c(16, 17)) +
-        #labs(title = "CREAT over Time for Patients with CRRT on and off 02", x = "Time", y = "CREAT") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_miscel_2[CRRT_miscel_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-#ggsave("creat_time_miscel_02_01.png", plot = creat_time_miscel_02, dpi = 300, width = 10, height = 5)
 
 # Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
 # Create data frame for patients with CREAT > 0
@@ -760,18 +556,6 @@ miscel_IDs_3 <- setdiff(miscel_IDs, c(miscel_IDs_1,miscel_IDs_2))
 # create a subset of the original data frame with the 6 patients
 CRRT_miscel_3 <- FlucTotIV_clean_imputed %>% 
         filter(ID %in% miscel_IDs_3)
-
-# Plot CREAT over time for the 2nd 6 patients with CRRT on and off
-#creat_time_miscel_03<-ggplot(data = CRRT_miscel_3, aes(x = TIME, y = CREAT, group = ID,shape = factor(CRRT))) +
-        #geom_line(aes(color = factor(CRRT))) + 
-        #scale_color_manual(values = c("black", "red")) +  geom_point(size = 2) + scale_shape_manual(values = c(16, 17)) +
-        #labs(title = "CREAT over Time for Patients with CRRT on and off 03", x = "Time", y = "CREAT") +
-        #theme_bw() +
-        #geom_rect(data = CRRT_miscel_3[CRRT_miscel_3$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                  #fill = "grey", alpha = 0.2) +
-        #facet_wrap(~ ID, scales = "free") +
-        #guides(color = guide_legend(title = "CRRT"))
-#ggsave("creat_time_miscel_03.png", plot = creat_time_miscel_03, dpi = 300, width = 10, height = 5)
 
 # Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
 # Create data frame for patients with CREAT > 0
@@ -825,28 +609,6 @@ hospital_1 <- FlucTotIV_clean_imputed %>%
         pull(ID)
 
 hospital_1_groups <- split(hospital_1, ceiling(seq_along(hospital_1)/4))
-
-# Can skip the following
-#for (i in seq_along(hospital_1_groups)) {
-        #nonCRRT_IDs <- hospital_1_groups[[i]]
-        #CRRT_non <- FlucTotIV_clean_imputed %>% 
-                #filter(ID %in% nonCRRT_IDs)
-        #creat_time_nonCRRT <- ggplot(data = CRRT_non, aes(x = TIME, y = CREAT, group = ID, shape = factor(CRRT))) +
-                #geom_line(aes(color = factor(CRRT))) + 
-                #scale_color_manual(values = c("black")) + 
-                #geom_point(size = 2) + 
-                #scale_shape_manual(values = c(16)) +
-                #labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 1 ", sprintf("%02d", i)), 
-                     #x = "Time", y = "CREAT") +
-                #theme_bw() +
-                #geom_rect(data = CRRT_non[CRRT_non$CRRT == 0, ], 
-                          #aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
-                          #fill = "grey", alpha = 0.2) +
-                #facet_wrap(~ ID, scales = "free") +
-                #guides(color = guide_legend(title = "CRRT"))
-        #ggsave(paste0("creat_time_nonCRRT_", sprintf("%02d", i), ".png"), 
-               #plot = creat_time_nonCRRT, dpi = 300, width = 10, height = 5)
-#}
 
 # Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
 for (i in seq_along(hospital_1_groups)) {
@@ -1099,6 +861,15 @@ FlucTotIV_clean <- FlucTotIV %>%
         mutate(CREAT = ifelse(row_number() > 1 & !is.na(CREAT), NA, CREAT)) %>%
         ungroup() %>%
         select(-dup_group)
+
+# Calculating the difference between in the number of CREAT records between FlucTotIV (original CREAT) FlucTotIV_old (after excluding imputation)
+# 100723
+
+# Count non-NA CREAT values in FlucTotIV
+sum(!is.na(FlucTotIV$CREAT)) #1715
+
+# Count non-NA CREAT values in FlucTotIV_clean_old
+sum(!is.na(FlucTotIV_clean_old$CREAT)) #598
 
 ### Next thing, fill in the CREAT of dosing events that are within 3 hours of the previous sampling events 
 # (this applies mostly to Ruth's study because she collected trough concentrations only so the dosing and sampling events would be very close)
@@ -6342,7 +6113,7 @@ for (i in seq_along(hospital_8_groups)) {
                 geom_line(data = CRRT_non_8, aes(x = TIME, y = CREAT10, group = ID, color = factor(CRRT)), size = 1) +
                 geom_point(data = CRRT_non_8, aes(x = TIME, y = CREAT10, shape = factor(CRRT)), size = 2) +
                 scale_shape_manual(values = c(16)) +
-                scale_color_manual(values = c("black")) +
+                scale_color_manual(values = c("black", "red")) +
                 labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 8 ", sprintf("%02d", i)), 
                      x = "Time (hours)", y = "CREAT (mg/dL)") +
                 theme_bw() +
@@ -6489,8 +6260,484 @@ table1(~ DV|HOSPITAL, data=trough,render.continuous=
                c(.="Median [Q1-Q3]"))
 
 
+#### Plot CREAT  over TIME no imputation of within 3 hours (CREAT 2 column - FlucTotIV clean dataset) - 100723 ####
 
+# Here I plot all the the time points (dosing & sampling) of CREAT over time where CREAT equal -0.1 indicating that it's missing
 
+# Converting DV to numeric
+FlucTotIV_clean$DV<-as.numeric(FlucTotIV_clean$DV)
+
+# Create new column Event_Type to plot CREAT over TIME stratified by Event_Type (1 for dosing and 2 for sampling events)
+FlucTotIV_clean$Event_Type <- ifelse(is.na(FlucTotIV_clean$DV), 1, 2)
+
+# Get unique IDs with CRRT == 1 only
+setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes/Plots/CREAT non impute org")
+library(dplyr)
+FlucTotIV_clean <- FlucTotIV_clean %>%filter(!HOSPITAL%in%c(3,4))
+FlucTotIV_clean$CREAT<-ifelse(is.na(FlucTotIV_clean$CREAT),-0.1,FlucTotIV_clean$CREAT) #This is the dataset that I will use thereafter
+crrt_1_ids <- unique(FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 1 & !FlucTotIV_clean$ID %in% FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 0]]) #equals 15  
+# that means we have 15 patients who were on CRRT for their whole treatment period while 21 patients who were on CRRT on all sampling events (these 15 contain 5 patients with CREAT missing completely)
+# after I filter out hospital 3 & 4 with CREAT completely missing, I got 10 patients that were on CRRT all the time (including dosing events) 
+
+library(ggplot2)
+
+# Select 5 random patients from crrt_IDs
+set.seed(123) # set seed for reproducibility
+crrt_IDs_1 <- sample(crrt_1_ids, size = 5, replace = FALSE)
+
+# Create a subset of the original data frame with the selected patients
+CRRT_subset_1 <- FlucTotIV_clean %>% 
+        filter(ID %in% crrt_IDs_1)
+CRRT_subset_2 <- FlucTotIV_clean %>% 
+        filter(ID %in% crrt_1_ids) %>% 
+        filter(!(ID %in% crrt_IDs_1))
+
+# Remove "." values in DV column
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+# Create data frame for patients with CREAT > 0
+CRRT_subset_1_pos <- CRRT_subset_1 %>% 
+        filter(CREAT > 0)
+
+# Create data frame for patients with CREAT < 0
+CRRT_subset_1_neg <- CRRT_subset_1 %>% 
+        filter(CREAT < 0)
+
+# Plot the two lines together
+creat_time_crrt_01<-ggplot() +
+        geom_line(data = CRRT_subset_1_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+        geom_line(data = CRRT_subset_1_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+        geom_point(data = CRRT_subset_1, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for 5 Random Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_subset_1[CRRT_subset_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) 
+ggsave("creat_time_crrt_01.png", plot = creat_time_crrt_01, dpi = 300, width = 10, height = 5)
+
+# An alternative code
+#creat_time_crrt_01 <- ggplot() +
+        #geom_line(data = CRRT_subset_1_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+        #geom_line(data = CRRT_subset_1_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+        #geom_point(data = CRRT_subset_1, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+        #scale_shape_manual(values = c(16, 17)) +
+        #scale_color_manual(values = c("black", "red")) +
+        #labs(title = "CREAT over Time for 5 Random Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        #theme_bw() +
+        #scale_x_continuous(breaks = seq(0, max(CRRT_subset_1$TIME), by = 12)) +
+        #facet_wrap(~ ID, scales = "free") +
+        #guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) +
+        #theme(axis.text = element_text(size = 5))
+
+#ggsave("creat_time_crrt_01.png", plot = creat_time_crrt_01, dpi = 300, width = 10, height = 5)
+# The end
+
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+# Create data frame for patients with CREAT > 0
+CRRT_subset_2_pos <- CRRT_subset_2 %>% 
+        filter(CREAT > 0)
+
+# Create data frame for patients with CREAT < 0
+CRRT_subset_2_neg <- CRRT_subset_2 %>% 
+        filter(CREAT < 0)
+
+# Plot the two lines together
+creat_time_crrt_02<-ggplot() +
+        geom_line(data = CRRT_subset_2_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+        geom_line(data = CRRT_subset_2_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+        geom_point(data = CRRT_subset_2, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for 5 remaing Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_subset_2[CRRT_subset_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) 
+ggsave("creat_time_crrt_02.png", plot = creat_time_crrt_02, dpi = 300, width = 10, height = 5)
+
+### Here I counted the number of patients who had CRRT at least once ###
+
+#### I make the same plot for those who are on CRRT on & off on the whole treatment period
+
+# First selecting the ID of those who have CRRT non-missing and CRRT on and off
+library(dplyr)
+miscel_IDs <- FlucTotIV_clean %>%
+        group_by(ID) %>% 
+        summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
+        filter(has_both_crrt) %>% 
+        pull(ID) #equal 17 
+
+#library(ggplot2)
+# Select 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_1 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_1)
+
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+# Create data frame for patients with CREAT > 0
+CRRT_miscel_1_pos <- CRRT_miscel_1 %>% 
+        filter(CREAT > 0)
+
+# Create data frame for patients with CREAT < 0
+CRRT_miscel_1_neg <- CRRT_miscel_1 %>% 
+        filter(CREAT < 0)
+
+# Plot the two lines together
+creat_time_miscel_01<-ggplot() +
+        geom_line(data = CRRT_miscel_1_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+        geom_line(data = CRRT_miscel_1_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+        geom_point(data = CRRT_miscel_1, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for Patients with CRRT on and off 01", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_1[CRRT_miscel_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) 
+ggsave("creat_time_miscel_01.png", plot = creat_time_miscel_01, dpi = 300, width = 10, height = 5)
+
+# Select another 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_2 <- sample(setdiff(miscel_IDs, miscel_IDs_1), size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_2 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_2)
+
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+# Create data frame for patients with CREAT > 0
+CRRT_miscel_2_pos <- CRRT_miscel_2 %>% 
+        filter(CREAT > 0)
+
+# Create data frame for patients with CREAT < 0
+CRRT_miscel_2_neg <- CRRT_miscel_2 %>% 
+        filter(CREAT < 0)
+
+# Plot the two lines together
+creat_time_miscel_02<-ggplot() +
+        geom_line(data = CRRT_miscel_2_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+        geom_line(data = CRRT_miscel_2_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+        geom_point(data = CRRT_miscel_2, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for Patients with CRRT on and off 02", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_2[CRRT_miscel_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) 
+ggsave("creat_time_miscel_02.png", plot = creat_time_miscel_02, dpi = 300, width = 10, height = 5)
+
+## And finally, select the remaining 5 patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_3 <- setdiff(miscel_IDs, c(miscel_IDs_1,miscel_IDs_2))
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_3 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_3)
+
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+# Create data frame for patients with CREAT > 0
+CRRT_miscel_3_pos <- CRRT_miscel_3 %>% 
+        filter(CREAT > 0)
+
+# Create data frame for patients with CREAT < 0
+CRRT_miscel_3_neg <- CRRT_miscel_3 %>% 
+        filter(CREAT < 0)
+
+# Plot the two lines together
+creat_time_miscel_03<-ggplot() +
+        geom_line(data = CRRT_miscel_3_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+        geom_line(data = CRRT_miscel_3_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+        geom_point(data = CRRT_miscel_3, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CREAT over Time for Patients with CRRT on and off 03", x = "Time (hours)", y = "CREAT (mg/dL)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_3[CRRT_miscel_3$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) 
+ggsave("creat_time_miscel_03.png", plot = creat_time_miscel_03, dpi = 300, width = 10, height = 5)
+
+## After that, I'll check how many non-CRRT patients are there per each HOSPITAL
+nonCRRT_IDs<-setdiff(unique(FlucTotIV_clean$ID),c(crrt_1_ids,miscel_IDs))
+FlucTotIV_clean %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        group_by(HOSPITAL) %>% 
+        summarize(n_distinct(ID))
+#HOSPITAL `n_distinct(ID)`
+
+#1               31
+#2               13
+#5               20
+#6               22
+#7               21
+#8               33
+
+## From here, I decide on the number of patients per plot in each Hospital
+## I will plot per hospital because there might be similar patterns in the way they deal with missing CREAT
+## First of all, hospital 1
+library(dplyr)
+
+hospital_1 <- FlucTotIV_clean %>% 
+        filter(HOSPITAL == 1) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_1_groups <- split(hospital_1, ceiling(seq_along(hospital_1)/4))
+
+# Here I try to plot it in a different fashion for better illustration (discriminate between NAs and non_NAs also between CRRT and non-CRRT)
+for (i in seq_along(hospital_1_groups)) {
+        nonCRRT_IDs_1 <- hospital_1_groups[[i]]
+        CRRT_non_1 <- FlucTotIV_clean %>% 
+                filter(ID %in% nonCRRT_IDs_1)
+        CRRT_non_1_pos <- CRRT_non_1 %>% 
+                filter(CREAT > 0)
+        CRRT_non_1_neg <- CRRT_non_1 %>% 
+                filter(CREAT <0)
+        creat_time_nonCRRT_01 <- ggplot() +
+                geom_line(data = CRRT_non_1_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+                geom_line(data = CRRT_non_1_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+                geom_point(data = CRRT_non_1, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+                scale_shape_manual(values = c(16, 17)) +
+                scale_color_manual(values = c("black", "red")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 1 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_1[CRRT_non_1$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type")) 
+        ggsave(paste0("creat_time_nonCRRT_hos1_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_01, dpi = 300, width = 10, height = 5)
+}
+
+## Second of all, hospital 2
+library(dplyr)
+
+hospital_2 <- FlucTotIV_clean %>% 
+        filter(HOSPITAL == 2) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_2_groups <- split(hospital_2, ceiling(seq_along(hospital_2)/5))
+for (i in seq_along(hospital_2_groups)) {
+        nonCRRT_IDs_2 <- hospital_2_groups[[i]]
+        CRRT_non_2 <- FlucTotIV_clean %>% 
+                filter(ID %in% nonCRRT_IDs_2)
+        CRRT_non_2_pos <- CRRT_non_2 %>% 
+                filter(CREAT > 0)
+        CRRT_non_2_neg <- CRRT_non_2 %>% 
+                filter(CREAT <0)
+        creat_time_nonCRRT_02 <- ggplot() +
+                geom_line(data = CRRT_non_2_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+                geom_line(data = CRRT_non_2_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+                geom_point(data = CRRT_non_2, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+                scale_shape_manual(values = c(16, 17)) +
+                scale_color_manual(values = c("black", "red")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 2 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_2[CRRT_non_2$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type"))
+        ggsave(paste0("creat_time_nonCRRT_hos2_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_02, dpi = 300, width = 10, height = 5)
+}
+
+## Third of all, hospital 5
+library(dplyr)
+
+hospital_5 <- FlucTotIV_clean %>% 
+        filter(HOSPITAL == 5) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_5_groups <- split(hospital_5, ceiling(seq_along(hospital_5)/5))
+for (i in seq_along(hospital_5_groups)) {
+        nonCRRT_IDs_5 <- hospital_5_groups[[i]]
+        CRRT_non_5 <- FlucTotIV_clean %>% 
+                filter(ID %in% nonCRRT_IDs_5)
+        CRRT_non_5_pos <- CRRT_non_5 %>% 
+                filter(CREAT > 0)
+        CRRT_non_5_neg <- CRRT_non_5 %>% 
+                filter(CREAT <0)
+        creat_time_nonCRRT_05 <- ggplot() +
+                geom_line(data = CRRT_non_5_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+                geom_line(data = CRRT_non_5_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+                geom_point(data = CRRT_non_5, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+                scale_shape_manual(values = c(16, 17)) +
+                scale_color_manual(values = c("black", "red")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 5 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_5[CRRT_non_5$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type"))
+        ggsave(paste0("creat_time_nonCRRT_hos5_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_05, dpi = 300, width = 10, height = 5)
+}
+
+## Fourth of all, hospital 6
+hospital_6 <- FlucTotIV_clean %>% 
+        filter(HOSPITAL == 6) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_6_groups <- split(hospital_6, ceiling(seq_along(hospital_6)/6))
+for (i in seq_along(hospital_6_groups)) {
+        nonCRRT_IDs_6 <- hospital_6_groups[[i]]
+        CRRT_non_6 <- FlucTotIV_clean %>% 
+                filter(ID %in% nonCRRT_IDs_6)
+        CRRT_non_6_pos <- CRRT_non_6 %>% 
+                filter(CREAT > 0)
+        CRRT_non_6_neg <- CRRT_non_6 %>% 
+                filter(CREAT <0)
+        creat_time_nonCRRT_06 <- ggplot() +
+                geom_line(data = CRRT_non_6_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+                geom_line(data = CRRT_non_6_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+                geom_point(data = CRRT_non_6, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+                scale_shape_manual(values = c(16, 17)) +
+                scale_color_manual(values = c("black", "red")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 6 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_6[CRRT_non_6$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type"))
+        ggsave(paste0("creat_time_nonCRRT_hos6_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_06, dpi = 300, width = 10, height = 5)
+}
+
+## Fifth of all, hospital 7
+hospital_7 <- FlucTotIV_clean %>% 
+        filter(HOSPITAL == 7) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_7_groups <- split(hospital_7, ceiling(seq_along(hospital_7)/6))
+for (i in seq_along(hospital_7_groups)) {
+        nonCRRT_IDs_7 <- hospital_7_groups[[i]]
+        CRRT_non_7 <- FlucTotIV_clean %>% 
+                filter(ID %in% nonCRRT_IDs_7)
+        CRRT_non_7_pos <- CRRT_non_7 %>% 
+                filter(CREAT > 0)
+        CRRT_non_7_neg <- CRRT_non_7 %>% 
+                filter(CREAT <0)
+        creat_time_nonCRRT_07 <- ggplot() +
+                geom_line(data = CRRT_non_7_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+                geom_line(data = CRRT_non_7_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+                geom_point(data = CRRT_non_7, aes(x = TIME, y = CREAT, shape = factor(Event_Type)), size = 2) +
+                scale_shape_manual(values = c(16, 17)) +
+                scale_color_manual(values = c("black", "red")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 7 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_7[CRRT_non_7$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type"))
+        ggsave(paste0("creat_time_nonCRRT_hos7_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_07, dpi = 300, width = 10, height = 5)
+}
+
+## Sixth of all, hospital 8
+hospital_8 <- FlucTotIV_clean %>% 
+        filter(HOSPITAL == 8) %>% 
+        select(ID) %>% 
+        distinct() %>% 
+        filter(ID %in% nonCRRT_IDs) %>% 
+        pull(ID)
+
+hospital_8_groups <- split(hospital_8, ceiling(seq_along(hospital_8)/6))
+for (i in seq_along(hospital_8_groups)) {
+        nonCRRT_IDs_8 <- hospital_8_groups[[i]]
+        CRRT_non_8 <- FlucTotIV_clean %>% 
+                filter(ID %in% nonCRRT_IDs_8)
+        CRRT_non_8_pos <- CRRT_non_8 %>% 
+                filter(CREAT > 0)
+        CRRT_non_8_neg <- CRRT_non_8 %>% 
+                filter(CREAT <0)
+        creat_time_nonCRRT_08 <- ggplot() +
+                geom_line(data = CRRT_non_8_pos, aes(x = TIME, y = CREAT, group = ID, color = factor(Event_Type)), size = 1) +
+                geom_line(data = CRRT_non_8_neg, aes(x = TIME, y = CREAT, group = ID), color = "grey", size = 1) +
+                geom_point(data = CRRT_non_8, aes(x = TIME, y = CREAT2, shape = factor(Event_Type)), size = 2) +
+                scale_shape_manual(values = c(16, 17)) +
+                scale_color_manual(values = c("black", "red")) +
+                labs(title = paste0("CREAT over Time for Patients with no CRRT of hospital 8 ", sprintf("%02d", i)), 
+                     x = "Time (hours)", y = "CREAT (mg/dL)") +
+                theme_bw() +
+                geom_rect(data = CRRT_non_8[CRRT_non_8$CRRT == 0, ], 
+                          aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                          fill = "grey", alpha = 0.2) +
+                facet_wrap(~ ID, scales = "free") +
+                guides(shape = guide_legend(title = "Event Type"), color = guide_legend(title = "Event Type"))
+        ggsave(paste0("creat_time_nonCRRT_hos8_", sprintf("%02d", i), ".png"), 
+               plot = creat_time_nonCRRT_08, dpi = 300, width = 10, height = 5)
+}
+
+#### Reply to Erwin's email 100723 ####
+
+# How many dosing intervals has missing Scr?
+# Extract Scr, OCC & ID, calculate how many unique pairs of OCC & ID has at least one Scr
+# Calculate how many pairs of OCC & ID has more than one Scr
+# How many sampling events out of 1616 total samples has missing Scr
+
+FlucTotIV_clean$DV <-as.numeric(FlucTotIV_clean$DV)
+Sam_Dos_Int <- FlucTotIV_clean %>% select (ID, OCC, CREAT,DV,Event_Type)
+# Create new column Event_Type to plot CREAT over TIME stratified by Event_Type (1 for dosing and 2 for sampling events)
+FlucTotIV_clean$Event_Type <- ifelse(is.na(FlucTotIV_clean$DV), 1, 2)
+
+# Calculate the number of unique pairs of ID and OCC in the Sam_Dos_Int dataset where OCC is greater than 1 and CREAT is not NA:
+library(dplyr)
+
+# Dosing intervals with non-missing Scr
+miss_Scr_dos_int <- Sam_Dos_Int %>%
+        filter(!is.na(CREAT)) %>%
+        distinct(ID, OCC) %>%
+        nrow()
+miss_Scr_dos_int #573
+#Total 598 Scr observations
+#Therefore 25 dosing intervals have more than 1 Scr
+
+tot_dos_int <- Sam_Dos_Int %>%
+        distinct(ID, OCC) %>%
+        nrow()
+tot_dos_int #1554
+
+miss_Scr_dos_int/tot_dos_int #36.8%
+
+# Sampling events with non-missing Scr
+unique_Scr_DV <- Sam_Dos_Int %>%
+        filter(!is.na(CREAT) & Event_Type==2)
+unique_Scr_DV #328
+nrow(unique_Scr_DV)/1616 #20.29%
 
 
 

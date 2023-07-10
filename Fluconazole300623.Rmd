@@ -1,0 +1,269 @@
+---
+title: "Fluconazole300623"
+author: "Leo"
+date: "2023-06-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### PTA fAUC200 of two optimized dosing 28 and 29
+
+```{r read in PTA_overall dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
+PTA_overall<-read.csv("PTA_overall.csv")
+
+```
+
+##### PTA over BW optimised dosing revised manuscript 300623
+
+###### Efficacy
+
+```{r for fAUC200}
+# PTA_OPT200_DAY1
+library(dplyr)
+library(ggplot2)
+PTA_OPT200_DAY1 <- PTA_overall %>%
+  filter(DAY == 1, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(84, 100), breaks = seq(84, 100, by = 2), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 1") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT200_DAY1
+
+# PTA_OPT200_DAY2
+PTA_OPT200_DAY2 <- PTA_overall %>%
+  filter(DAY == 2, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(84, 100), breaks = seq(84, 100, by = 2), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 2") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT200_DAY2
+
+# PTA_OPT200_DAY7
+PTA_OPT200_DAY7 <- PTA_overall %>%
+  filter(DAY == 7, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(84, 100), breaks = seq(84, 100, by = 2), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 7") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT200_DAY7
+
+# PTA_OPT200_DAY14
+PTA_OPT200_DAY14 <- PTA_overall %>%
+  filter(DAY == 14, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_fAUC_200, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_fAUC_200, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(84, 100), breaks = seq(84, 100, by = 2), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 14") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT200_DAY14
+
+```
+
+###### Toxicity
+
+```{r for Cmin80}
+library(dplyr)
+library(ggplot2)
+# PTA_OPT80_DAY1
+PTA_OPT80_DAY1 <- PTA_overall %>%
+  filter(DAY == 1, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_Cmin_80, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_Cmin_80, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1.5), breaks = seq(0, 1.5, by = 0.1), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 1") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) #+ 
+  #geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT80_DAY1
+
+# PTA_OPT80_DAY2
+PTA_OPT80_DAY2 <- PTA_overall %>%
+  filter(DAY == 2, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_Cmin_80, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_Cmin_80, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1.5), breaks = seq(0, 1.5, by = 0.1), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 2") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) #+ 
+  #geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT80_DAY2
+
+# PTA_OPT80_DAY7
+PTA_OPT80_DAY7 <- PTA_overall %>%
+  filter(DAY == 7, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_Cmin_80, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_Cmin_80, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1.5), breaks = seq(0, 1.5, by = 0.1), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 7") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  ) #+ 
+  #geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+PTA_OPT80_DAY7
+
+# PTA_OPT80_DAY14
+PTA_OPT80_DAY14 <- PTA_overall %>%
+  filter(DAY == 14, BW < 150, Regimen %in% c(29, 30)) %>%
+  mutate(Regimen = factor(Regimen, levels = c(29, 30))) %>%
+  ggplot() +
+  geom_line(aes(x = BW, y = PTA_Cmin_80, color = factor(Regimen)), size = 1) +
+  geom_point(aes(x = BW, y = PTA_Cmin_80, shape = factor(Regimen)), size = 2) +
+  scale_color_manual(values = c("blue", "orange")) +
+  scale_shape_manual(values = c(17, 5)) +
+  scale_x_continuous(limits = c(30, 145), breaks = seq(30, 145, by = 5), name = "Body Weight (kg)", expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1.5), breaks = seq(0, 1.5, by = 0.1), name = "Probability (%)", expand = c(0, 0)) +
+  theme_minimal(base_size = 12) +
+  ggtitle("Day 14") +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 9),
+    panel.grid.major = element_line(colour = "gray85"),
+    panel.grid.minor = element_blank()
+  )
+PTA_OPT80_DAY14#+
+  #geom_hline(yintercept = 90, linetype = "dashed", color = "gray50", size = 1)
+#+ theme(axis.title.x = element_blank(),axis.title.y = element_blank()) 
+
+```
+###### Combing plots
+
+```{r combining fAUC200}
+
+# Combine PTA_OPT200_DAY1, PTA_OPT200_DAY2, PTA_OPT200_DAY7, and PTA_OPT200_DAY14
+library(gridExtra)
+library(grid)
+combined_PTA_OPT200 <- grid.arrange(
+  PTA_OPT200_DAY1, PTA_OPT200_DAY2,
+  PTA_OPT200_DAY7, PTA_OPT200_DAY14,
+  nrow = 2, ncol = 2,
+  top = textGrob("Probability of target Attainment of fAUC 200 mgxh/L", gp = gpar(fontsize = 12, fontface = "bold")),
+  left = textGrob("(a)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 12)),
+  bottom = get_legend(PTA_OPT200_day1)
+)
+
+# Save the combined plots
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("combined_PTA_OPT200_2706.png", combined_PTA_OPT200, dpi = 300, width = 29.7, height = 19, units = "cm", limitsize = FALSE)
+
+```
+
+```{r combining Cmin80, warning=FALSE}
+# Loading the gridExtra package
+library(gridExtra)
+library(grid)
+
+# Combine PTA_OPT80_DAY1, PTA_OPT80_DAY2, PTA_OPT80_DAY7, and PTA_OPT80_DAY14
+combined_PTA_OPT80 <- grid.arrange(
+  PTA_OPT80_DAY1, PTA_OPT80_DAY2,
+  PTA_OPT80_DAY7, PTA_OPT80_DAY14,
+  nrow = 2, ncol = 2,
+  top = textGrob("Probability of reaching toxicity threshold of Cmin 80 mg/L", gp = gpar(fontsize = 12, fontface = "bold")),
+  left = textGrob("(b)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 12)),
+  bottom = get_legend(PTA_OPT200_day1)
+)
+
+# Save the combined plots
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("combined_PTA_OPT80_2706.png", combined_PTA_OPT80, dpi = 300, width = 29.7, height = 17.5, units = "cm", limitsize = FALSE)
+
+```

@@ -57,264 +57,56 @@ write.csv(PTA_pop_10_overall, "PTA_pop_10_overall.csv",quote=F,row.names = FALSE
 
 ```
 
-#### Plot fAUC over DAY (draft code)
+#### Population level simulations dataset for optimised dosing 280623
 
-```{r read those exported datasets again when R aborted, warning=FALSE}
+```{r for optimised dosing 280623, warning=FALSE}
+
+library(dplyr)
+# Setwd for this chunk
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+
+# Read in sdtab_pop.txt file
+sdtab_pop_2706 <- read.table("sdtab_pop_2706.txt", header=TRUE, skip=1, sep="", na.strings="", strip.white=TRUE)
+
+#change all the variables to numeric
+sdtab_pop_2706[] <- lapply(sdtab_pop_2706, as.numeric)
+
+#eliminate all NAs
+sdtab_pop_2706 <- na.omit(sdtab_pop_2706)
+
+# Extract only the trough events
+sdtab_pop_2706_trough <- sdtab_pop_2706[sdtab_pop_2706$TROUGH == 1,]
+
+# Create a new variable AUC24 for each ID
+sdtab_pop_2706_trough <- sdtab_pop_2706_trough %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+sdtab_pop_2706_trough<- sdtab_pop_2706_trough %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+sdtab_pop_2706_trough$fAUC<- sdtab_pop_2706_trough$AUC24*0.89
+
+#Eliminate peak column
+sdtab_pop_2706_trough$PEAK<-NULL
+
+# Extract ID, DV, fAUC, DAY columns
+PTA_pop_2706 <- subset(sdtab_pop_2706_trough, select = c("ID", "DV", "fAUC", "DAY"))
+
+# Calculate percentage of DV >= 7.5 per DAY (PTA_Cmin_75)
+PTA_pop_2706$PTA_Cmin_75 <- 100 * ave(PTA_pop_2706$DV >= 7.5, PTA_pop_2706$DAY, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY (PTA_Cmin_80)
+PTA_pop_2706$PTA_Cmin_80 <- 100 * ave(PTA_pop_2706$DV >= 80, PTA_pop_2706$DAY, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY (PTA_fAUC_200)
+PTA_pop_2706$PTA_fAUC_200 <- 100 * ave(PTA_pop_2706$fAUC >= 200, PTA_pop_2706$DAY, FUN = mean)
+
+# Create PTA_pop_2706_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY
+PTA_pop_2706_overall <- unique(PTA_pop_2706[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY")])
+
+# Export trough and PTA dataset
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
-sdtab_pop_10_trough<-read.csv("sdtab_pop_10_trough.csv")
-library(dplyr)
-pop_10_trough <-sdtab_pop_10_trough%>%select(ID, DAY, fAUC)
+write.csv(sdtab_pop_2706_trough, "sdtab_pop_2706_trough.csv",quote=F,row.names = FALSE)
+write.csv(PTA_pop_2706_overall, "PTA_pop_2706_overall.csv",quote=F,row.names = FALSE)
 
-```
-
-```{r modify the sdtab_pop_10_trough dataset}
-# Extract only the first row
-pop_10_trough_01 <- pop_10_trough[1,]
-
-# Change DAY to 0
-pop_10_trough_01$DAY<-0
-pop_10_trough_01$fAUC<-0
-
-# Create 1000 copies of pop_10_trough and assign IDs 1-1000
-new_rows <- lapply(1:1000, function(id){
-  new_df <- pop_10_trough_01
-  new_df$ID <- id
-  return(new_df)
-})
-
-new_rows<-rep(new_rows,10)
-
-# Combine the new datasets with the original dataset
-pop_10_trough <- rbind(pop_10_trough, do.call(rbind, new_rows))
-
-```
-
-```{r fAUC over DAY}
-
-library(ggplot2)
-
-# Calculate median and quantiles for fAUC by DAY
-summary_stats <- pop_10_trough %>%
-  group_by(DAY) %>%
-  summarize(median_fAUC = median(fAUC),
-            q1_fAUC = quantile(fAUC, 0.005),
-            q99_fAUC = quantile(fAUC, 0.995))
-
-# Change summary_stats into data.frame
-summary_stats<-as.data.frame(summary_stats)
-
-# Plot fAUC over DAY with median line and population interval ribbon
-ggplot(pop_10_trough, aes(x = DAY, y = fAUC)) +
-  geom_ribbon(data = summary_stats, aes(ymin = q1_fAUC, ymax = q99_fAUC),
-              fill = "gray70", alpha = 0.5) +
-  geom_line(data = summary_stats, aes(y = median_fAUC), color = "gray40", size = 1) +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50") +
-  labs(x = "DAY", y = "fAUC") +
-  theme_minimal()
-
-library(ggplot2)
-library(dplyr)
-
-# Assuming your dataset is named "pop_10_trough"
-# Make sure DAY and fAUC are numeric variables
-
-# Check if 'fAUC' variable exists in the dataset
-if (!"fAUC" %in% colnames(pop_10_trough)) {
-  stop("Variable 'fAUC' not found in the dataset.")
-}
-
-# Calculate median and quantiles for fAUC by DAY
-summary_stats <- pop_10_trough %>%
-  group_by(DAY) %>%
-  summarize(median_fAUC = median(fAUC),
-            q1_fAUC = quantile(fAUC, 0.005),
-            q99_fAUC = quantile(fAUC, 0.995))
-
-# Plot fAUC over DAY with median line and population interval ribbon
-ggplot() +
-  geom_ribbon(data = summary_stats, aes(x = factor(DAY),ymin = q1_fAUC, ymax = q99_fAUC),
-              fill = "gray70", alpha = 0.5) +
-  geom_line(data = summary_stats, aes(x = factor(DAY),y = median_fAUC), color = "gray40", size = 1) +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50") +
-  labs(x = "DAY", y = "fAUC") +
-  theme_minimal()
-
-ggplot (data = summary_stats, aes(x=factor(DAY), y=median_fAUC)) +
-   geom_ribbon(aes(ymin = q1_fAUC, ymax = q99_fAUC), fill = "gray70", alpha = 0.5)+ geom_line(color = "gray40", size = 1)+
-  xlab('DAY') +
-  ylab('Fluconazole fAUC (mgxh/L)') +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50") +
-  #scale_x_discrete(limits = c(0, 14), breaks = seq(0,14, by =1)) +
-  #scale_y_continuous(limits = c(0, 3300), breaks = seq(0,3300, by =100)) 
-  theme(text = element_text(size = 18))+  theme(
-  #Remove panel border
-  panel.border = element_blank(),  
-  # Remove panel grid lines
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  # Remove panel background
-  panel.background = element_blank(),
-  # Add axis line
-  axis.line = element_line(colour = "grey"),
-  plot.title = element_text(hjust = 0.5),
-  legend.position = "none",
-  axis.title = element_text(size = 18),
-   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
-
-ggplot(summary_stats, aes(x = factor(DAY))) +
-  geom_ribbon(aes(ymin = q1_fAUC, ymax = q99_fAUC), fill = "gray70", alpha = 0.5) +
-  geom_line(aes(y = median_fAUC), color = "gray40", size = 1) +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50") +
-  labs(x = "DAY", y = "fAUC") +
-  theme_minimal()
-
-
-```
-
-##### Trying the code of Omar, ribbon + line plot of optimised dosing
-
-```{r create a data_summary_opt dataset}
-data_summary_opt <- pop_10_trough %>%
-  group_by(DAY) %>%
-  summarize(median= median(fAUC),
-            min= quantile(fAUC, 0.05),
-            max= quantile(fAUC, 0.95),
-            .groups = 'drop')
-
-# Round the values to 2 decimal places
-data_summary_opt <- data_summary_opt %>%
-  mutate(across(everything(), ~ round(., 2)))
-
-```
-
-```{r plot simple ribbon}
-ggplot (data = data_summary_opt, aes(x=DAY, y=median)) +
-   geom_ribbon(aes(ymin = min, ymax = max), fill = "gray70", alpha = 0.5)+ geom_line(color = "gray40", size = 1) #geom_line requires two observations per group to create a line
-```
-
-```{r more complicated ribbon plot}
-ggplot (data = data_summary_opt, aes(x=DAY, y=median)) +
-   geom_ribbon(aes(ymin = min, ymax = max), fill = "gray70", alpha = 0.5)+ geom_line(color = "gray40", size = 1)+
-  xlab('DAY') +
-  ylab('Fluconazole fAUC (mgxh/L)') +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50") +
-  scale_x_continuous(limits = c(0, 14), breaks = seq(0,14, by =1)) +
-  scale_y_continuous(limits = c(0, 1200), breaks = seq(0,1200, by =100)) 
-  theme(text = element_text(size = 18))+  theme(
-  #Remove panel border
-  panel.border = element_blank(),  
-  # Remove panel grid lines
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  # Remove panel background
-  panel.background = element_blank(),
-  # Add axis line
-  axis.line = element_line(colour = "grey"),
-  plot.title = element_text(hjust = 0.5),
-  legend.position = "none",
-  axis.title = element_text(size = 18),
-   axis.text = element_text(size = 14), strip.text= element_text(size=14),legend.title=element_text(size=14),legend.text=element_text(size=12)) 
-```
-
-```{r refined version of the code above,warning=FALSE}
-pop_sim_opt<-ggplot(data = data_summary_opt, aes(x = DAY, y = median)) +
-  geom_ribbon(aes(ymin = min, ymax = max), fill = "gray70", alpha = 0.5) +
-  geom_line(color = "gray40", size = 1) +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50",size=0.8) +
-  xlab("DAY") +
-  ylab("Fluconazole fAUC (mgxh/L)") +
-  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1)) +
-  scale_y_continuous(limits = c(0, 1200), breaks = seq(0, 1200, by = 100)) +
-  theme_minimal() +
-  theme(
-    text = element_text(size = 18),
-    panel.border = element_rect(color = "gray80", fill = NA, size = 1),  # Add panel borders
-    panel.grid.major = element_line(color = "gray80"),  # Use a minimal grid color
-    panel.grid.minor = element_blank(),
-    axis.line = element_line(colour = "grey"),
-    plot.title = element_text(hjust = 0.5),
-    legend.position = "none",
-    axis.title = element_text(size = 18),
-    axis.text = element_text(size = 14),
-    strip.text = element_text(size = 14),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12)
-  )
-
-# save the plot
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
-ggsave("pop_sim_opt.png",pop_sim_opt, dpi = 300, width = 12, height = 7)
-```
-
-##### Ribbon + line plot of standard dosing
-
-```{r modify the sdtab_pop_std_10_trough dataset}
-library(dplyr)
-pop_std_10_trough <-sdtab_pop_std_10_trough%>%select(ID, DAY, fAUC)
-# Extract only the first row
-pop_std_10_trough_01 <- pop_std_10_trough[1,]
-
-# Change DAY to 0
-pop_std_10_trough_01$DAY<-0
-pop_std_10_trough_01$fAUC<-0
-
-# Create 1000 copies of pop_std_10_trough and assign IDs 1-1000
-new_rows <- lapply(1:1000, function(id){
-  new_df <- pop_std_10_trough_01
-  new_df$ID <- id
-  return(new_df)
-})
-
-new_rows<-rep(new_rows,10)
-
-# Combine the new datasets with the original dataset
-pop_std_10_trough <- rbind(pop_std_10_trough, do.call(rbind, new_rows))
-
-```
-
-```{r create a data_summary_std dataset}
-data_summary_std <- pop_std_10_trough %>%
-  group_by(DAY) %>%
-  summarize(median= median(fAUC),
-            min= quantile(fAUC, 0.05),
-            max= quantile(fAUC, 0.95),
-            .groups = 'drop')
-
-# Round the values to 2 decimal places
-data_summary_std <- data_summary_std %>%
-  mutate(across(everything(), ~ round(., 2)))
-
-```
-
-```{r ribbon plot std dosing}
-
-pop_sim_std<-ggplot(data = data_summary_std, aes(x = DAY, y = median)) +
-  geom_ribbon(aes(ymin = min, ymax = max), fill = "gray70", alpha = 0.5) +
-  geom_line(color = "gray40", size = 1) +
-  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50",size=0.8) +
-  xlab("DAY") +
-  ylab("Fluconazole fAUC (mgxh/L)") +
-  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1)) +
-  scale_y_continuous(limits = c(0, 1200), breaks = seq(0, 1200, by = 100)) +
-  theme_minimal() +
-  theme(
-    text = element_text(size = 18),
-    panel.border = element_rect(color = "gray80", fill = NA, size = 1),  # Add panel borders
-    panel.grid.major = element_line(color = "gray80"),  # Use a minimal grid color
-    panel.grid.minor = element_blank(),
-    axis.line = element_line(colour = "grey"),
-    plot.title = element_text(hjust = 0.5),
-    legend.position = "none",
-    axis.title = element_text(size = 18),
-    axis.text = element_text(size = 14),
-    strip.text = element_text(size = 14),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12)
-  )
-
-# save the plot
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
-ggsave("pop_sim_std.png",pop_sim_std, dpi = 300, width = 12, height = 7)
 ```
 
 #### Analyse population level simulations dataset for standard dosing
@@ -325,7 +117,7 @@ library(dplyr)
 # Setwd for this chunk
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
 
-# Read in sdtab_stand.txt file
+# Read in sdtab_pop_std.txt file
 sdtab_pop_std_10 <- read.table("sdtab_pop_std_10.txt", header=TRUE, skip=1, sep="", na.strings="", strip.white=TRUE)
 
 #change all the variables to numeric
@@ -367,6 +159,65 @@ PTA_pop_std_10_overall <- unique(PTA_pop_std_10[c("PTA_Cmin_75","PTA_Cmin_80", "
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
 write.csv(sdtab_pop_std_10_trough, "sdtab_pop_std_10_trough.csv",quote=F,row.names = FALSE)
 write.csv(PTA_pop_std_10_overall, "PTA_pop_std_10_overall.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r read those exported datasets again when R aborted, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
+sdtab_pop_std_10_trough<-read.csv("sdtab_pop_std_10_trough.csv")
+
+```
+
+#### Analyse population level simulations dataset for standard dosing 280623
+
+```{r for optimised dosing, warning=FALSE}
+
+library(dplyr)
+# Setwd for this chunk
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+
+# Read in sdtab_pop_std.txt file
+sdtab_pop_std_2706 <- read.table("sdtab_pop_std_2706.txt", header=TRUE, skip=1, sep="", na.strings="", strip.white=TRUE)
+
+#change all the variables to numeric
+sdtab_pop_std_2706[] <- lapply(sdtab_pop_std_2706, as.numeric)
+
+#eliminate all NAs
+sdtab_pop_std_2706 <- na.omit(sdtab_pop_std_2706)
+
+# Extract only the trough events
+sdtab_pop_std_2706_trough <- sdtab_pop_std_2706[sdtab_pop_std_2706$TROUGH == 1,]
+
+# Create a new variable AUC24 for each ID
+sdtab_pop_std_2706_trough <- sdtab_pop_std_2706_trough %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+sdtab_pop_std_2706_trough<- sdtab_pop_std_2706_trough %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+sdtab_pop_std_2706_trough$fAUC<- sdtab_pop_std_2706_trough$AUC24*0.89
+
+#Eliminate peak column
+sdtab_pop_std_2706_trough$PEAK<-NULL
+
+# Extract ID, DV, fAUC, DAY columns
+PTA_pop_std_2706 <- subset(sdtab_pop_std_2706_trough, select = c("ID", "DV", "fAUC", "DAY"))
+
+# Calculate percentage of DV >= 7.5 per DAY (PTA_Cmin_75)
+PTA_pop_std_2706$PTA_Cmin_75 <- 100 * ave(PTA_pop_std_2706$DV >= 7.5, PTA_pop_std_2706$DAY, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY (PTA_Cmin_80)
+PTA_pop_std_2706$PTA_Cmin_80 <- 100 * ave(PTA_pop_std_2706$DV >= 80, PTA_pop_std_2706$DAY, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY (PTA_fAUC_200)
+PTA_pop_std_2706$PTA_fAUC_200 <- 100 * ave(PTA_pop_std_2706$fAUC >= 200, PTA_pop_std_2706$DAY, FUN = mean)
+
+# Create PTA_pop_std_2706_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY
+PTA_pop_std_2706_overall <- unique(PTA_pop_std_2706[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY")])
+# PTA of Cmin 80 mg/L is very low actually!
+
+# Export trough and PTA dataset
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
+write.csv(sdtab_pop_std_2706_trough, "sdtab_pop_std_2706_trough.csv",quote=F,row.names = FALSE)
+write.csv(PTA_pop_std_2706_overall, "PTA_pop_std_2706_overall.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -486,6 +337,116 @@ ggsave("pop_auc_std.png", pop_auc_std, dpi = 300, width = 12, height = 7)
 
 ```
 
+#### Box plot AUC over DAY 280623
+
+##### For optimised dosing 280623
+
+```{r read those exported datasets again when R aborted, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
+sdtab_pop_2706_trough<-read.csv("sdtab_pop_2706_trough.csv")
+library(dplyr)
+pop_2706_trough <-sdtab_pop_2706_trough%>%select(ID, DAY, fAUC)
+
+```
+
+```{r boxplot optimised dosing}
+library(ggplot2)
+
+# Calculate the percentile
+percentiles_opt <- pop_2706_trough %>%
+group_by(DAY) %>%
+summarize(p5 = quantile(fAUC, 0.05),
+p25 = quantile(fAUC, 0.25),
+p50 = median(fAUC),
+p75 = quantile(fAUC, 0.75),
+p95 = quantile(fAUC, 0.95))
+
+# box plot
+pop_auc_opt <- ggplot(pop_2706_trough, aes(x = factor(DAY), y = fAUC)) +
+  geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
+  ylab(expression(atop("Fluconazole area under the", "unbound concentration time curve (mgxh/L)"))) +
+  xlab("DAY") +
+  coord_cartesian(ylim = c(0, 1100)) +
+  scale_y_continuous(breaks = seq(0, 1100, by = 100)) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 18),
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none",
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+# Save the plot
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("pop_auc_opt_2706.png", pop_auc_opt, dpi = 300, width = 12, height = 7)
+
+```
+
+##### For standard dosing 280623
+
+```{r read those exported datasets again when R aborted, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Trough and PTA datasets")
+sdtab_pop_std_2706_trough<-read.csv("sdtab_pop_std_2706_trough.csv")
+library(dplyr)
+pop_std_2706_trough <-sdtab_pop_std_2706_trough%>%select(ID, DAY, fAUC)
+
+```
+
+```{r boxplot standard dosing}
+library(ggplot2)
+
+# Calculate the percentile
+percentiles_std <- pop_std_2706_trough %>%
+group_by(DAY) %>%
+summarize(p5 = quantile(fAUC, 0.05),
+p25 = quantile(fAUC, 0.25),
+p50 = median(fAUC),
+p75 = quantile(fAUC, 0.75),
+p95 = quantile(fAUC, 0.95))
+
+# box plot
+pop_auc_std <- ggplot(pop_std_2706_trough, aes(x = factor(DAY), y = fAUC)) +
+  geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
+  geom_segment(data = percentiles_std, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_std, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
+  ylab(expression(atop("Fluconazole area under the", "unbound concentration time curve (mgxh/L)"))) +
+  xlab("DAY") +
+  coord_cartesian(ylim = c(0, 1100)) +
+  scale_y_continuous(breaks = seq(0, 1100, by = 100)) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 18),
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none",
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+
+# Save the plot
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("pop_auc_std_2706.png", pop_auc_std, dpi = 300, width = 12, height = 7)
+
+```
+
 #### Ribbon of optimised dosing - DV over TIME
 
 ```{r create a optimised dataset}
@@ -537,6 +498,59 @@ pop_sim_opt
 # save the plot
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
 ggsave("DV_pop_opt.png",pop_sim_opt, dpi = 300, width = 12, height = 7)
+```
+
+#### Ribbon of optimised dosing 280623 - DV over TIME
+
+```{r create a optimised dataset}
+
+pop_2706 <- sdtab_pop_2706 %>% select(TIME,DV)
+
+pop_2706 <- pop_2706[pop_2706$DV != 0 | pop_2706$TIME == 0, ]
+        
+data_summary_opt <- pop_2706 %>%
+  group_by(TIME) %>%
+  summarize(median= median(DV),
+            min= quantile(DV, 0.05),
+            max= quantile(DV, 0.95),
+            .groups = 'drop')
+
+# Round the values to 2 decimal places
+data_summary_opt <- data_summary_opt %>%
+  mutate(across(everything(), ~ round(., 2)))
+
+```
+
+```{r ribbon plot opt dosing}
+
+pop_sim_opt<-ggplot(data = data_summary_opt, aes(x = TIME/24, y = median)) +
+  geom_ribbon(aes(ymin = min, ymax = max), fill = "steelblue", alpha = 0.5) +
+  geom_line(color = "#4E84C4", size = 1.2) +
+  geom_hline(yintercept = 80, linetype = "dashed", color = "gray50",size=0.8) +
+  xlab("DAY") +
+  ylab("Fluconazole concentration (mg/L)") +
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1)) +
+  #scale_y_continuous(limits = c(0, 1200), breaks = seq(0, 1200, by = 100)) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 18),
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),  # Add panel borders
+    panel.grid.major = element_line(color = "gray80"),  # Use a minimal grid color
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none",
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+pop_sim_opt
+
+# save the plot
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("DV_pop_opt_2706.png",pop_sim_opt, dpi = 300, width = 12, height = 7)
 ```
 
 #### Ribbon of standard dosing - DV over TIME
@@ -593,6 +607,60 @@ setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and 
 ggsave("DV_pop_std.png",pop_sim_std, dpi = 300, width = 12, height = 7)
 ```
 
+#### Ribbon of standard dosing 280623 - DV over TIME
+
+```{r create a standard dataset}
+
+pop_std_2706 <- sdtab_pop_std_2706 %>% select(TIME,DV)
+
+pop_std_2706 <- pop_std_2706[pop_std_2706$DV != 0 | pop_std_2706$TIME == 0, ]
+
+        
+data_summary_std <- pop_std_2706 %>%
+  group_by(TIME) %>%
+  summarize(median= median(DV),
+            min= quantile(DV, 0.05),
+            max= quantile(DV, 0.95),
+            .groups = 'drop')
+
+# Round the values to 2 decimal places
+data_summary_std <- data_summary_std %>%
+  mutate(across(everything(), ~ round(., 2)))
+
+```
+
+```{r ribbon plot std dosing}
+
+pop_sim_std<-ggplot(data = data_summary_std, aes(x = TIME/24, y = median)) +
+  geom_ribbon(aes(ymin = min, ymax = max), fill = "steelblue", alpha = 0.5) +
+  geom_line(color = "#4E84C4", size = 1.2) +
+  geom_hline(yintercept = 80, linetype = "dashed", color = "gray50",size=0.8) +
+  xlab("DAY") +
+  ylab("Fluconazole concentration (mg/L)") +
+  scale_x_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 1)) +
+  #scale_y_continuous(limits = c(0, 1200), breaks = seq(0, 1200, by = 100)) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 18),
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),  # Add panel borders
+    panel.grid.major = element_line(color = "gray80"),  # Use a minimal grid color
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none",
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12)
+  )
+pop_sim_std
+
+# save the plot
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("DV_pop_std_2706.png",pop_sim_std, dpi = 300, width = 12, height = 7)
+```
+
 #### Combining box plots & DV plots of standard and optimised dosing
 
 ```{r combining box plots & DV plots}
@@ -618,6 +686,92 @@ combined_plots <- grid.arrange(combined_std, combined_opt, ncol = 1)
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
 #ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
 ggsave("auc&dv_1406.png", combined_plots, dpi = 300, width = 22, height = 22, units = "cm", limitsize = FALSE)
+
+# For my PAGE poster 100623
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
+#ggsave("combined_auc&dv_plots.png", combined_plots, dpi = 300, width = 26, height = 26.14, units = "cm", limitsize = FALSE)
+
+#Adjust plot for defence slides 170623
+left_title <- textGrob("Fluconazole area under the unbound concentration time curve (mgxh/L)",
+                       gp = gpar(fontsize = 8))
+left_title_rotated <- grobTree(left_title, vp = viewport(angle = 90))
+library(grid)
+library(gridExtra)
+combined_plots <- grid.arrange(pop_auc_std, pop_auc_opt, ncol = 1,top=textGrob("Standard vs Optimised dosing regimen", gp = gpar(fontsize = 12, fontface = "bold")),left=left_title_rotated,bottom=textGrob("DAY", gp = gpar(fontsize = 9))) #reducing the top font size from 14 (as in manuscript) to 12 #170623
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("auc&dv_1706.png", combined_plots, dpi = 300, width = 11.22, height = 11.22, units = "cm", limitsize = FALSE)
+
+# box plot std
+pop_auc_std <- ggplot(pop_std_10_trough, aes(x = factor(DAY), y = fAUC)) +
+  geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
+  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
+  coord_cartesian(ylim = c(0, 1200)) +
+  scale_y_continuous(breaks = seq(0, 1200, by = 100)) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "left",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7)
+  )
+
+# box plot opt
+pop_auc_opt <- ggplot(pop_10_trough, aes(x = factor(DAY), y = fAUC)) +
+  geom_boxplot(fill = "steelblue", color = "#4E84C4", outlier.shape = NA, alpha = 0.6, coef = 0) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p5, yend = p25), color = "#4E84C4", size = 1) +
+  geom_segment(data = percentiles_opt, aes(x = factor(DAY), xend = factor(DAY), y = p75, yend = p95), color = "#4E84C4", size = 1) +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "gray50", size = 0.8) +
+  coord_cartesian(ylim = c(0, 1200)) +
+  scale_y_continuous(breaks = seq(0, 1200, by = 100)) +
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(color = "gray80", fill = NA, size = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "grey"),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7)
+  )
+
+```
+
+#### Combining box plots & DV plots of standard and optimised dosing 280623
+
+```{r combining box plots & DV plots 280623}
+library(grid)
+library(gridExtra)
+
+# Combine pop_sim_opt and pop_auc_opt horizontally
+combined_opt <- grid.arrange(pop_sim_opt, pop_auc_opt, ncol = 2, top=textGrob("Optimised dosing regimen", gp = gpar(fontsize = 14, fontface = "bold")))
+
+# Add annotation "(b)" on the top left corner
+combined_opt <- grid.arrange(textGrob("(b)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 14)), combined_opt, ncol = 1, heights = c(0.05, 0.95))
+
+# Combine pop_sim_std and pop_auc_std horizontally
+combined_std <- grid.arrange(pop_sim_std, pop_auc_std, ncol = 2, top = textGrob("Standard dosing regimen", gp = gpar(fontsize = 14, fontface = "bold")))
+
+# Add annotation "(a)" on the top left corner
+combined_std <- grid.arrange(textGrob("(a)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 14)), combined_std, ncol = 1, heights = c(0.05, 0.95))
+
+# Combine the two combined plots vertically
+combined_plots <- grid.arrange(combined_std, combined_opt, ncol = 1)
+
+# Save the combined plots
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("combined_auc&dv_plots_2706.png", combined_plots, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+#ggsave("auc&dv_1406.png", combined_plots, dpi = 300, width = 22, height = 22, units = "cm", limitsize = FALSE)
 
 # For my PAGE poster 100623
 #setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
@@ -1344,6 +1498,620 @@ print(plt_roc14)
 
 ```
 
+##### Combining ROC curves 280623
+
+```{r combining 2 roc curves of DAY1}
+
+library(ggplot2)
+
+# For standard dosing
+analysis1_DAY1 <- sdtab_pop_std_2706_trough %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY1 <- pROC::roc(analysis1_DAY1$TA,
+                        analysis1_DAY1$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW1 <- pROC::auc(ROC_AUC_BW1_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW1 <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW1)), 3)
+CI_AUC_AUC_BW1 <- pROC::ci.auc(ROC_AUC_BW1_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW1 <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW1)
+AUC_secondpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[1], 1, 5))
+AUC_thirdpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[3], 1, 5))
+AUC_label_AUC_BW1_DAY1 <- paste0("AUC:", AUC_firstpart_AUC_BW1, "(", AUC_secondpart_AUC_BW1, "-", AUC_thirdpart_AUC_BW1, ")", sep = "")
+
+# For recommended dosing
+analysis_DAY1 <- sdtab_pop_2706_trough %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY1 <- pROC::roc(analysis_DAY1$TA,
+                        analysis_DAY1$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW <- pROC::auc(ROC_AUC_BW_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW)), 3)
+CI_AUC_AUC_BW <- pROC::ci.auc(ROC_AUC_BW_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW)
+AUC_secondpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[1], 1, 5))
+AUC_thirdpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[3], 1, 5))
+AUC_label_AUC_BW_DAY1 <- paste0("AUC:", AUC_firstpart_AUC_BW, "(", AUC_secondpart_AUC_BW, "-", AUC_thirdpart_AUC_BW, ")", sep = "")
+
+# Convert roc objects to data frames
+roc1_DAY1 <- pROC::coords(ROC_AUC_BW1_DAY1)
+roc_DAY1 <- pROC::coords(ROC_AUC_BW_DAY1)
+
+library(gridExtra)
+
+# Create the plot with DAY 1 title
+Plot_ROC_AUC_BW_DAY1 <- ggplot() +
+  geom_line(data = roc1_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1 - Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY1, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY1, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+  ggtitle("DAY 1") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 1 title
+
+# Create the annotation grob
+annotation <- textGrob("(a)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY1 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY1, ncol = 1, heights = c(0.02, 0.98)) 
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY1)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_day1.png", combined_plot_DAY1, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+```
+
+```{r combining two ROC curves of DAY2}
+
+library(ggplot2)
+
+# For standard dosing - DAY 2
+analysis1_DAY2 <- sdtab_pop_std_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY2 <- pROC::roc(analysis1_DAY2$TA,
+                        analysis1_DAY2$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW1 <- pROC::auc(ROC_AUC_BW1_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW1 <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW1)), 3)
+CI_AUC_AUC_BW1 <- pROC::ci.auc(ROC_AUC_BW1_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW1 <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW1)
+AUC_secondpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[1], 1, 5))
+AUC_thirdpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[3], 1, 5))
+AUC_label_AUC_BW1_DAY2 <- paste0("AUC:", AUC_firstpart_AUC_BW1, "(", AUC_secondpart_AUC_BW1, "-", AUC_thirdpart_AUC_BW1, ")", sep = "")
+
+# For recommended dosing - DAY 2
+analysis_DAY2 <- sdtab_pop_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY2 <- pROC::roc(analysis_DAY2$TA,
+                        analysis_DAY2$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW <- pROC::auc(ROC_AUC_BW_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW)), 3)
+CI_AUC_AUC_BW <- pROC::ci.auc(ROC_AUC_BW_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW)
+AUC_secondpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[1], 1, 5))
+AUC_thirdpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[3], 1, 5))
+AUC_label_AUC_BW_DAY2 <- paste0("AUC:", AUC_firstpart_AUC_BW, "(", AUC_secondpart_AUC_BW, "-", AUC_thirdpart_AUC_BW, ")", sep = "")
+
+# Convert roc objects to data frames
+roc1_DAY2 <- pROC::coords(ROC_AUC_BW1_DAY2)
+roc_DAY2 <- pROC::coords(ROC_AUC_BW_DAY2)
+
+# Plot ROC curves - DAY 2
+Plot_ROC_AUC_BW_DAY2 <- ggplot() +
+  geom_line(data = roc1_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY2, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY2, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+ggtitle("DAY 2") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 2 title
+
+# Create the annotation grob
+annotation <- textGrob("(b)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY2 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY2, ncol = 1, heights = c(0.02, 0.98))
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY2)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_day2.png", combined_plot_DAY2, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+```
+
+```{r combining two ROC curves of DAY7}
+
+library(ggplot2)
+
+# For standard dosing - DAY 7
+analysis1_DAY7 <- sdtab_pop_std_2706_trough %>% filter(DAY == 7) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY7 <- pROC::roc(analysis1_DAY7$TA,
+                        analysis1_DAY7$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW1 <- pROC::auc(ROC_AUC_BW1_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW1 <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW1)), 3)
+CI_AUC_AUC_BW1 <- pROC::ci.auc(ROC_AUC_BW1_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW1 <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW1)
+AUC_secondpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[1], 1, 5))
+AUC_thirdpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[3], 1, 5))
+AUC_label_AUC_BW1_DAY7 <- paste0("AUC:", AUC_firstpart_AUC_BW1, "(", AUC_secondpart_AUC_BW1, "-", AUC_thirdpart_AUC_BW1, ")", sep = "")
+
+# For recommended dosing - DAY 7
+analysis_DAY7 <- sdtab_pop_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY7 <- pROC::roc(analysis_DAY7$TA,
+                        analysis_DAY7$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW <- pROC::auc(ROC_AUC_BW_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW)), 3)
+CI_AUC_AUC_BW <- pROC::ci.auc(ROC_AUC_BW_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW)
+AUC_secondpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[1], 1, 5))
+AUC_thirdpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[3], 1, 5))
+AUC_label_AUC_BW_DAY7 <- paste0("AUC:", AUC_firstpart_AUC_BW, "(", AUC_secondpart_AUC_BW, "-", AUC_thirdpart_AUC_BW, ")", sep = "")
+
+# Convert roc objects to data frames
+roc1_DAY7 <- pROC::coords(ROC_AUC_BW1_DAY7)
+roc_DAY7 <- pROC::coords(ROC_AUC_BW_DAY7)
+
+# Plot ROC curves - DAY 7
+Plot_ROC_AUC_BW_DAY7 <- ggplot() +
+  geom_line(data = roc1_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY7, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY7, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+        ggtitle("DAY 7") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 7 title
+
+# Create the annotation grob
+annotation <- textGrob("(c)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY7 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY7, ncol = 1, heights = c(0.02, 0.98))
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY7)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_day7.png", combined_plot_DAY7, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+
+```
+
+```{r combining two ROC curves of DAY14}
+
+library(ggplot2)
+
+# For standard dosing - DAY 14
+analysis1_DAY14 <- sdtab_pop_std_2706_trough %>% filter(DAY == 14) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY14 <- pROC::roc(analysis1_DAY14$TA,
+                        analysis1_DAY14$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW1 <- pROC::auc(ROC_AUC_BW1_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW1 <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW1)), 3)
+CI_AUC_AUC_BW1 <- pROC::ci.auc(ROC_AUC_BW1_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW1 <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW1)
+AUC_secondpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[1], 1, 5))
+AUC_thirdpart_AUC_BW1 <- as.numeric(substr(AUC_anotherpart_AUC_BW1[3], 1, 5))
+AUC_label_AUC_BW1_DAY14 <- paste0("AUC:", AUC_firstpart_AUC_BW1, "(", AUC_secondpart_AUC_BW1, "-", AUC_thirdpart_AUC_BW1, ")", sep = "")
+
+# For recommended dosing - DAY 14
+analysis_DAY14 <- sdtab_pop_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY14 <- pROC::roc(analysis_DAY14$TA,
+                        analysis_DAY14$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_AUC_BW <- pROC::auc(ROC_AUC_BW_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_AUC_BW <- round(as.numeric(sub(".*(: *)", "\\1", AUC_AUC_BW)), 3)
+CI_AUC_AUC_BW <- pROC::ci.auc(ROC_AUC_BW_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_AUC_BW <- sub(".*(: *)", "\\1", CI_AUC_AUC_BW)
+AUC_secondpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[1], 1, 5))
+AUC_thirdpart_AUC_BW <- as.numeric(substr(AUC_anotherpart_AUC_BW[3], 1, 5))
+AUC_label_AUC_BW_DAY14 <- paste0("AUC:", AUC_firstpart_AUC_BW, "(", AUC_secondpart_AUC_BW, "-", AUC_thirdpart_AUC_BW, ")", sep = "")
+
+# Convert roc objects to data frames
+roc1_DAY14 <- pROC::coords(ROC_AUC_BW1_DAY14)
+roc_DAY14 <- pROC::coords(ROC_AUC_BW_DAY14)
+
+# Plot ROC curves - DAY 14
+Plot_ROC_AUC_BW_DAY14 <- ggplot() +
+  geom_line(data = roc1_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY14, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY14, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+        ggtitle("DAY 14") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 14 title
+
+# Create the annotation grob
+annotation <- textGrob("(d)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY14 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY14, ncol = 1, heights = c(0.02, 0.98))
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY14)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_day14.png", combined_plot_DAY14, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+
+```
+
+```{r combining ROC curves day 1 2 7 14}
+combined_plot_roc <- grid.arrange(combined_plot_DAY1,combined_plot_DAY2,combined_plot_DAY7,combined_plot_DAY14, ncol = 1)
+# Draw the combined plot
+#grid.draw(combined_plot_roc)
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("combined_roc_plot_2706.png", combined_plot_roc, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+```
+
+```{r draft code trying out suggestions by chatgpt}
+library(gridExtra)
+library(ggplot2)
+library(grid)
+
+# Create the plot with DAY 1 title
+Plot_ROC_AUC_BW_DAY1 <- ggplot() +
+  geom_line(data = roc1_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1 - Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "none",  # Hide legend initially
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY1, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY1, color = "steelblue") +
+  ggtitle("DAY 1") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 1 title
+
+# Create the plot with DAY 2 title
+Plot_ROC_AUC_BW_DAY2 <- ggplot() +
+  geom_line(data = roc1_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "none",  # Hide legend initially
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY2, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY2, color = "steelblue") +
+  ggtitle("DAY 2") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 2 title
+
+# Create the plot with DAY 7 title
+Plot_ROC_AUC_BW_DAY7 <- ggplot() +
+  geom_line(data = roc1_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1 - Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "none",  # Hide legend initially
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY7, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY7, color = "steelblue") +
+  ggtitle("DAY 7") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 7 title
+
+# Create the plot with DAY 14 title
+Plot_ROC_AUC_BW_DAY14 <- ggplot() +
+  geom_line(data = roc1_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1 - Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "none",  # Hide legend initially
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY14, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY14, color = "steelblue") +
+  ggtitle("DAY 14") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 14 title
+
+library(gridExtra)
+library(grid)
+library(ggplot2)
+
+# Assuming you have defined the plots and annotations before this step
+
+# Define the theme settings
+custom_theme <- theme(
+  plot.title = element_text(hjust = 0.01, size = 12),
+  text = element_text(size = 12),
+  panel.border = element_rect(color = "black", fill = NA, size = 1),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.line = element_line(colour = "black"),
+  legend.position = "none",  # Hide legend initially
+  axis.title = element_text(size = 12),
+  axis.text = element_text(size = 12),
+  strip.text = element_text(size = 12)
+)
+
+# Combine the plots and annotations using grid.arrange
+annotation_day1 <- textGrob("(a)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+combined_plot_DAY1 <- grid.arrange(annotation_day1, Plot_ROC_AUC_BW_DAY1 + custom_theme, ncol = 1, heights = c(0.02, 0.98))
+
+annotation_day2 <- textGrob("(b)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+combined_plot_DAY2 <- grid.arrange(annotation_day2, Plot_ROC_AUC_BW_DAY2 + custom_theme, ncol = 1, heights = c(0.02, 0.98))
+
+annotation_day7 <- textGrob("(c)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+combined_plot_DAY7 <- grid.arrange(annotation_day7, Plot_ROC_AUC_BW_DAY7 + custom_theme, ncol = 1, heights = c(0.02, 0.98))
+
+annotation_day14 <- textGrob("(d)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+combined_plot_DAY14 <- grid.arrange(annotation_day14, Plot_ROC_AUC_BW_DAY14 + custom_theme, ncol = 1, heights = c(0.02, 0.98))
+
+# Combine all plots using grid.arrange
+combined_plot_roc <- grid.arrange(combined_plot_DAY1, combined_plot_DAY2, combined_plot_DAY7, combined_plot_DAY14, ncol = 1)
+
+# Add the legend and adjust theme settings
+combined_plot_roc <- combined_plot_roc +
+  theme(legend.position = "right") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none")
+
+# Draw the combined plot
+grid.draw(combined_plot_roc)
+
+```
+
+```{r combine 4 ROC plots}
+library(patchwork)
+
+# Create titles and annotations
+title_day1 <- ggtitle("DAY 1") + theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+annotation_day1 <- annotate("text", x = 0.05, y = 0.95, label = "(a)", size = 12, hjust = 0, vjust = 1)
+
+title_day2 <- ggtitle("DAY 2") + theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+annotation_day2 <- annotate("text", x = 0.05, y = 0.95, label = "(b)", size = 12, hjust = 0, vjust = 1)
+
+title_day7 <- ggtitle("DAY 7") + theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+annotation_day7 <- annotate("text", x = 0.05, y = 0.95, label = "(c)", size = 12, hjust = 0, vjust = 1)
+
+title_day14 <- ggtitle("DAY 14") + theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+annotation_day14 <- annotate("text", x = 0.05, y = 0.95, label = "(d)", size = 12, hjust = 0, vjust = 1)
+
+# Add titles and annotations to each plot
+Plot_ROC_AUC_BW_DAY1 <- Plot_ROC_AUC_BW_DAY1 + title_day1 + annotation_day1
+Plot_ROC_AUC_BW_DAY2 <- Plot_ROC_AUC_BW_DAY2 + title_day2 + annotation_day2
+Plot_ROC_AUC_BW_DAY7 <- Plot_ROC_AUC_BW_DAY7 + title_day7 + annotation_day7
+Plot_ROC_AUC_BW_DAY14 <- Plot_ROC_AUC_BW_DAY14 + title_day14 + annotation_day14
+
+# Combine the plots vertically
+combined_roc_plot <- Plot_ROC_AUC_BW_DAY1 / Plot_ROC_AUC_BW_DAY2 / Plot_ROC_AUC_BW_DAY7 / Plot_ROC_AUC_BW_DAY14
+
+# Save the combined plot
+ggsave("combined_roc_plot.png", combined_roc_plot, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+
+```
+
+
+```{r shorter code by chatGPT}
+library(pROC)
+library(ggplot2)
+
+# Function to calculate AUC and create AUC label
+calculate_auc <- function(data) {
+  roc_obj <- roc(data$TA, data$BW, ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE)
+  auc <- auc(roc_obj)
+  ci_auc <- ci.auc(roc_obj, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+  
+  auc_label <- paste0("AUC:", round(auc, 3), " (", round(ci_auc[1], 3), "-", round(ci_auc[3], 3), ")")
+  
+  return(list(auc_obj = roc_obj, auc_label = auc_label))
+}
+
+# Function to plot ROC curve
+plot_roc <- function(roc_obj, auc_label) {
+  roc_plot <- ggroc(roc_obj, alpha = 0.5, colour = "red", linetype = "solid", size = 1) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.01, size = 15),
+      text = element_text(size = 15),
+      panel.border = element_rect(color = "black", fill = NA, size = 1),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(colour = "black"),
+      legend.position = "none",
+      legend.title = element_blank(),
+      legend.text = element_text(size = 15)
+    ) +
+    labs(y = "Sensitivity", x = "Specificity") +
+    geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), color = "grey", linetype = "solid") +
+    annotate(geom = "text", x = 0.4, parse = TRUE, y = 0.2, size = 5.5, label = auc_label)
+  
+  return(roc_plot)
+}
+
+# Filter data for DAY 1 and calculate AUC
+analysis1 <- sdtab_pop_std_2706_trough %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+auc_results1 <- calculate_auc(analysis1)
+
+# Plot ROC curve for DAY 1
+plt_roc1 <- plot_roc(auc_results1$auc_obj, auc_results1$auc_label)
+print(plt_roc1)
+
+# Repeat for DAY 2, 7, and 14
+analysis2 <- sdtab_pop_std_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+auc_results2 <- calculate_auc(analysis2)
+plt_roc2 <- plot_roc(auc_results2$auc_obj, auc_results2$auc_label)
+print(plt_roc2)
+
+analysis7 <- sdtab_pop_std_2706_trough %>% filter(DAY == 7) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+auc_results7 <- calculate_auc(analysis7)
+plt_roc7 <- plot_roc(auc_results7$auc_obj, auc_results7$auc_label)
+print(plt_roc7)
+
+analysis14 <- sdtab_pop_std_2706_trough %>% filter(DAY == 14) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+auc_results14 <- calculate_auc(analysis14)
+plt_roc14 <- plot_roc(auc_results14$auc_obj, auc_results14$auc_label)
+print(plt_roc14)
+
+```
+
 #### PTA fAUC200 of two optimized dosing 28 and 29 - 020623
 
 ```{r read in PTA_overall dataset, warning=FALSE}
@@ -1703,7 +2471,6 @@ setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and 
 ggsave("final_combined.png", final_combined, dpi = 300, width = 21, height = 27, units = "cm", limitsize = FALSE)
 
 ```
-
 
 ###### End of chat gpt generated code
 
@@ -5285,7 +6052,6 @@ gridExtra::grid.arrange(grobs = plots, nrow = 2, ncol = 3)
 #### Identifying centers that have imputed CREAT before sending datasets to us - 230623
 
 ```{r identifying centers already imputed CREAT}
-# Impute 09
 # Get unique IDs with CRRT == 1 only
 setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes/Plots/Creat_nonimpute_org")
 library(dplyr)
