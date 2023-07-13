@@ -5969,11 +5969,21 @@ library(dplyr)
 
 dosing_intervals<-ungroup(dosing_intervals)
 dosing_intervals <- dosing_intervals[!is.na(dosing_intervals$dosing_interval), ]
-percentage <- dosing_intervals %>%
+percentage_12_24 <- dosing_intervals %>%
   filter((dosing_interval < 13 & dosing_interval > 11) | (dosing_interval < 25 & dosing_interval > 23)) %>%
   summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
-percentage
-# 86.34713% dosing interval are within 12 hours or 24 hours	
+percentage_12_24
+# 86.34713% dosing interval are within 12 hours or 24 hours
+
+percentage_below_12 <- dosing_intervals %>%
+  filter((dosing_interval < 11)) %>%
+  summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
+percentage_below_12
+
+percentage_above_24 <- dosing_intervals %>%
+  filter((dosing_interval >25)) %>%
+  summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
+percentage_above_24
 
 ```
 ##### Identify patients with high concentration
