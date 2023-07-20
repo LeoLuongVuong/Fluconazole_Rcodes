@@ -78,6 +78,7 @@ missing_percents <- colMeans(is.na(FlucTotIV_clean[, vars_to_process])) * 100
 
 # Print the results
 missing_percents
+
 ```
 ##### quite a lot actually
 ##### CL24, APACHE and ALB should be least prioritized since they are missing too much
@@ -335,6 +336,7 @@ library(dplyr)
 crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
 FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
 FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+
 ```
 
 ##### Then I build the imputation model for crrt dataset
@@ -344,6 +346,19 @@ FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
 lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT)+factor(HOSPITAL), data = FlucTotIV_clean_crrt)
 summary(lm_crrt_1)
 AIC(lm_crrt_1)
+
+# Check the code
+library(dplyr)
+
+subset_non_na <- FlucTotIV_clean_crrt %>%
+  filter(!is.na(CREAT2) & !is.na(TIME) & !is.na(AMT) & !is.na(RATE) & !is.na(DV) &
+         !is.na(AGE) & !is.na(BW2) & !is.na(SEX) & !is.na(LENGTH) & !is.na(OCC) &
+         !is.na(TAD) & !is.na(CRRT) & !is.na(HOSPITAL) & !is.na(dosing_interval))
+
+# View the subset data
+View(subset_non_na)
+
+
 ```
 ###### AIC of lm_crrt_1 model equals 352, adjusted R-squared is -0.02
 ###### It is too bad!

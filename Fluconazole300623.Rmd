@@ -267,3 +267,2516 @@ setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and 
 ggsave("combined_PTA_OPT80_2706.png", combined_PTA_OPT80, dpi = 300, width = 29.7, height = 17.5, units = "cm", limitsize = FALSE)
 
 ```
+
+#### Relax assumption of kidney function 130723
+
+##### Within dosing-interval imputation
+
+```{r read the dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes")
+FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
+View(FlucTotIV_clean)
+
+```
+
+```{r new variable CREAT_DOS_INT, warning=FALSE}
+#CREAT_DOS_INT using within dosing-interval imputation
+library(dplyr)
+
+FlucTotIV_clean$CREAT_DOS_INT <- FlucTotIV_clean$CREAT
+
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  group_by(ID, OCC) %>%
+  mutate(unique_CREAT = sum(!is.na(CREAT)))
+
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  group_by(ID, OCC) %>%
+  mutate(
+    CREAT_DOS_INT = ifelse(unique_CREAT == 1, CREAT[!is.na(CREAT)],
+                           ifelse((is.na(CREAT_DOS_INT) & unique_CREAT > 1),mean(CREAT[!is.na(CREAT)], na.rm = TRUE),CREAT_DOS_INT)
+  )
+)
+
+```
+
+```{r explore the missing data pattern after imputing}
+library(table1)
+table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
+       render.continuous=c(.="Median [Q1-Q3]"))
+# Missingness goes from 81.1 to 59.3%
+
+```
+
+###### Plot CREAT over TIME for dos_int having more than 1 CREAT, disuss with Erwin 180723 
+
+```{r how many dos_int has more than 1 CREAT, warning=FALSE}
+#dosing intervals having more than 1 CREAT values
+library(dplyr)
+
+FlucTotIV_clean %>% filter(!is.na(AMT)) %>% filter (unique_CREAT>1) #24
+24/1554 #1.5% of all dosing intervals containing more than 1 CREAT values
+
+```
+
+```{r CREAT over TIME per each ID&OCC}
+library(dplyr)
+library(ggplot2)
+
+# Filter rows with unique_CREAT > 1
+filtered_data <- FlucTotIV_clean %>%
+  group_by(ID, OCC) %>%
+  filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
+  ungroup()
+
+# Plot CREAT over TIME for each ID and OCC pair
+plot_data <- filtered_data %>%
+  ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
+       x = "Time", y = "CREAT") +
+  theme_minimal()
+
+# Display the plot
+print(plot_data)
+
+# CREAT fluctuates all over the place
+
+```
+
+
+###### Missingness drops from 81.1% to 59.3%, I will employ 70 impuptations (no, I have to impute at a between-dosing interval level)
+
+###### Check missingness among all the dosing intervals 140723
+
+```{r missingness among all dosing intervals}
+library(dplyr)
+
+CREAT_DOS_INT_subset <- FlucTotIV_clean %>%
+  distinct(ID, OCC, CREAT_DOS_INT, .keep_all = TRUE) #extract all the rows with unique combination of ID, OCC, CREAT_DOS_INT
+
+library(table1)
+table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=CREAT_DOS_INT_subset,
+       render.continuous=c(.="Median [Q1-Q3]"))
+# Missingness goes from 81.2 to 62.0%
+
+```
+
+#### Imputation step (adapted from Fluconazole120423.Rmd file) - 140723 - but for CREAT_DOS_INT_subset dataset
+
+##### Firstly, I will create 2 datasets, crrt and no crrt datasets
+
+```{r convert data types,warning=FALSE}
+CREAT_DOS_INT_subset$AGE <- as.numeric(CREAT_DOS_INT_subset$AGE)
+CREAT_DOS_INT_subset$LENGTH <- as.numeric(CREAT_DOS_INT_subset$LENGTH)
+CREAT_DOS_INT_subset$BW2 <- as.numeric(CREAT_DOS_INT_subset$BW2)
+CREAT_DOS_INT_subset$DV <- as.numeric(CREAT_DOS_INT_subset$DV)
+CREAT_DOS_INT_subset$TIME <- as.numeric(CREAT_DOS_INT_subset$TIME)
+CREAT_DOS_INT_subset$CREAT_DOS_INT <- as.numeric(CREAT_DOS_INT_subset$CREAT_DOS_INT)
+CREAT_DOS_INT_subset$SEX <- as.factor(CREAT_DOS_INT_subset$SEX)
+CREAT_DOS_INT_subset$HOSPITAL <- as.factor(CREAT_DOS_INT_subset$HOSPITAL)
+CREAT_DOS_INT_subset$CRRT <- as.factor(CREAT_DOS_INT_subset$CRRT)
+CREAT_DOS_INT_subset$OCC <- as.factor(CREAT_DOS_INT_subset$OCC)
+CREAT_DOS_INT_subset$EVID <- as.factor(CREAT_DOS_INT_subset$EVID)
+CREAT_DOS_INT_subset$TAD <- as.numeric(CREAT_DOS_INT_subset$TAD)
+CREAT_DOS_INT_subset$AMT <- as.numeric(CREAT_DOS_INT_subset$AMT)
+CREAT_DOS_INT_subset$RATE <- as.numeric(CREAT_DOS_INT_subset$RATE)
+
+```
+
+###### Convert all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
+
+```{r convert NAs to 0}
+CREAT_DOS_INT_subset$TAD[is.na(CREAT_DOS_INT_subset$TAD)] <- 0
+CREAT_DOS_INT_subset$AMT[is.na(CREAT_DOS_INT_subset$AMT)] <- 0
+CREAT_DOS_INT_subset$RATE[is.na(CREAT_DOS_INT_subset$RATE)] <- 0
+
+```
+
+```{r convert DV to 0 where TIME equals 0}
+CREAT_DOS_INT_subset$DV[CREAT_DOS_INT_subset$TIME == 0] <- 0
+
+```
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+library(dplyr)
+crrt_patients <- unique(CREAT_DOS_INT_subset[CREAT_DOS_INT_subset$CRRT == 1, "ID"])
+CREAT_DOS_INT_subset_crrt<-CREAT_DOS_INT_subset%>%filter(ID%in%crrt_patients$ID)
+CREAT_DOS_INT_subset_nocrrt<-CREAT_DOS_INT_subset%>%filter(!ID%in%(crrt_patients$ID))
+
+```
+
+##### Then I build the imputation model for crrt dataset
+
+###### My first lm_crrt_1 model (which include all the possible predictors as above)
+
+```{r lm_crrt_1 linear model}
+lm_crrt_1 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+TAD+CRRT+HOSPITAL, data = CREAT_DOS_INT_subset_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+
+```
+
+###### Note, if I do imputation like this, there will be too few DV in the model (because essentially my CREAT_DOS_INT_subset_crrt dataset only involves dosing events). So I would do another strategy instead. It is imputing for the whole dataset, and take the average of the imputed CREAT_DOS_INT values per each dosing interval as the final value to be included in the popPK analysis
+
+###### Important note 140723 15:12 (This is actually similar to what I did with BW and LENGTH)
+
+#### Redo the imputation based on the aforementioned strategy (adapted from Fluconazole120423.Rmd file) - 140723 - FlucTotIV_clean dataset
+
+##### Firstly, I will create 2 datasets, crrt and no crrt datasets
+
+```{r convert data types,warning=FALSE}
+FlucTotIV_clean$AGE <- as.numeric(FlucTotIV_clean$AGE)
+FlucTotIV_clean$LENGTH <- as.numeric(FlucTotIV_clean$LENGTH)
+FlucTotIV_clean$BW2 <- as.numeric(FlucTotIV_clean$BW2)
+FlucTotIV_clean$DV <- as.numeric(FlucTotIV_clean$DV)
+FlucTotIV_clean$TIME <- as.numeric(FlucTotIV_clean$TIME)
+FlucTotIV_clean$CREAT_DOS_INT <- as.numeric(FlucTotIV_clean$CREAT_DOS_INT)
+FlucTotIV_clean$SEX <- as.factor(FlucTotIV_clean$SEX)
+FlucTotIV_clean$HOSPITAL <- as.factor(FlucTotIV_clean$HOSPITAL)
+FlucTotIV_clean$CRRT <- as.factor(FlucTotIV_clean$CRRT)
+FlucTotIV_clean$OCC <- as.factor(FlucTotIV_clean$OCC)
+FlucTotIV_clean$EVID <- as.factor(FlucTotIV_clean$EVID)
+FlucTotIV_clean$TAD <- as.numeric(FlucTotIV_clean$TAD)
+FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
+FlucTotIV_clean$RATE <- as.numeric(FlucTotIV_clean$RATE)
+
+```
+
+###### Convert all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
+
+```{r convert NAs to 0}
+FlucTotIV_clean$TAD[is.na(FlucTotIV_clean$TAD)] <- 0
+FlucTotIV_clean$AMT[is.na(FlucTotIV_clean$AMT)] <- 0
+FlucTotIV_clean$RATE[is.na(FlucTotIV_clean$RATE)] <- 0
+
+```
+
+```{r convert DV to 0 where TIME equals 0}
+FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
+
+```
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+
+```
+
+##### Then I build the imputation model for crrt dataset
+
+###### My first lm_crrt_1 model (which include all the possible predictors as above)
+
+```{r lm_crrt_1 linear model}
+lm_crrt_1 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+TAD+CRRT+HOSPITAL, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+
+```
+
+
+###### AIC of lm_crrt_1 model equals 605, adjusted R-squared is 0.18  This is not bad.
+
+###### My second lm_crrt_2 model, which is lm_crrt_1 removing TAD
+
+```{r lm_crrt_2 linear model}
+lm_crrt_2 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+CRRT+HOSPITAL, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_2)
+AIC(lm_crrt_2)
+
+```
+
+###### AIC of lm_crrt_2 model equals 604, adjusted R-squared is 0.18, which is better than lm_crrt_1
+
+###### My third lm_crrt_3 model, which is lm_crrt_2 removing HOSPITAL
+
+```{r lm_crrt_3 linear model}
+lm_crrt_3 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+CRRT, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_3)
+AIC(lm_crrt_3)
+
+```
+
+###### AIC of lm_crrt_3 model equals 607, adjusted R-squared is 0.16, which is worse than lm_crrt_2
+
+```{r lm_crrt_2 model diagnostic}
+qqnorm(residuals(lm_crrt_2), pch = 1, frame = FALSE)
+qqline(residuals(lm_crrt_2), col = "steelblue", lwd = 2)
+
+```
+
+###### It looks normal, normality assumption therefore holds.
+
+###### Therefore, lm_crrt_2 will be my final imputation model for crrt dataset. The predictors for final imputation crrt dataset model are TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+CRRT+HOSPITAL
+
+```{r best imputation crrt dataset}
+impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+```
+
+##### After that, I build the imputation model for no-crrt dataset
+
+###### My first lm_nocrrt_1 model (which include all the possible predictors as above, not including CRRT of course)
+
+```{r lm_nocrrt_1 linear model}
+lm_nocrrt_1 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_1)
+AIC(lm_nocrrt_1)
+
+```
+###### AIC of lm_nocrrt_1 model equals 1160, adjusted R-squared is 0.305
+
+###### My second lm_nocrrt_2 model, which is lm_nocrrt_1 removing TAD
+
+```{r lm_nocrrt_2 linear model}
+lm_nocrrt_2 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_2)
+AIC(lm_nocrrt_2)
+
+```
+
+###### AIC of lm_nocrrt_2 model equals 1158, adjusted R-squared is 0.306, which is better than lm_nocrrt_1
+
+```{r lm_nocrrt_2 model diagnostic}
+qqnorm(residuals(lm_nocrrt_2), pch = 1, frame = FALSE)
+qqline(residuals(lm_nocrrt_2), col = "steelblue", lwd = 2)
+
+```
+
+###### It looks quite normal, normality assumption therefore holds.
+
+###### Therefore, lm_nocrrt_2 will be my final imputation model for nocrrt dataset. The predictors for final imputation no-crrt dataset model are TIME + AMT + RATE + DV + AGE + BW2 + factor(SEX) + LENGTH + factor(OCC) + factor(HOSPITAL) 
+
+###### Best imputation nocrrt dataset
+
+```{r best imputation nocrrt dataset}
+impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+```
+
+##### Then imputing crrt and non-crrt models
+
+```{r for impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for impute_CREAT2_nocrrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+#### Creat imputation datasets step 
+
+##### Here I will set up a new working directory where I save all the imputed datasets using the aforementioned strategy. The minimum number of imputations is 70, so at least 7 datasets, 10 imputations each
+
+#### First of all, my first imputed dataset (imputation 1st to 10th)
+
+##### Firstly, for FlucTotIV_clean_crrt dataset
+
+##### With this, I just need to continue from above by adding BW and LENGTH
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+# Change the maximum number of columns displayed, e.g. 1000
+rstudioapi::writeRStudioPreference("data_viewer_max_columns", 1000L)
+View(FlucTotIV_clean_imputed)
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Average CREAT per each ID and OCC, in rows that have CREAT_DOS_INT == NA
+##### This is not something to worry about, I was worry for nothing!
+##### I was wrong again! Average CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+# Itlooks correct, perfect! 150723 14:03
+
+```
+
+
+#### CKDEPI Equation to use
+##### In men:
+###### cre < 0.9 mg/dL: CKD-EPI = 142 x (cre/0.9)^-0.302 x 0.9938^age 
+###### cre >= 0.9 mg/dL:CKD-EPI = 142 x (cre/0.9)^-1.200 x 0.9938^age
+##### In women:
+###### cre < 0.7 mg/dL: CKD-EPI = 142 x (cre/0.7)^-0.241 x 0.9938^age * 1.012
+###### cre >= 0.7 mg/dL: CKD-EPI = 142 x (cre/0.7)^-1.200 x 0.9938^age * 1.012
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+```
+
+```{r median of observed CKDEPI}
+median(Fluc_NONMEM_mul_impute$CKDEPI01[!is.na(Fluc_NONMEM_mul_impute$CREAT_DOS_INT)]) #89
+# Why is it a bit different than before?
+
+```
+
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW01 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Second of all, my second imputed dataset (imputation 11th to 20th)
+
+```{r imputing impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(124)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r imputing impute_CREAT_DOS_INT_nocrrt dataset, warning = FALSE}
+library(mice)
+set.seed(124)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW02.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Third of all, my third imputed dataset (imputation 21st to 30th)
+
+```{r imputing impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(125)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r imputing impute_CREAT_DOS_INT_nocrrt dataset, warning = FALSE}
+library(mice)
+set.seed(125)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW03.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Fourth of all, my fourth imputed dataset (imputation 31st to 40th)
+
+```{r imputing impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(126)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r imputing impute_CREAT_DOS_INT_nocrrt dataset, warning = FALSE}
+library(mice)
+set.seed(126)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW04.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Fifth of all, my fifth imputed dataset (imputation 41st to 50th)
+
+```{r imputing impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(127)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r imputing impute_CREAT_DOS_INT_nocrrt dataset, warning = FALSE}
+library(mice)
+set.seed(127)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW05.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Sixth of all, my sixth imputed dataset (imputation 51st to 60th)
+
+```{r imputing impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(128)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r imputing impute_CREAT_DOS_INT_nocrrt dataset, warning = FALSE}
+library(mice)
+set.seed(128)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW06.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Seventh of all, my seventh imputed dataset (imputation 61st to 70th)
+
+```{r imputing impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(129)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r imputing impute_CREAT_DOS_INT_nocrrt dataset, warning = FALSE}
+library(mice)
+set.seed(129)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Calculate CKDEPI 01 to 10
+
+```{r CKDEPI 01}
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT01 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT01 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT01/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 02}
+Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 03}
+Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 04}
+Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 05}
+Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 06}
+Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 07}
+Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 08}
+Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 09}
+Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+```{r CKDEPI 10}
+Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
+```
+
+##### Convert all NAs to -99
+
+```{r NAs to -99}
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+##### Convert back to NONMEM format
+
+```{r DV from 0 & -99 to "."}
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW07.csv",quote=F,row.names = FALSE)
+
+```
+
+##### Within-day imputation 170723, try later
+
+```{r read the dataset, warning=FALSE}
+setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes")
+FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
+View(FlucTotIV_clean)
+
+```
+
+```{r new variable CREAT_DOS_INT, warning=FALSE}
+#CREAT_DOS_INT using within dosing-interval imputation
+library(dplyr)
+
+FlucTotIV_clean$CREAT_DOS_INT <- FlucTotIV_clean$CREAT
+
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  group_by(ID, OCC) %>%
+  mutate(unique_CREAT = sum(!is.na(CREAT)))
+
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  group_by(ID, OCC) %>%
+  mutate(
+    CREAT_DOS_INT = ifelse(unique_CREAT == 1, CREAT[!is.na(CREAT)],
+                           ifelse((is.na(CREAT_DOS_INT) & unique_CREAT > 1),mean(CREAT[!is.na(CREAT)], na.rm = TRUE),CREAT_DOS_INT)
+  )
+)
+
+```
+
+```{r explore the missing data pattern after imputing}
+library(table1)
+table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
+       render.continuous=c(.="Median [Q1-Q3]"))
+# Missingness goes from 81.1 to 59.3%
+
+```
+
+##### Adding dosing interval as a predictor for the final imputation model in Fluconazole120423.Rmd file 180723
+
+```{r creating dosing_interval column}
+library(dplyr)
+
+# Create the dosing_interval column
+new_column <- FlucTotIV_clean %>% 
+  filter(!is.na(AMT)) %>%
+  arrange(ID, TIME) %>%
+  group_by(ID) %>%
+  mutate(dosing_interval = TIME - lag(TIME))
+
+# Merge the new column with the original FlucTotIV_clean data
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  left_join(new_column %>% select(ID, TIME, dosing_interval), by = c("ID", "TIME"))
+
+# View the updated FlucTotIV_clean data
+View(FlucTotIV_clean)
+
+library(dplyr)
+
+# Sort the dataset by ID and OCC
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  arrange(ID, OCC)
+
+# Group by ID and OCC and fill missing CREAT2 with observed CREAT2
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  group_by(ID, OCC) %>%
+  mutate(dosing_interval = ifelse(is.na(dosing_interval), na.omit(dosing_interval), dosing_interval)) %>%
+  ungroup()
+
+# Fill all the remaining missing dosing_interval with 0
+FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
+
+```
+
+
+###### I decided to build imputation models based on CRRT status (whether a patient has at least 1 CRRT session), and the predictors that I will be using will be restricted to "TIME", "AMT", "RATE", "DV", "AGE", "BW2", "SEX", "LENGTH", "HOSPITAL", "OCC", "TAD", "CRRT", "CREAT2" 
+
+##### Firstly, I will create 2 datasets, crrt and no crrt datasets
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+
+```
+
+##### Then I build the imputation model for crrt dataset
+##### I will have the same imputation model for crrt dataset as above, which is lm_crrt_4 as below
+###### My first lm_crrt_1 model (which include all the possible predictors as above)
+```{r lm_crrt_1 linear model}
+lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT)+factor(HOSPITAL), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+
+lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+TAD+CRRT+HOSPITAL, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+
+
+```
+###### AIC of lm_crrt_1 model equals 352, adjusted R-squared is -0.02
+###### It is too bad!
+
+###### My second lm_crrt_2 model, which is lm_crrt_1 removing HOSPITAL
+```{r lm_crrt_2 linear model}
+lm_crrt_2 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_2)
+AIC(lm_crrt_2)
+```
+
+###### AIC of lm_crrt_2 model equals 347, adjusted R-squared is 0.014, which is better than lm_crrt_1
+
+###### My third lm_crrt_3 model, which is lm_crrt_2 removing OCC
+```{r lm_crrt_3 linear model}
+lm_crrt_3 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+TAD+factor(CRRT), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_3)
+AIC(lm_crrt_3)
+```
+###### AIC of lm_crrt_3 model equals 315.3, adjusted R-squared is 0.1405, which is better than lm_crrt_2
+
+##### My fourth lm_crrt_4 model, which is lm_crrt_3 removing TAD
+```{r lm_crrt_4 linear model}
+lm_crrt_4 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_4)
+AIC(lm_crrt_4)
+```
+##### AIC of lm_crrt_4 model equals 313.3, adjusted R-squared is 0.150
+
+```{r lm_crrt_4 model diagnostic}
+qqnorm(residuals(lm_crrt_4), pch = 1, frame = FALSE)
+qqline(residuals(lm_crrt_4), col = "steelblue", lwd = 2)
+```
+###### It looks normal, normality assumption therefore holds.
+###### Therefore, lm_crrt_4 will be my final imputation model for crrt dataset. The predictors for final imputation crrt dataset model are TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT)
+
+```{r best imputation crrt dataset}
+impute_CREAT2_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT2")]
+```
+
+##### After that, I build the imputation model for no-crrt dataset
+###### My first lm_nocrrt_1 model (which include all the possible predictors as above, not including CRRT of course) 
+```{r lm_nocrrt_1 linear model}
+lm_nocrrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_1)
+AIC(lm_nocrrt_1)
+```
+###### AIC of lm_nocrrt_1 model equals 704, adjusted R-squared is 0.160
+
+###### My second lm_nocrrt_2 model, which is lm_nocrrt_1 removing OCC
+```{r lm_nocrrt_2 linear model}
+lm_nocrrt_2 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+TAD+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_2)
+AIC(lm_nocrrt_2)
+```
+
+###### AIC of lm_nocrrt_2 model equals 669.8, adjusted R-squared is 0.186, which is a lot better than lm_nocrrt_1
+
+###### My third lm_nocrrt_3 model, which is lm_nocrrt_2 removing TAD
+```{r lm_nocrrt_3 linear model}
+lm_nocrrt_3 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_3)
+AIC(lm_nocrrt_3)
+```
+
+###### AIC of lm_nocrrt_3 model equals 669.3, adjusted R-squared is 0.185, which is a slightly worse than lm_nocrrt_2
+
+```{r lm_nocrrt_2 model diagnostic}
+qqnorm(residuals(lm_nocrrt_2), pch = 1, frame = FALSE)
+qqline(residuals(lm_nocrrt_2), col = "steelblue", lwd = 2)
+```
+
+###### It looks quite normal, normality assumption therefore holds.
+###### Therefore, lm_nocrrt_2 will be my final imputation model for nocrrt dataset. The predictors for final imputation no-crrt dataset model are TIME + AMT + RATE + DV + AGE + BW2 + factor(SEX) + LENGTH + TAD + factor(HOSPITAL) 
+
+```{r best imputation nocrrt dataset}
+impute_CREAT2_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT2")]
+```
+
+##### Then imputing crrt and non-crrt models
+```{r for impute_CREAT2_crrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT2_crrt<- mice(impute_CREAT2_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT2_crrt, action = i))$CREAT2
+}
+```
+
+```{r for impute_CREAT2_nocrrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT2_nocrrt<- mice(impute_CREAT2_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT2_nocrrt, action = i))$CREAT2
+}
+```
+###### The number of logged events is much lower than before (400 compared to 1400)
+
+##### Then combining these two crrt and non-crrt imputed dataset
+```{r combine FlucTotIV_clean}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+```
+
+##### Then check the imputation performation via diagnostic plots
+```{r distribution of CREAT01 to 10 compared to CREAT2,warning=FALSE}
+library(ggplot2)
+FlucTotIV_clean_imputed$CREAT2 <- ifelse(FlucTotIV_clean_imputed$CREAT2 == -99, NA, FlucTotIV_clean_imputed$CREAT2)
+ggplot(FlucTotIV_clean_imputed, aes(x = CREAT01)) + 
+        geom_density(aes(fill = "CREAT01"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT02, fill = "CREAT02"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT03, fill = "CREAT03"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT04, fill = "CREAT04"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT05, fill = "CREAT05"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT06, fill = "CREAT06"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT07, fill = "CREAT07"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT08, fill = "CREAT08"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT09, fill = "CREAT09"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT10, fill = "CREAT10"), alpha = 0.5) +
+        geom_density(aes(x = CREAT2, fill = "CREAT2"), alpha = 0.5) +
+        scale_fill_manual(name = "Variable", values = c("CREAT01" = "blue", "CREAT02" = "lightblue", "CREAT03" = "green",
+                                                        "CREAT04" = "orange", "CREAT05" = "purple", "CREAT06" = "pink",
+                                                        "CREAT07" = "brown", "CREAT08" = "gray", "CREAT09" = "black",
+                                                        "CREAT10" = "yellow","CREAT2" = "red")) +
+        xlab("Creatinine Levels") +
+        ylab("Density") +
+        ggtitle("Density Plot of 10 imputed creatinin vs the original creatinin")
+```
+###### This plot also looks better than before
+###### I also made CREAT vs TIME plots (from Fluconazole.Rmd file), they look alright
+
+###### Meeting Erwin 180723
+
+```{r meeting Erwin 180723}
+filtered_data_observed <- FlucTotIV_clean %>%
+group_by(ID, OCC) %>%
+filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
+filter(!is.na(CREAT))
+View(filtered_data)
+# Plot CREAT over TIME for each ID and OCC pair
+plot_data <- filtered_data %>%
+ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
+geom_line() +
+geom_point() +
+facet_wrap(~ ID + OCC, scales = "free") +
+labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
+x = "Time", y = "CREAT") +
+theme_minimal()
+plot_data
+
+plot_data <- filtered_data %>%
+ggplot(aes(x = TIME, y = CKDEPI, group = ID, color = factor(ID))) +
+geom_line() +
+geom_point() +
+facet_wrap(~ ID + OCC, scales = "free") +
+labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
+x = "Time", y = "CREAT") +
+theme_minimal()
+plot_data
+
+```
+
+```{r adding CRRT2 columns to the FlucTotIV_clean data}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean$CRRT2 <- ifelse(FlucTotIV_clean$ID %in% crrt_patients, 1, 0)
+
+```
+
+```{r plot of multiple observed CREAT2 over dosing intervals}
+filtered_data_observed <- FlucTotIV_clean %>%
+group_by(ID, OCC) %>%
+filter(n_distinct(CREAT2, na.rm = TRUE) > 1) %>%
+filter(!is.na(CREAT2))
+View(filtered_data_observed)
+
+```
+
+```{r adding new column CREAT2_observed}
+FlucTotIV_clean$CREAT2_observed <- ifelse(is.na(FlucTotIV_clean$CREAT2), 0, 1)
+
+```
+
+```{r investigate multiple imputed CREAT2 in the observed Scr dosing intervals with more than 1 observations}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+Fluc_NONMEM_mul_impute1<- read.csv("Fluc_NONMEM_mul_impute1.csv")
+
+FlucTotIV_clean_investigate<-FlucTotIV_clean
+
+# Adding CKDEPI01 to CKDEPI10 to FlucTotIV_clean_investigate dataset
+FlucTotIV_clean_investigate <- cbind(FlucTotIV_clean_investigate, Fluc_NONMEM_mul_impute1[, c("CKDEPI01", "CKDEPI02", "CKDEPI03", "CKDEPI04", "CKDEPI05", "CKDEPI06", "CKDEPI07", "CKDEPI08", "CKDEPI09", "CKDEPI10")])
+
+### Making the most important plots
+
+library(dplyr)
+library(ggplot2)
+
+filtered_data <- FlucTotIV_clean_investigate %>%
+  group_by(ID, OCC) %>%
+  filter(unique_CREAT > 1 & sum(CREAT2_observed == 0) > 0 & sum(CREAT2_observed == 1) > 0) %>%
+  ungroup()
+
+### Following this is a very long code
+
+# Plot CKDEPI01 over TIME, differentiating by CREAT2_observed
+CKDEPI01_plot<-ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) +  geom_point() +
+  facet_wrap(~ ID + OCC, scales="free") +
+  labs(title = "CKDEPI over TIME 01",
+       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m2") +
+  scale_color_discrete(name = "Creatinin Observed", labels = c("No", "Yes")) +
+  theme_minimal()
+
+# Load necessary libraries
+library(ggplot2)
+library(ggsave)
+
+# Create the plot 01
+CKDEPI01_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 01",
+       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI01_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI01_plot.png", plot = CKDEPI01_plot, dpi = 300, width = 10, height = 8)
+
+# Load necessary libraries
+library(ggplot2)
+library(ggsave)
+
+# Define the column names for CKDEPI02 to CKDEPI10
+ckdepi_cols <- paste0("CKDEPI", sprintf("%02d", 2:10))
+
+# Loop through the columns and create the plots
+for (col in ckdepi_cols) {
+  # Create the plot
+  plot <- ggplot(filtered_data, aes(x = TIME, y = .data[[col]], color = factor(CREAT2_observed))) +
+    geom_point() +
+    facet_wrap(~ ID + OCC, scales = "free") +
+    labs(title = paste("CKDEPI over TIME", substr(col, 7), sep = " "),
+         x = "Time (h)", y = paste(col, "(mL/min/1.73 m²)", sep = " "),
+         color = "Creatinin Observed") +
+    scale_color_discrete(labels = c("No", "Yes")) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+
+  # Print the plot
+  print(plot)
+
+  # Export the plot to a high-quality image
+  ggsave(paste0("CKDEPI", substr(col, 7), "_plot.png"), plot = plot, dpi = 300, width = 10, height = 8)
+}
+
+# CKDEPI 02
+CKDEPI02_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI02, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 02",
+       x = "Time (h)", y = "CKDEPI02 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI02_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI02_plot.png", plot = CKDEPI02_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI 03
+CKDEPI03_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI03, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 03",
+       x = "Time (h)", y = "CKDEPI03 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI03_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI03_plot.png", plot = CKDEPI03_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI 04
+CKDEPI04_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI04, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 04",
+       x = "Time (h)", y = "CKDEPI04 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI04_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI04_plot.png", plot = CKDEPI04_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI 05
+CKDEPI05_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI05, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 05",
+       x = "Time (h)", y = "CKDEPI05 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI05_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI05_plot.png", plot = CKDEPI05_plot, dpi = 300, width = 10, height = 8)
+
+CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 06",
+       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI06_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
+
+CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 06",
+       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI06_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
+
+#CKDEPI07
+CKDEPI07_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI07, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 07",
+       x = "Time (h)", y = "CKDEPI07 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI07_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI07_plot.png", plot = CKDEPI07_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI08
+CKDEPI08_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI08, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 08",
+       x = "Time (h)", y = "CKDEPI08 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI08_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI08_plot.png", plot = CKDEPI08_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI09
+CKDEPI09_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI09, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 09",
+       x = "Time (h)", y = "CKDEPI09 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI09_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI09_plot.png", plot = CKDEPI09_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI10
+CKDEPI10_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI10, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 10",
+       x = "Time (h)", y = "CKDEPI10 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI10_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI10_plot.png", plot = CKDEPI10_plot, dpi = 300, width = 10, height = 8)
+
+```
+```{r use tidyr convert filtered_data from wide to long format}
+library(tidyr)
+
+# Eliminate former CKDEPI column
+filtered_data$CKDEPI<-NULL
+
+# This code is used to plot all the imputed values at once
+filtered_data_long <- filtered_data  %>%
+  pivot_longer(
+    cols = starts_with("CKDEPI"),
+    names_to = "Imputation",
+    names_prefix = "CKDEPI",
+    values_to = "CKDEPI",
+    values_drop_na = TRUE
+  )
+
+```
+
+```{r plot all the imputed CKDEPI at once}
+# CKDEPI plot
+CKDEPI_plot <- ggplot(filtered_data_long, aes(x = TIME, y = CKDEPI, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME",
+       x = "Time (h)", y = "CKDEPI (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI_plot.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
+
+```
+
+```{r adapt the CREAT2 generating code a bit}
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  mutate(CREAT3 = CREAT) %>%
+  group_by(ID) %>%
+  mutate(CREAT3 = ifelse(is.na(CREAT3) & !is.na(lag(CREAT3)) & !is.na(lag(DV)) & (TIME - lag(TIME)) <= 3,
+                         lag(CREAT3), 
+                         ifelse(is.na(CREAT3) & !is.na(lead(CREAT3)) & !is.na(lead(DV)) & (lead(TIME) - TIME) <= 3,
+                                lead(CREAT3),
+                                CREAT3))) %>%
+  ungroup()
+
+# Count non-NA rows in CREAT3 column
+sum(!is.na(FlucTotIV_clean$CREAT3)) #864
+
+# Count non-NA rows in CREAT2 column
+sum(!is.na(FlucTotIV_clean$CREAT2)) #846
+# Miss 18 data points
+
+```
+
+```{r make the plot for CREAT3 instead of CREAT2 like above}
+
+FlucTotIV_clean$CREAT3_observed <- ifelse(is.na(FlucTotIV_clean$CREAT3), 0, 1)
+
+# Filter the rows with unique_CREAT > 1
+library(dplyr)
+
+filtered_data <- FlucTotIV_clean_investigate %>%
+  group_by(ID, OCC) %>%
+  filter(unique_CREAT > 1 & sum(CREAT3_observed == 0) > 0 & sum(CREAT3_observed == 1) > 0) %>%
+  ungroup()
+
+```
+
+##### Repeat the initial 100 imputations with additional predictor: dosing_interval - 190723
+
+###### Building imputation models based on CRRT status (whether a patient has at least 1 CRRT session), and the predictors that I will be using will be restricted to "TIME", "AMT", "RATE", "DV", "AGE", "BW2", "SEX", "LENGTH", "HOSPITAL", "OCC", "TAD", "CRRT", "CREAT2", "dosing_interval" 
+
+###### Firstly, I will create 2 datasets, crrt and no crrt datasets
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+
+```
+
+###### Then I build the imputation model for crrt dataset
+
+###### My first lm_crrt_1 model 
+
+```{r lm_crrt_1 linear model}
+lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT)+factor(HOSPITAL), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+
+```
+###### AIC of lm_crrt_1 model equals 352, adjusted R-squared is -0.02
+###### It is too bad!
+
+###### My second lm_crrt_2 model, which is lm_crrt_1 removing HOSPITAL
+```{r lm_crrt_2 linear model}
+lm_crrt_2 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_2)
+AIC(lm_crrt_2)
+```
+
+###### AIC of lm_crrt_2 model equals 347, adjusted R-squared is 0.014, which is better than lm_crrt_1
+
+###### My third lm_crrt_3 model, which is lm_crrt_2 removing OCC
+```{r lm_crrt_3 linear model}
+lm_crrt_3 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+TAD+factor(CRRT), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_3)
+AIC(lm_crrt_3)
+```
+###### AIC of lm_crrt_3 model equals 315.3, adjusted R-squared is 0.1405, which is better than lm_crrt_2
+
+##### My fourth lm_crrt_4 model, which is lm_crrt_3 removing TAD
+```{r lm_crrt_4 linear model}
+lm_crrt_4 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT) + dosing_interval, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_4)
+AIC(lm_crrt_4)
+
+```
+##### AIC of lm_crrt_4 model equals 313.3, adjusted R-squared is 0.150
+
+```{r lm_crrt_4 model diagnostic}
+qqnorm(residuals(lm_crrt_4), pch = 1, frame = FALSE)
+qqline(residuals(lm_crrt_4), col = "steelblue", lwd = 2)
+```
+###### It looks normal, normality assumption therefore holds.
+###### Therefore, lm_crrt_4 will be my final imputation model for crrt dataset. The predictors for final imputation crrt dataset model are TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT)
+
+```{r best imputation crrt dataset}
+impute_CREAT2_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT2")]
+```
