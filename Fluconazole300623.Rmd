@@ -299,6 +299,24 @@ FlucTotIV_clean <- FlucTotIV_clean %>%
 
 ```
 
+```{r convert data types,warning=FALSE}
+FlucTotIV_clean$AGE <- as.numeric(FlucTotIV_clean$AGE)
+FlucTotIV_clean$LENGTH <- as.numeric(FlucTotIV_clean$LENGTH)
+FlucTotIV_clean$BW2 <- as.numeric(FlucTotIV_clean$BW2)
+FlucTotIV_clean$DV <- as.numeric(FlucTotIV_clean$DV)
+FlucTotIV_clean$TIME <- as.numeric(FlucTotIV_clean$TIME)
+FlucTotIV_clean$CREAT_DOS_INT <- as.numeric(FlucTotIV_clean$CREAT_DOS_INT)
+FlucTotIV_clean$SEX <- as.factor(FlucTotIV_clean$SEX)
+FlucTotIV_clean$HOSPITAL <- as.factor(FlucTotIV_clean$HOSPITAL)
+FlucTotIV_clean$CRRT <- as.factor(FlucTotIV_clean$CRRT)
+FlucTotIV_clean$OCC <- as.factor(FlucTotIV_clean$OCC)
+FlucTotIV_clean$EVID <- as.factor(FlucTotIV_clean$EVID)
+FlucTotIV_clean$TAD <- as.numeric(FlucTotIV_clean$TAD)
+FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
+FlucTotIV_clean$RATE <- as.numeric(FlucTotIV_clean$RATE)
+
+```
+
 ```{r explore the missing data pattern after imputing}
 library(table1)
 table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
@@ -2160,17 +2178,17 @@ FlucTotIV_clean <- FlucTotIV_clean %>%
 # View the updated FlucTotIV_clean data
 View(FlucTotIV_clean)
 
-library(dplyr)
+#library(dplyr)
 
 # Sort the dataset by ID and OCC
-FlucTotIV_clean <- FlucTotIV_clean %>%
-  arrange(ID, OCC)
+#FlucTotIV_clean <- FlucTotIV_clean %>%
+  #arrange(ID, OCC)
 
 # Group by ID and OCC and fill missing CREAT2 with observed CREAT2
-FlucTotIV_clean <- FlucTotIV_clean %>%
-  group_by(ID, OCC) %>%
-  mutate(dosing_interval = ifelse(is.na(dosing_interval), na.omit(dosing_interval), dosing_interval)) %>%
-  ungroup()
+#FlucTotIV_clean <- FlucTotIV_clean %>%
+  #group_by(ID, OCC) %>%
+  #mutate(dosing_interval = ifelse(is.na(dosing_interval), na.omit(dosing_interval), dosing_interval)) %>%
+  #ungroup()
 
 # Fill all the remaining missing dosing_interval with 0
 FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
@@ -2644,6 +2662,7 @@ setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets an
 ggsave("CKDEPI10_plot.png", plot = CKDEPI10_plot, dpi = 300, width = 10, height = 8)
 
 ```
+
 ```{r use tidyr convert filtered_data from wide to long format}
 library(tidyr)
 
