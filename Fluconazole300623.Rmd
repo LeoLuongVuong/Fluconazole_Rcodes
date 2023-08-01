@@ -317,11 +317,433 @@ FlucTotIV_clean$RATE <- as.numeric(FlucTotIV_clean$RATE)
 
 ```
 
+###### Creating CREAT3 variable that captures more CREAT that are within 3 hours than CREAT2
+
+```{r adapt the CREAT2 generating code a bit}
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  mutate(CREAT3 = CREAT) %>%
+  group_by(ID) %>%
+  mutate(CREAT3 = ifelse(is.na(CREAT3) & !is.na(lag(CREAT3)) & !is.na(lag(DV)) & (TIME - lag(TIME)) <= 3,
+                         lag(CREAT3), 
+                         ifelse(is.na(CREAT3) & !is.na(lead(CREAT3)) & !is.na(lead(DV)) & (lead(TIME) - TIME) <= 3,
+                                lead(CREAT3),
+                                CREAT3))) %>%
+  ungroup()
+
+# Count non-NA rows in CREAT3 column
+sum(!is.na(FlucTotIV_clean$CREAT3)) #864 #Actually it is 850 - 310723
+
+# Count non-NA rows in CREAT2 column
+sum(!is.na(FlucTotIV_clean$CREAT2)) #846
+# Miss 18 data points
+# Miss 4 data points - 310723
+
+```
+
 ```{r explore the missing data pattern after imputing}
 library(table1)
 table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
        render.continuous=c(.="Median [Q1-Q3]"))
 # Missingness goes from 81.1 to 59.3%
+
+```
+
+###### Meeting Erwin 180723
+
+```{r meeting Erwin 180723}
+filtered_data_observed <- FlucTotIV_clean %>%
+group_by(ID, OCC) %>%
+filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
+filter(!is.na(CREAT))
+View(filtered_data_observed)
+
+# Plot CREAT over TIME for each ID and OCC pair
+plot_data <- filtered_data_observed %>%
+ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
+geom_line() +
+geom_point() +
+facet_wrap(~ ID + OCC, scales = "free") +
+labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
+x = "Time", y = "CREAT") +
+theme_minimal()
+plot_data
+
+# Plot CKDEPI over TIME for each ID and OCC pair
+plot_data <- filtered_data_observed %>%
+ggplot(aes(x = TIME, y = CKDEPI, group = ID, color = factor(ID))) +
+geom_line() +
+geom_point() +
+facet_wrap(~ ID + OCC, scales = "free") +
+labs(title = "CKDEPI over Time for ID and OCC pairs with unique_CREAT > 1",
+x = "Time", y = "CKDEPI") +
+theme_minimal()
+plot_data
+
+```
+
+```{r adding CRRT2 columns to the FlucTotIV_clean data}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean$CRRT2 <- ifelse(FlucTotIV_clean$ID %in% crrt_patients, 1, 0)
+
+```
+
+```{r investigate multiple imputed CREAT2 in the observed Scr dosing intervals with more than 1 observations}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+Fluc_NONMEM_mul_impute1<- read.csv("Fluc_NONMEM_mul_impute1.csv")
+
+#CREAT3_observed new column
+FlucTotIV_clean$CREAT3_observed <- ifelse(is.na(FlucTotIV_clean$CREAT3), 0, 1)
+
+FlucTotIV_clean_investigate<-FlucTotIV_clean
+
+# Adding CKDEPI01 to CKDEPI10 to FlucTotIV_clean_investigate dataset
+FlucTotIV_clean_investigate <- cbind(FlucTotIV_clean_investigate, Fluc_NONMEM_mul_impute1[, c("CKDEPI01", "CKDEPI02", "CKDEPI03", "CKDEPI04", "CKDEPI05", "CKDEPI06", "CKDEPI07", "CKDEPI08", "CKDEPI09", "CKDEPI10")])
+
+### Making the most important plots
+
+library(dplyr)
+library(ggplot2)
+
+filtered_data <- FlucTotIV_clean_investigate %>%
+  group_by(ID, OCC) %>%
+  filter(unique_CREAT > 1 & sum(CREAT2_observed == 0) > 0 & sum(CREAT2_observed == 1) > 0) %>%
+  ungroup()
+
+```
+
+```{r make the plot for CREAT3 instead of CREAT2 like above}
+
+# Filter the rows with unique_CREAT > 1
+library(dplyr)
+
+filtered_data <- FlucTotIV_clean_investigate %>%
+  group_by(ID, OCC) %>%
+  filter(unique_CREAT > 1 & sum(CREAT3_observed == 0) > 0 & sum(CREAT3_observed == 1) > 0) %>%
+  ungroup()
+
+```
+
+```{r use tidyr convert filtered_data from wide to long format}
+library(tidyr)
+
+# Eliminate former CKDEPI column
+filtered_data$CKDEPI<-NULL
+
+# This code is used to plot all the imputed values at once
+filtered_data_long <- filtered_data  %>%
+  pivot_longer(
+    cols = starts_with("CKDEPI"),
+    names_to = "Imputation",
+    names_prefix = "CKDEPI",
+    values_to = "CKDEPI",
+    values_drop_na = TRUE
+  )
+
+```
+
+```{r plot all the imputed CKDEPI at once}
+library(ggplot2)
+# CKDEPI plot
+CKDEPI_plot <- ggplot(filtered_data_long, aes(x = TIME, y = CKDEPI, color = factor(CREAT3_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME",
+       x = "Time (h)", y = "CKDEPI (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI_plot
+
+# Export the plot to a high-quality image
+# pmm method
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI_plot_pmm.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
+
+#Bayesian linear regression - norm method
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI_plot_norm.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
+
+```
+
+```{r plot all the imputed CKDEPI at once}
+library(ggplot2)
+# CKDEPI plot
+CKDEPI_plot <- ggplot(filtered_data_long, aes(x = TIME, y = CKDEPI, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME",
+       x = "Time (h)", y = "CKDEPI (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI_plot.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
+
+```
+
+###### Redundant code
+
+```{r plot of multiple observed CREAT2 over dosing intervals}
+filtered_data_observed <- FlucTotIV_clean %>%
+group_by(ID, OCC) %>%
+filter(n_distinct(CREAT2, na.rm = TRUE) > 1) %>%
+filter(!is.na(CREAT2))
+View(filtered_data_observed)
+
+```
+
+```{r adding new column CREAT2_observed}
+FlucTotIV_clean$CREAT2_observed <- ifelse(is.na(FlucTotIV_clean$CREAT2), 0, 1)
+
+```
+
+```{r redundant code}
+### Following this is a very long code
+
+# Plot CKDEPI01 over TIME, differentiating by CREAT2_observed
+CKDEPI01_plot<-ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) +  geom_point() +
+  facet_wrap(~ ID + OCC, scales="free") +
+  labs(title = "CKDEPI over TIME 01",
+       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m2") +
+  scale_color_discrete(name = "Creatinin Observed", labels = c("No", "Yes")) +
+  theme_minimal()
+
+# Load necessary libraries
+library(ggplot2)
+library(ggsave)
+
+# Create the plot 01
+CKDEPI01_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 01",
+       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI01_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI01_plot.png", plot = CKDEPI01_plot, dpi = 300, width = 10, height = 8)
+
+# Load necessary libraries
+library(ggplot2)
+library(ggsave)
+
+# Define the column names for CKDEPI02 to CKDEPI10
+ckdepi_cols <- paste0("CKDEPI", sprintf("%02d", 2:10))
+
+# Loop through the columns and create the plots
+for (col in ckdepi_cols) {
+  # Create the plot
+  plot <- ggplot(filtered_data, aes(x = TIME, y = .data[[col]], color = factor(CREAT2_observed))) +
+    geom_point() +
+    facet_wrap(~ ID + OCC, scales = "free") +
+    labs(title = paste("CKDEPI over TIME", substr(col, 7), sep = " "),
+         x = "Time (h)", y = paste(col, "(mL/min/1.73 m²)", sep = " "),
+         color = "Creatinin Observed") +
+    scale_color_discrete(labels = c("No", "Yes")) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+
+  # Print the plot
+  print(plot)
+
+  # Export the plot to a high-quality image
+  ggsave(paste0("CKDEPI", substr(col, 7), "_plot.png"), plot = plot, dpi = 300, width = 10, height = 8)
+}
+
+# CKDEPI 02
+CKDEPI02_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI02, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 02",
+       x = "Time (h)", y = "CKDEPI02 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI02_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI02_plot.png", plot = CKDEPI02_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI 03
+CKDEPI03_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI03, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 03",
+       x = "Time (h)", y = "CKDEPI03 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI03_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI03_plot.png", plot = CKDEPI03_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI 04
+CKDEPI04_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI04, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 04",
+       x = "Time (h)", y = "CKDEPI04 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI04_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI04_plot.png", plot = CKDEPI04_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI 05
+CKDEPI05_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI05, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 05",
+       x = "Time (h)", y = "CKDEPI05 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI05_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI05_plot.png", plot = CKDEPI05_plot, dpi = 300, width = 10, height = 8)
+
+CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 06",
+       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI06_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
+
+CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 06",
+       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI06_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
+
+#CKDEPI07
+CKDEPI07_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI07, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 07",
+       x = "Time (h)", y = "CKDEPI07 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI07_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI07_plot.png", plot = CKDEPI07_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI08
+CKDEPI08_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI08, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 08",
+       x = "Time (h)", y = "CKDEPI08 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI08_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI08_plot.png", plot = CKDEPI08_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI09
+CKDEPI09_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI09, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 09",
+       x = "Time (h)", y = "CKDEPI09 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI09_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI09_plot.png", plot = CKDEPI09_plot, dpi = 300, width = 10, height = 8)
+
+# CKDEPI10
+CKDEPI10_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI10, color = factor(CREAT2_observed))) + 
+  geom_point() +
+  facet_wrap(~ ID + OCC, scales = "free") +
+  labs(title = "CKDEPI over TIME 10",
+       x = "Time (h)", y = "CKDEPI10 (mL/min/1.73 m²)",
+       color = "Creatinin Observed") +  # Move color to the labs function
+  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
+# Print the plot
+CKDEPI10_plot
+
+# Export the plot to a high-quality image
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("CKDEPI10_plot.png", plot = CKDEPI10_plot, dpi = 300, width = 10, height = 8)
 
 ```
 
@@ -462,6 +884,30 @@ FlucTotIV_clean$RATE <- as.numeric(FlucTotIV_clean$RATE)
 
 ```
 
+##### Adding dosing interval as a predictor for the final imputation model in Fluconazole120423.Rmd file 180723
+
+```{r creating dosing_interval column}
+library(dplyr)
+
+# Create the dosing_interval column
+new_column <- FlucTotIV_clean %>% 
+  filter(!is.na(AMT)) %>%
+  arrange(ID, TIME) %>%
+  group_by(ID) %>%
+  mutate(dosing_interval = TIME - lag(TIME))
+
+# Merge the new column with the original FlucTotIV_clean data
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  left_join(new_column %>% select(ID, TIME, dosing_interval), by = c("ID", "TIME"))
+
+# View the updated FlucTotIV_clean data
+View(FlucTotIV_clean)
+
+# Fill all the remaining missing dosing_interval with 0
+FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
+
+```
+
 ###### Convert all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
 
 ```{r convert NAs to 0}
@@ -485,6 +931,7 @@ FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
 ```
 
 ##### Then I build the imputation model for crrt dataset
+##### These following codes are incorrect
 
 ###### My first lm_crrt_1 model (which include all the possible predictors as above)
 
@@ -2159,43 +2606,6 @@ table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
 
 ```
 
-##### Adding dosing interval as a predictor for the final imputation model in Fluconazole120423.Rmd file 180723
-
-```{r creating dosing_interval column}
-library(dplyr)
-
-# Create the dosing_interval column
-new_column <- FlucTotIV_clean %>% 
-  filter(!is.na(AMT)) %>%
-  arrange(ID, TIME) %>%
-  group_by(ID) %>%
-  mutate(dosing_interval = TIME - lag(TIME))
-
-# Merge the new column with the original FlucTotIV_clean data
-FlucTotIV_clean <- FlucTotIV_clean %>%
-  left_join(new_column %>% select(ID, TIME, dosing_interval), by = c("ID", "TIME"))
-
-# View the updated FlucTotIV_clean data
-View(FlucTotIV_clean)
-
-#library(dplyr)
-
-# Sort the dataset by ID and OCC
-#FlucTotIV_clean <- FlucTotIV_clean %>%
-  #arrange(ID, OCC)
-
-# Group by ID and OCC and fill missing CREAT2 with observed CREAT2
-#FlucTotIV_clean <- FlucTotIV_clean %>%
-  #group_by(ID, OCC) %>%
-  #mutate(dosing_interval = ifelse(is.na(dosing_interval), na.omit(dosing_interval), dosing_interval)) %>%
-  #ungroup()
-
-# Fill all the remaining missing dosing_interval with 0
-FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
-
-```
-
-
 ###### I decided to build imputation models based on CRRT status (whether a patient has at least 1 CRRT session), and the predictors that I will be using will be restricted to "TIME", "AMT", "RATE", "DV", "AGE", "BW2", "SEX", "LENGTH", "HOSPITAL", "OCC", "TAD", "CRRT", "CREAT2" 
 
 ##### Firstly, I will create 2 datasets, crrt and no crrt datasets
@@ -2247,43 +2657,89 @@ AIC(lm_crrt_3)
 lm_crrt_4 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT), data = FlucTotIV_clean_crrt)
 summary(lm_crrt_4)
 AIC(lm_crrt_4)
+
 ```
+
+```{r lm_crrt_4 linear model}
+lm_crrt_4 = lm(CREAT3 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT), data = FlucTotIV_clean_crrt)
+summary(lm_crrt_4)
+AIC(lm_crrt_4)
+
+```
+
 ##### AIC of lm_crrt_4 model equals 313.3, adjusted R-squared is 0.150
+##### AIC of lm_crrt_4 model equals 367.4, adjusted R-squared is 0.160
 
 ```{r lm_crrt_4 model diagnostic}
 qqnorm(residuals(lm_crrt_4), pch = 1, frame = FALSE)
 qqline(residuals(lm_crrt_4), col = "steelblue", lwd = 2)
+
 ```
+
 ###### It looks normal, normality assumption therefore holds.
 ###### Therefore, lm_crrt_4 will be my final imputation model for crrt dataset. The predictors for final imputation crrt dataset model are TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT)
 
 ```{r best imputation crrt dataset}
 impute_CREAT2_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT2")]
+
+```
+
+```{r best imputation crrt dataset}
+impute_CREAT3_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT3")]
+
+```
+
+###### Here I test lm_crrt_1 belows (the model with all the possible predictors)
+
+```{r best imputation crrt dataset}
+impute_CREAT3_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","TAD","HOSPITAL","CRRT","dosing_interval","CREAT3")]
+
 ```
 
 ##### After that, I build the imputation model for no-crrt dataset
 ###### My first lm_nocrrt_1 model (which include all the possible predictors as above, not including CRRT of course) 
+
 ```{r lm_nocrrt_1 linear model}
 lm_nocrrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
 summary(lm_nocrrt_1)
 AIC(lm_nocrrt_1)
+
 ```
+
 ###### AIC of lm_nocrrt_1 model equals 704, adjusted R-squared is 0.160
 
 ###### My second lm_nocrrt_2 model, which is lm_nocrrt_1 removing OCC
+
 ```{r lm_nocrrt_2 linear model}
 lm_nocrrt_2 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+TAD+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
 summary(lm_nocrrt_2)
 AIC(lm_nocrrt_2)
+
+```
+
+```{r lm_nocrrt_2 linear model}
+lm_nocrrt_2 = lm(CREAT3 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+TAD+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_2)
+AIC(lm_nocrrt_2)
+
 ```
 
 ###### AIC of lm_nocrrt_2 model equals 669.8, adjusted R-squared is 0.186, which is a lot better than lm_nocrrt_1
 
 ###### My third lm_nocrrt_3 model, which is lm_nocrrt_2 removing TAD
+
 ```{r lm_nocrrt_3 linear model}
 lm_nocrrt_3 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
 summary(lm_nocrrt_3)
 AIC(lm_nocrrt_3)
+
+```
+
+```{r lm_nocrrt_3 linear model}
+lm_nocrrt_3 = lm(CREAT3 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(HOSPITAL), data = FlucTotIV_clean_nocrrt)
+summary(lm_nocrrt_3)
+AIC(lm_nocrrt_3)
+
 ```
 
 ###### AIC of lm_nocrrt_3 model equals 669.3, adjusted R-squared is 0.185, which is a slightly worse than lm_nocrrt_2
@@ -2291,6 +2747,7 @@ AIC(lm_nocrrt_3)
 ```{r lm_nocrrt_2 model diagnostic}
 qqnorm(residuals(lm_nocrrt_2), pch = 1, frame = FALSE)
 qqline(residuals(lm_nocrrt_2), col = "steelblue", lwd = 2)
+
 ```
 
 ###### It looks quite normal, normality assumption therefore holds.
@@ -2298,9 +2755,23 @@ qqline(residuals(lm_nocrrt_2), col = "steelblue", lwd = 2)
 
 ```{r best imputation nocrrt dataset}
 impute_CREAT2_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT2")]
+
+```
+
+```{r best imputation nocrrt dataset}
+impute_CREAT3_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT3")]
+
+```
+
+###### Here I test lm_nocrrt_1 belows (the model with all the possible predictors)
+
+```{r best imputation crrt dataset}
+impute_CREAT3_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","TAD","HOSPITAL","dosing_interval","CREAT3")]
+
 ```
 
 ##### Then imputing crrt and non-crrt models
+
 ```{r for impute_CREAT2_crrt dataset}
 library(mice)
 set.seed(123)
@@ -2308,6 +2779,17 @@ imputed_CREAT2_crrt<- mice(impute_CREAT2_crrt, m = 10,maxit=20,printFlag = FALSE
 for (i in 1:10) {
         FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT2_crrt, action = i))$CREAT2
 }
+
+```
+
+```{r for impute_CREAT3_crrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT3_crrt<- mice(impute_CREAT3_crrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_crrt, action = i))$CREAT3
+}
+
 ```
 
 ```{r for impute_CREAT2_nocrrt dataset}
@@ -2317,13 +2799,26 @@ imputed_CREAT2_nocrrt<- mice(impute_CREAT2_nocrrt, m = 10,maxit=20,printFlag = F
 for (i in 1:10) {
         FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT2_nocrrt, action = i))$CREAT2
 }
+
 ```
+
+```{r for impute_CREAT3_nocrrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT3_nocrrt<- mice(impute_CREAT3_nocrrt, m = 10,maxit=20,printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_nocrrt, action = i))$CREAT3
+}
+
+```
+
 ###### The number of logged events is much lower than before (400 compared to 1400)
 
 ##### Then combining these two crrt and non-crrt imputed dataset
 ```{r combine FlucTotIV_clean}
 FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
 FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
 ```
 
 ##### Then check the imputation performation via diagnostic plots
@@ -2353,392 +2848,9 @@ ggplot(FlucTotIV_clean_imputed, aes(x = CREAT01)) +
 ###### This plot also looks better than before
 ###### I also made CREAT vs TIME plots (from Fluconazole.Rmd file), they look alright
 
-###### Meeting Erwin 180723
-
-```{r meeting Erwin 180723}
-filtered_data_observed <- FlucTotIV_clean %>%
-group_by(ID, OCC) %>%
-filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
-filter(!is.na(CREAT))
-View(filtered_data)
-# Plot CREAT over TIME for each ID and OCC pair
-plot_data <- filtered_data %>%
-ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
-geom_line() +
-geom_point() +
-facet_wrap(~ ID + OCC, scales = "free") +
-labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
-x = "Time", y = "CREAT") +
-theme_minimal()
-plot_data
-
-plot_data <- filtered_data %>%
-ggplot(aes(x = TIME, y = CKDEPI, group = ID, color = factor(ID))) +
-geom_line() +
-geom_point() +
-facet_wrap(~ ID + OCC, scales = "free") +
-labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
-x = "Time", y = "CREAT") +
-theme_minimal()
-plot_data
-
-```
-
-```{r adding CRRT2 columns to the FlucTotIV_clean data}
-library(dplyr)
-crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
-FlucTotIV_clean$CRRT2 <- ifelse(FlucTotIV_clean$ID %in% crrt_patients, 1, 0)
-
-```
-
-```{r plot of multiple observed CREAT2 over dosing intervals}
-filtered_data_observed <- FlucTotIV_clean %>%
-group_by(ID, OCC) %>%
-filter(n_distinct(CREAT2, na.rm = TRUE) > 1) %>%
-filter(!is.na(CREAT2))
-View(filtered_data_observed)
-
-```
-
-```{r adding new column CREAT2_observed}
-FlucTotIV_clean$CREAT2_observed <- ifelse(is.na(FlucTotIV_clean$CREAT2), 0, 1)
-
-```
-
-```{r investigate multiple imputed CREAT2 in the observed Scr dosing intervals with more than 1 observations}
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-Fluc_NONMEM_mul_impute1<- read.csv("Fluc_NONMEM_mul_impute1.csv")
-
-FlucTotIV_clean_investigate<-FlucTotIV_clean
-
-# Adding CKDEPI01 to CKDEPI10 to FlucTotIV_clean_investigate dataset
-FlucTotIV_clean_investigate <- cbind(FlucTotIV_clean_investigate, Fluc_NONMEM_mul_impute1[, c("CKDEPI01", "CKDEPI02", "CKDEPI03", "CKDEPI04", "CKDEPI05", "CKDEPI06", "CKDEPI07", "CKDEPI08", "CKDEPI09", "CKDEPI10")])
-
-### Making the most important plots
-
-library(dplyr)
-library(ggplot2)
-
-filtered_data <- FlucTotIV_clean_investigate %>%
-  group_by(ID, OCC) %>%
-  filter(unique_CREAT > 1 & sum(CREAT2_observed == 0) > 0 & sum(CREAT2_observed == 1) > 0) %>%
-  ungroup()
-
-### Following this is a very long code
-
-# Plot CKDEPI01 over TIME, differentiating by CREAT2_observed
-CKDEPI01_plot<-ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) +  geom_point() +
-  facet_wrap(~ ID + OCC, scales="free") +
-  labs(title = "CKDEPI over TIME 01",
-       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m2") +
-  scale_color_discrete(name = "Creatinin Observed", labels = c("No", "Yes")) +
-  theme_minimal()
-
-# Load necessary libraries
-library(ggplot2)
-library(ggsave)
-
-# Create the plot 01
-CKDEPI01_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 01",
-       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI01_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI01_plot.png", plot = CKDEPI01_plot, dpi = 300, width = 10, height = 8)
-
-# Load necessary libraries
-library(ggplot2)
-library(ggsave)
-
-# Define the column names for CKDEPI02 to CKDEPI10
-ckdepi_cols <- paste0("CKDEPI", sprintf("%02d", 2:10))
-
-# Loop through the columns and create the plots
-for (col in ckdepi_cols) {
-  # Create the plot
-  plot <- ggplot(filtered_data, aes(x = TIME, y = .data[[col]], color = factor(CREAT2_observed))) +
-    geom_point() +
-    facet_wrap(~ ID + OCC, scales = "free") +
-    labs(title = paste("CKDEPI over TIME", substr(col, 7), sep = " "),
-         x = "Time (h)", y = paste(col, "(mL/min/1.73 m²)", sep = " "),
-         color = "Creatinin Observed") +
-    scale_color_discrete(labels = c("No", "Yes")) +
-    theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5))
-
-  # Print the plot
-  print(plot)
-
-  # Export the plot to a high-quality image
-  ggsave(paste0("CKDEPI", substr(col, 7), "_plot.png"), plot = plot, dpi = 300, width = 10, height = 8)
-}
-
-# CKDEPI 02
-CKDEPI02_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI02, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 02",
-       x = "Time (h)", y = "CKDEPI02 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI02_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI02_plot.png", plot = CKDEPI02_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI 03
-CKDEPI03_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI03, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 03",
-       x = "Time (h)", y = "CKDEPI03 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI03_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI03_plot.png", plot = CKDEPI03_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI 04
-CKDEPI04_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI04, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 04",
-       x = "Time (h)", y = "CKDEPI04 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI04_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI04_plot.png", plot = CKDEPI04_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI 05
-CKDEPI05_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI05, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 05",
-       x = "Time (h)", y = "CKDEPI05 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI05_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI05_plot.png", plot = CKDEPI05_plot, dpi = 300, width = 10, height = 8)
-
-CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 06",
-       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI06_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
-
-CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 06",
-       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI06_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
-
-#CKDEPI07
-CKDEPI07_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI07, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 07",
-       x = "Time (h)", y = "CKDEPI07 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI07_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI07_plot.png", plot = CKDEPI07_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI08
-CKDEPI08_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI08, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 08",
-       x = "Time (h)", y = "CKDEPI08 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI08_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI08_plot.png", plot = CKDEPI08_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI09
-CKDEPI09_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI09, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 09",
-       x = "Time (h)", y = "CKDEPI09 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI09_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI09_plot.png", plot = CKDEPI09_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI10
-CKDEPI10_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI10, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 10",
-       x = "Time (h)", y = "CKDEPI10 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI10_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI10_plot.png", plot = CKDEPI10_plot, dpi = 300, width = 10, height = 8)
-
-```
-
-```{r use tidyr convert filtered_data from wide to long format}
-library(tidyr)
-
-# Eliminate former CKDEPI column
-filtered_data$CKDEPI<-NULL
-
-# This code is used to plot all the imputed values at once
-filtered_data_long <- filtered_data  %>%
-  pivot_longer(
-    cols = starts_with("CKDEPI"),
-    names_to = "Imputation",
-    names_prefix = "CKDEPI",
-    values_to = "CKDEPI",
-    values_drop_na = TRUE
-  )
-
-```
-
-```{r plot all the imputed CKDEPI at once}
-# CKDEPI plot
-CKDEPI_plot <- ggplot(filtered_data_long, aes(x = TIME, y = CKDEPI, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME",
-       x = "Time (h)", y = "CKDEPI (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI_plot.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
-
-```
-
-```{r adapt the CREAT2 generating code a bit}
-FlucTotIV_clean <- FlucTotIV_clean %>%
-  mutate(CREAT3 = CREAT) %>%
-  group_by(ID) %>%
-  mutate(CREAT3 = ifelse(is.na(CREAT3) & !is.na(lag(CREAT3)) & !is.na(lag(DV)) & (TIME - lag(TIME)) <= 3,
-                         lag(CREAT3), 
-                         ifelse(is.na(CREAT3) & !is.na(lead(CREAT3)) & !is.na(lead(DV)) & (lead(TIME) - TIME) <= 3,
-                                lead(CREAT3),
-                                CREAT3))) %>%
-  ungroup()
-
-# Count non-NA rows in CREAT3 column
-sum(!is.na(FlucTotIV_clean$CREAT3)) #864
-
-# Count non-NA rows in CREAT2 column
-sum(!is.na(FlucTotIV_clean$CREAT2)) #846
-# Miss 18 data points
-
-```
-
-```{r make the plot for CREAT3 instead of CREAT2 like above}
-
-FlucTotIV_clean$CREAT3_observed <- ifelse(is.na(FlucTotIV_clean$CREAT3), 0, 1)
-
-# Filter the rows with unique_CREAT > 1
-library(dplyr)
-
-filtered_data <- FlucTotIV_clean_investigate %>%
-  group_by(ID, OCC) %>%
-  filter(unique_CREAT > 1 & sum(CREAT3_observed == 0) > 0 & sum(CREAT3_observed == 1) > 0) %>%
-  ungroup()
-
-```
-
 ##### Repeat the initial 100 imputations with additional predictor: dosing_interval - 190723
 
-###### Building imputation models based on CRRT status (whether a patient has at least 1 CRRT session), and the predictors that I will be using will be restricted to "TIME", "AMT", "RATE", "DV", "AGE", "BW2", "SEX", "LENGTH", "HOSPITAL", "OCC", "TAD", "CRRT", "CREAT2", "dosing_interval" 
+###### Building imputation models based on CRRT status (whether a patient has at least 1 CRRT session), and the predictors that I will be using will be restricted to "TIME", "AMT", "RATE", "DV", "AGE", "BW2", "SEX", "LENGTH", "HOSPITAL", "OCC", "TAD", "CRRT", "CREAT3", "dosing_interval" 
 
 ###### Firstly, I will create 2 datasets, crrt and no crrt datasets
 
@@ -2760,14 +2872,35 @@ summary(lm_crrt_1)
 AIC(lm_crrt_1)
 
 ```
+
+```{r lm_crrt_1 linear model CREAT3}
+lm_crrt_1 = lm(CREAT3 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT)+factor(HOSPITAL) + dosing_interval, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+
+```
+
 ###### AIC of lm_crrt_1 model equals 352, adjusted R-squared is -0.02
 ###### It is too bad!
+
+###### AIC of lm_crrt_1 model equals 354, adjusted R-squared is -0.037
+###### It is too bad!
+
+###### I will choose this for imputing - 310723
 
 ###### My second lm_crrt_2 model, which is lm_crrt_1 removing HOSPITAL
 ```{r lm_crrt_2 linear model}
 lm_crrt_2 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT), data = FlucTotIV_clean_crrt)
 summary(lm_crrt_2)
 AIC(lm_crrt_2)
+
+```
+
+```{r lm_crrt_2 linear model CREAT3}
+lm_crrt_2 = lm(CREAT3 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(OCC)+TAD+factor(CRRT)+dosing_interval, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_2)
+AIC(lm_crrt_2)
+
 ```
 
 ###### AIC of lm_crrt_2 model equals 347, adjusted R-squared is 0.014, which is better than lm_crrt_1
@@ -2777,6 +2910,7 @@ AIC(lm_crrt_2)
 lm_crrt_3 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+TAD+factor(CRRT), data = FlucTotIV_clean_crrt)
 summary(lm_crrt_3)
 AIC(lm_crrt_3)
+
 ```
 ###### AIC of lm_crrt_3 model equals 315.3, adjusted R-squared is 0.1405, which is better than lm_crrt_2
 
@@ -2792,10 +2926,72 @@ AIC(lm_crrt_4)
 ```{r lm_crrt_4 model diagnostic}
 qqnorm(residuals(lm_crrt_4), pch = 1, frame = FALSE)
 qqline(residuals(lm_crrt_4), col = "steelblue", lwd = 2)
+
 ```
 ###### It looks normal, normality assumption therefore holds.
 ###### Therefore, lm_crrt_4 will be my final imputation model for crrt dataset. The predictors for final imputation crrt dataset model are TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT)
 
 ```{r best imputation crrt dataset}
 impute_CREAT2_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT2")]
+
 ```
+
+#### Building a linear/non-linear (mixed) effect model for imputation 310723
+
+```{r lm_crrt_1 linear model}
+lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT) + dosing_interval, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+# I will forget this for a moment and select norm method (bayesian normal imputation method) for imputing CREAT3
+
+```
+
+```{r best imputation crrt dataset}
+impute_CREAT3_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT3")]
+
+```
+
+```{r best imputation nocrrt dataset}
+impute_CREAT3_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT3")]
+
+```
+
+```{r for impute_CREAT3_crrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT3_crrt<- mice(impute_CREAT3_crrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_crrt, action = i))$CREAT3
+}
+
+```
+
+```{r for impute_CREAT3_nocrrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT3_nocrrt<- mice(impute_CREAT3_nocrrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_nocrrt, action = i))$CREAT3
+}
+
+```
+```{r combine FlucTotIV_clean}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Norm method surpasses pmm if the variable is close to normally distributed (cf. vanbuuren's book 6.3.1)
+
+```{r check if CREAT3 is normally distributed}
+hist(FlucTotIV_clean$CREAT3) #very skewed
+
+FlucTotIV_clean$Log_CREAT3<-log(FlucTotIV_clean$CREAT3) #log-transform to be normally distributed
+
+hist(FlucTotIV_clean$Log_CREAT3)
+
+shapiro.test(FlucTotIV_clean$Log_CREAT3)
+
+```
+
+
