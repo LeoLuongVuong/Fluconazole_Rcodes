@@ -340,47 +340,6 @@ sum(!is.na(FlucTotIV_clean$CREAT2)) #846
 
 ```
 
-```{r explore the missing data pattern after imputing}
-library(table1)
-table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
-       render.continuous=c(.="Median [Q1-Q3]"))
-# Missingness goes from 81.1 to 59.3%
-
-```
-
-###### Meeting Erwin 180723
-
-```{r meeting Erwin 180723}
-filtered_data_observed <- FlucTotIV_clean %>%
-group_by(ID, OCC) %>%
-filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
-filter(!is.na(CREAT))
-View(filtered_data_observed)
-
-# Plot CREAT over TIME for each ID and OCC pair
-plot_data <- filtered_data_observed %>%
-ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
-geom_line() +
-geom_point() +
-facet_wrap(~ ID + OCC, scales = "free") +
-labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
-x = "Time", y = "CREAT") +
-theme_minimal()
-plot_data
-
-# Plot CKDEPI over TIME for each ID and OCC pair
-plot_data <- filtered_data_observed %>%
-ggplot(aes(x = TIME, y = CKDEPI, group = ID, color = factor(ID))) +
-geom_line() +
-geom_point() +
-facet_wrap(~ ID + OCC, scales = "free") +
-labs(title = "CKDEPI over Time for ID and OCC pairs with unique_CREAT > 1",
-x = "Time", y = "CKDEPI") +
-theme_minimal()
-plot_data
-
-```
-
 ```{r adding CRRT2 columns to the FlucTotIV_clean data}
 library(dplyr)
 crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
@@ -388,9 +347,14 @@ FlucTotIV_clean$CRRT2 <- ifelse(FlucTotIV_clean$ID %in% crrt_patients, 1, 0)
 
 ```
 
-```{r investigate multiple imputed CREAT2 in the observed Scr dosing intervals with more than 1 observations}
+```{r investigate multiple imputed CREAT3 in the observed Scr dosing intervals with more than 1 observations}
+
+# When using pmm method
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
 Fluc_NONMEM_mul_impute1<- read.csv("Fluc_NONMEM_mul_impute1.csv")
+
+# If use another method, convert Fluc_NONMEM_mul_impute into Fluc_NONMEM_mul_impute1 first
+Fluc_NONMEM_mul_impute1<-Fluc_NONMEM_mul_impute
 
 #CREAT3_observed new column
 FlucTotIV_clean$CREAT3_observed <- ifelse(is.na(FlucTotIV_clean$CREAT3), 0, 1)
@@ -400,22 +364,10 @@ FlucTotIV_clean_investigate<-FlucTotIV_clean
 # Adding CKDEPI01 to CKDEPI10 to FlucTotIV_clean_investigate dataset
 FlucTotIV_clean_investigate <- cbind(FlucTotIV_clean_investigate, Fluc_NONMEM_mul_impute1[, c("CKDEPI01", "CKDEPI02", "CKDEPI03", "CKDEPI04", "CKDEPI05", "CKDEPI06", "CKDEPI07", "CKDEPI08", "CKDEPI09", "CKDEPI10")])
 
-### Making the most important plots
+### Making the dataset for CREAT3
 
 library(dplyr)
 library(ggplot2)
-
-filtered_data <- FlucTotIV_clean_investigate %>%
-  group_by(ID, OCC) %>%
-  filter(unique_CREAT > 1 & sum(CREAT2_observed == 0) > 0 & sum(CREAT2_observed == 1) > 0) %>%
-  ungroup()
-
-```
-
-```{r make the plot for CREAT3 instead of CREAT2 like above}
-
-# Filter the rows with unique_CREAT > 1
-library(dplyr)
 
 filtered_data <- FlucTotIV_clean_investigate %>%
   group_by(ID, OCC) %>%
@@ -463,9 +415,161 @@ CKDEPI_plot
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
 ggsave("CKDEPI_plot_pmm.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
 
-#Bayesian linear regression - norm method
+# Bayesian linear regression - norm method
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
 ggsave("CKDEPI_plot_norm.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
+
+```
+
+#### Building a linear/non-linear (mixed) effect model for imputation 310723
+
+##### Adding dosing interval as a predictor for the final imputation model in Fluconazole120423.Rmd file 180723
+
+```{r creating dosing_interval column}
+library(dplyr)
+
+# Create the dosing_interval column
+new_column <- FlucTotIV_clean %>% 
+  filter(!is.na(AMT)) %>%
+  arrange(ID, TIME) %>%
+  group_by(ID) %>%
+  mutate(dosing_interval = TIME - lag(TIME))
+
+# Merge the new column with the original FlucTotIV_clean data
+FlucTotIV_clean <- FlucTotIV_clean %>%
+  left_join(new_column %>% select(ID, TIME, dosing_interval), by = c("ID", "TIME"))
+
+# View the updated FlucTotIV_clean data
+View(FlucTotIV_clean)
+
+# Fill all the remaining missing dosing_interval with 0
+FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
+
+```
+
+###### Convert all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
+
+```{r convert NAs to 0}
+FlucTotIV_clean$TAD[is.na(FlucTotIV_clean$TAD)] <- 0
+FlucTotIV_clean$AMT[is.na(FlucTotIV_clean$AMT)] <- 0
+FlucTotIV_clean$RATE[is.na(FlucTotIV_clean$RATE)] <- 0
+
+```
+
+```{r convert DV to 0 where TIME equals 0}
+FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
+
+```
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+
+```
+
+```{r best imputation crrt dataset}
+impute_CREAT3_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT3")]
+
+```
+
+```{r best imputation nocrrt dataset}
+impute_CREAT3_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT3")]
+
+```
+
+```{r for impute_CREAT3_crrt dataset norm method}
+library(mice)
+set.seed(123)
+imputed_CREAT3_crrt<- mice(impute_CREAT3_crrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_crrt, action = i))$CREAT3
+}
+
+```
+
+```{r for impute_CREAT3_crrt dataset norm.predict method}
+# norm.predict - Linear regression, predicted values
+
+library(mice)
+set.seed(123)
+imputed_CREAT3_crrt<- mice(impute_CREAT3_crrt, m = 10,maxit=20,method="norm.predict",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_crrt, action = i))$CREAT3
+}
+
+```
+
+```{r for impute_CREAT3_nocrrt dataset norm method}
+library(mice)
+set.seed(123)
+imputed_CREAT3_nocrrt<- mice(impute_CREAT3_nocrrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_nocrrt, action = i))$CREAT3
+}
+
+```
+
+```{r for impute_CREAT3_nocrrt dataset norm.predict method}
+library(mice)
+set.seed(123)
+imputed_CREAT3_nocrrt<- mice(impute_CREAT3_nocrrt, m = 10,maxit=20,method="norm.predict",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_nocrrt, action = i))$CREAT3
+}
+
+```
+
+```{r combine FlucTotIV_clean}
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Norm method surpasses pmm if the variable is close to normally distributed (cf. vanbuuren's book 6.3.1)
+
+```{r check if CREAT3 is normally distributed}
+hist(FlucTotIV_clean$CREAT3) #very skewed
+
+FlucTotIV_clean$Log_CREAT3<-log(FlucTotIV_clean$CREAT3) #log-transform to be normally distributed
+
+hist(FlucTotIV_clean$Log_CREAT3)
+
+shapiro.test(FlucTotIV_clean$Log_CREAT3)
+
+```
+
+###### Meeting Erwin 180723
+
+```{r meeting Erwin 180723}
+filtered_data_observed <- FlucTotIV_clean %>%
+group_by(ID, OCC) %>%
+filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
+filter(!is.na(CREAT))
+View(filtered_data_observed)
+
+# Plot CREAT over TIME for each ID and OCC pair
+plot_data <- filtered_data_observed %>%
+ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
+geom_line() +
+geom_point() +
+facet_wrap(~ ID + OCC, scales = "free") +
+labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
+x = "Time", y = "CREAT") +
+theme_minimal()
+plot_data
+
+# Plot CKDEPI over TIME for each ID and OCC pair
+plot_data <- filtered_data_observed %>%
+ggplot(aes(x = TIME, y = CKDEPI, group = ID, color = factor(ID))) +
+geom_line() +
+geom_point() +
+facet_wrap(~ ID + OCC, scales = "free") +
+labs(title = "CKDEPI over Time for ID and OCC pairs with unique_CREAT > 1",
+x = "Time", y = "CKDEPI") +
+theme_minimal()
+plot_data
 
 ```
 
@@ -492,6 +596,34 @@ ggsave("CKDEPI_plot.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
 ```
 
 ###### Redundant code
+
+```{r lm_crrt_1 linear model}
+lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT) + dosing_interval, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_1)
+AIC(lm_crrt_1)
+# I will forget this for a moment and select norm method (bayesian normal imputation method) for imputing CREAT3
+
+```
+
+```{r explore the missing data pattern after imputing}
+library(table1)
+table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
+       render.continuous=c(.="Median [Q1-Q3]"))
+# Missingness goes from 81.1 to 59.3%
+
+```
+
+```{r make the plot for CREAT2 }
+
+# Filter the rows with unique_CREAT > 1
+library(dplyr)
+
+filtered_data <- FlucTotIV_clean_investigate %>%
+  group_by(ID, OCC) %>%
+  filter(unique_CREAT > 1 & sum(CREAT2_observed == 0) > 0 & sum(CREAT2_observed == 1) > 0) %>%
+  ungroup()
+
+```
 
 ```{r plot of multiple observed CREAT2 over dosing intervals}
 filtered_data_observed <- FlucTotIV_clean %>%
@@ -881,52 +1013,6 @@ FlucTotIV_clean$EVID <- as.factor(FlucTotIV_clean$EVID)
 FlucTotIV_clean$TAD <- as.numeric(FlucTotIV_clean$TAD)
 FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
 FlucTotIV_clean$RATE <- as.numeric(FlucTotIV_clean$RATE)
-
-```
-
-##### Adding dosing interval as a predictor for the final imputation model in Fluconazole120423.Rmd file 180723
-
-```{r creating dosing_interval column}
-library(dplyr)
-
-# Create the dosing_interval column
-new_column <- FlucTotIV_clean %>% 
-  filter(!is.na(AMT)) %>%
-  arrange(ID, TIME) %>%
-  group_by(ID) %>%
-  mutate(dosing_interval = TIME - lag(TIME))
-
-# Merge the new column with the original FlucTotIV_clean data
-FlucTotIV_clean <- FlucTotIV_clean %>%
-  left_join(new_column %>% select(ID, TIME, dosing_interval), by = c("ID", "TIME"))
-
-# View the updated FlucTotIV_clean data
-View(FlucTotIV_clean)
-
-# Fill all the remaining missing dosing_interval with 0
-FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
-
-```
-
-###### Convert all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
-
-```{r convert NAs to 0}
-FlucTotIV_clean$TAD[is.na(FlucTotIV_clean$TAD)] <- 0
-FlucTotIV_clean$AMT[is.na(FlucTotIV_clean$AMT)] <- 0
-FlucTotIV_clean$RATE[is.na(FlucTotIV_clean$RATE)] <- 0
-
-```
-
-```{r convert DV to 0 where TIME equals 0}
-FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
-
-```
-
-```{r crrt & non-crrt dataset, warning=FALSE}
-library(dplyr)
-crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
-FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
-FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
 
 ```
 
@@ -2936,61 +3022,322 @@ impute_CREAT2_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","S
 
 ```
 
-#### Building a linear/non-linear (mixed) effect model for imputation 310723
+### Vignette 01 - Ad hoc methods and the MICE algorithm
 
-```{r lm_crrt_1 linear model}
-lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT) + dosing_interval, data = FlucTotIV_clean_crrt)
-summary(lm_crrt_1)
-AIC(lm_crrt_1)
-# I will forget this for a moment and select norm method (bayesian normal imputation method) for imputing CREAT3
+##### Inspect the missing data pattern
 
-```
-
-```{r best imputation crrt dataset}
-impute_CREAT3_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT3")]
-
-```
-
-```{r best imputation nocrrt dataset}
-impute_CREAT3_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT3")]
-
-```
-
-```{r for impute_CREAT3_crrt dataset}
-library(mice)
+```{r using md.pattern function}
+require(mice)
+require(lattice)
 set.seed(123)
-imputed_CREAT3_crrt<- mice(impute_CREAT3_crrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
-for (i in 1:10) {
-        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_crrt, action = i))$CREAT3
-}
+md.pattern(FlucTotIV_clean)
+md.pattern(nhanes)
 
 ```
 
-```{r for impute_CREAT3_nocrrt dataset}
-library(mice)
+##### Impute the missing data in the nhanes dataset with mean imputation
+
+```{r mean imputation nhanes}
+imp <- mice(nhanes, method = "mean", m = 1, maxit = 1)
+#imp is a convention in mice function
+
+```
+
+##### Explore the imputed data with the complete() function
+
+```{r using complete function}
+complete(imp)
+
+# confirming the means of the variables
+colMeans(nhanes, na.rm = TRUE)
+
+# fitting a regression model where age is predicted from bmi
+
+fit <- with(nhanes, lm(age ~ bmi))
+summary(fit)
+
+# inspecting the regression model with the imputed data
+
+fit <- with(imp, lm(age ~ bmi))
+summary(fit)
+
+## nothing changed, but this is not surprising as variable bmi is somewhat normally distributed and we are just adding weight to the mean
+
+densityplot(nhanes$bmi)
+
+```
+
+##### Impute the missing data in the nhanes dataset with regression imputation
+
+```{r regression imputation - norm.predict}
+imp <- mice(nhanes, method = "norm.predict", m = 1, maxit = 1)
+
+## The argument method = "norm.predict" first fits a regression model for each observed value, based on the corresponding values in other variables and then imputes the missing values with the predicted values
+
+# Again, inspect the completed data and investigate the imputed data regression model
+
+complete(imp)
+
+##  we extrapolated (part of) the regression model for the observed data to missing data in bmi. In other words; the relation (read: information) gets stronger and we’ve obtained more observations
+
+```
+
+##### Impute the missing data in the nhanes dataset with stochastic regression imputation.
+
+```{r regression imputation - norm.nob}
+imp <- mice(nhanes, method = "norm.nob", m = 1, maxit = 1)
+
+##  This code imputes the missing values in the data set by the stochastic regression imputation method. The function does not incorporate the variability of the regression weights, so it is not ‘proper’ in the sense of Rubin (1987). For small samples, the variability of the imputed data will be underestimated.
+
+# Again, inspect the completed data and investigate the imputed data regression model
+
+complete(imp)
+
+##  We have once more obtained a more natural looking set of imputations, where instead of filling in the same bmi for all ages, we now take age (as well as hyp and chl) into account when imputing bmi. We also add a random error to allow for our imputations to be off the regression line.
+
+# Inspect the regression model with the imputed data
+
+fit <- with(imp, lm(age ~ bmi))
+summary(fit)
+
+```
+
+##### Re-run the stochastic imputation model with seed 123
+
+```{r regression imputation - norm.nob with seed}
+imp <- mice(nhanes, method = "norm.nob", m = 1, maxit = 1, seed = 123)
+fit <- with(imp, lm(age ~ bmi))
+summary(fit)
+
+```
+
+##### Impute the missing data in the nhanes dataset
+
+```{r using mice default for imputation}
+imp <- mice(nhanes)
+imp
+
+## The object imp contains a multiply imputed data set (of class mids). It encapsulates all information from imputing the nhanes dataset, such as the original data, the imputed values, the number of missing values, number of iterations, and so on.
+
+#  Obtaining an overview of the information stored in the object imp, using the attributes() function
+
+attributes(imp)
+
+# for example, the original data are stored as
+
+imp$data
+
+# and the imputations are stored as
+
+imp$imp
+
+```
+
+##### Extract the completed data
+
+```{r getting the third imputed data set}
+c3 <- complete(imp, 3) 
+md.pattern(c3)
+
+# The collection of the m imputed data sets can be exported by function complete() in long, broad and repeated formats
+
+c.long <- complete(imp, "long")  
+c.long
+
+c.broad <- complete(imp, "broad")
+c.broad
+
+```
+
+### Vignette 02 - Convergence and pooling (Algorithmic convergence and inference pooling)
+
+```{r require()) the necessary packages}
+require(mice)
+require(lattice)
 set.seed(123)
-imputed_CREAT3_nocrrt<- mice(impute_CREAT3_nocrrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
-for (i in 1:10) {
-        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT3_nocrrt, action = i))$CREAT3
-}
-
-```
-```{r combine FlucTotIV_clean}
-FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
-FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
 
 ```
 
-##### Norm method surpasses pmm if the variable is close to normally distributed (cf. vanbuuren's book 6.3.1)
+##### Vary the number of imputations.
 
-```{r check if CREAT3 is normally distributed}
-hist(FlucTotIV_clean$CREAT3) #very skewed
+```{r creating 3 imputations}
+imp <- mice(nhanes, m = 3, print=F)
 
-FlucTotIV_clean$Log_CREAT3<-log(FlucTotIV_clean$CREAT3) #log-transform to be normally distributed
+```
 
-hist(FlucTotIV_clean$Log_CREAT3)
+##### Change the predictor matrix
 
-shapiro.test(FlucTotIV_clean$Log_CREAT3)
+```{r predictor matrix}
+# The predictor matrix is a square matrix that specifies the variables that are used to impute each incomplete variable. Let us have a look at the predictor matrix that was used
+
+imp$pred
+
+## Each variable in the data has a row and a column in the predictor matrix. A value 1 indicates that the column variable was used to impute the row variable. For example, the 1 at entry [bmi, age] indicates that variable age was used to impute the incomplete variable bmi.
+
+# You can use mice() to give you the initial predictor matrix, and change it afterwards, without running the algorithm. This can be done by typing
+
+ini <- mice(nhanes, maxit=0, print=F)
+pred <- ini$pred
+pred
+
+## Altering the predictor matrix and returning it to the mice algorithm is very simple
+
+# The following code removes the variable hyp from the set of predictors, but still leaves it to be predicted by the other variables
+
+pred[ ,"hyp"] <- 0
+pred
+
+# Use the new predictor matrix in mice() as follows
+
+imp <- mice(nhanes, pred=pred, print=F)
+
+## There is a special function called quickpred() for a quick selection procedure of predictors which can be handy for datasets containing many variables. 
+
+# Selecting predictors according to data relations with a minimum correlation of ρ=.30 can be done by
+
+ini <- mice(nhanes, pred=quickpred(nhanes, mincor=.3), print=F)
+ini$pred
+
+## For large predictor matrices, it can be useful to export them to Microsoft Excel for easier configuration
+
+```
+
+##### Inspect the convergence of the algorithm
+
+```{r inspecting the convergence}
+## The mice() function implements an iterative Markov Chain Monte Carlo type of algorithm. Let us have a look at the trace lines generated by the algorithm to study convergence:
+
+imp <- mice(nhanes, print=F)
+plot(imp)
+
+## The algorithm uses random sampling, and therefore, the results will be (perhaps slightly) different if we repeat the imputations with different seeds. In order to get exactly the same result, use the seed argument
+
+imp <- mice(nhanes, seed=123, print=F)
+
+```
+
+##### Change the imputation method
+
+```{r check imputation method}
+# For each column, the algorithm requires a specification of the imputation method. To see which method was used by default
+
+imp$meth
+
+##  In reality, the data are better described a as mix of numerical and categorical data. 
+
+# Let us take a look at the nhanes2 data frame
+
+summary(nhanes2)
+
+# The structure of the data frame
+
+str(nhanes2)
+
+# Methods used to impute nhanes2 dataset
+
+imp <- mice(nhanes2, print=F)
+imp$meth
+
+## Notice that mice has set the imputation method for variable hyp to logreg, which implements multiple imputation by logistic regression.
+
+# An up-to-date overview of the methods in mice can be found by
+
+methods(mice)
+
+# change the imputation method for bmi to Bayesian normal linear regression imputation
+
+ini <- mice(nhanes2, maxit = 0)
+meth <- ini$meth
+meth
+
+meth["bmi"] <- "norm"
+meth
+
+# and run the imputations again.
+
+imp <- mice(nhanes2, meth = meth, print=F)
+
+# plot trace lines to study convergence
+
+plot(imp)
+
+```
+
+##### Extend the number of iterations
+
+```{r the number of iterations}
+## Though using just five iterations (the default) often works well in practice, we need to extend the number of iterations of the mice algorithm to confirm that there is ###---no trend and that the trace lines intermingle well---###
+
+# Increase the number of iterations to 40 by running 35 additional iterations using the mice.mids() function
+
+imp40 <- mice.mids(imp, maxit=35, print=F)
+plot(imp40)
+
+```
+
+##### Further diagnostic checking. Use function stripplot()
+
+```{r further diagnostic checking}
+## Generally, one would prefer for the imputed data to be plausible values, i.e. values that could have been observed if they had not been missing. In order to form an idea about plausibility, one may check the imputations and compare them against the observed values.
+
+## If we are willing to assume that the data are missing completely at random (MCAR), then the imputations should have the same distribution as the observed data.
+
+## In general, distributions may be different because the missing data are MAR (or even MNAR). However, very large discrepancies need to be screened.
+
+#  Let us plot the observed and imputed data of chl by
+
+stripplot(imp, chl~.imp, pch=20, cex=2)
+
+## The convention is to plot observed data in blue and the imputed data in red.
+
+## Since the PMM method draws imputations from the observed data, imputed values have the same gaps as in the observed data, and are always within the range of the observed data. 
+
+## The figure indicates that the distributions of the imputed and the observed values are similar.
+
+## Under MCAR, univariate distributions of the observed and imputed data are expected to be identical. Under MAR, they can be different, both in location and spread, but their multivariate distribution is assumed to be identical.
+
+# The following command creates a simpler version of the graph from the previous step and adds the plot for bmi.
+
+stripplot(imp)
+## Remember that bmi was imputed by Bayesian linear regression and (the range of) imputed values may therefore be different than observed values.
+
+```
+
+#####  Perform the following regression analysis on the multiply imputed data. Store the solution in object fit.
+
+```{r regression analysis on the multiply imputed data}
+## bmi=β0+β1chl+ϵ
+fit <- with(imp, lm(bmi ~ chl))
+fit
+
+## The fit object contains the regression summaries for each data set. The new object fit is actually of class mira (multiply imputed repeated analyses).
+
+class(fit)
+
+# Use the ls() function to what out what is in the object.
+
+ls(fit)
+
+# Suppose we want to find the regression model fitted to the second imputed data set. It can be found as
+
+summary(fit$analyses[[2]])
+
+```
+
+##### Pool the analyses from object fit.
+
+```{r pooling the analyses}
+## Pooling the repeated regression analyses
+pool.fit <- pool(fit)
+summary(pool.fit)
+
+## which gives the relevant pooled regression coefficients and parameters, as well as the fraction of information about the coefficients missing due to nonresponse (fmi) and the proportion of the variation attributable to the missing data (lambda).
+
+## The pooled fit object is of class mipo, which stands for "multiply imputed pooled object."
+
+## mice is able to pool many analyses from a variety of packages for you, as long as the functions adhere to the coef method convention in R.
+
+## For flexibility and in order to run custom pooling functions, mice also incorporates a function pool.scalar() which pools univariate estimates of m  repeated complete data analysis conform Rubin’s pooling rules (Rubin, 1987, paragraph 3.1)
 
 ```
 
