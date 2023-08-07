@@ -472,12 +472,18 @@ FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
 ```{r best imputation crrt dataset}
 impute_CREAT3_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT3")]
 
+impute_CREAT3_crrt_ID <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","CREAT3","ID")]
+
 ```
 
 ```{r best imputation nocrrt dataset}
 impute_CREAT3_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT3")]
 
+impute_CREAT3_nocrrt_ID <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","TAD","HOSPITAL","CREAT3","ID")]
+
 ```
+
+##### Performing imputation
 
 ```{r for impute_CREAT3_crrt dataset norm method}
 library(mice)
@@ -520,6 +526,8 @@ for (i in 1:10) {
 }
 
 ```
+
+##### Combining two imputed dataset
 
 ```{r combine FlucTotIV_clean}
 FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
@@ -594,6 +602,43 @@ setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets an
 ggsave("CKDEPI_plot.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
 
 ```
+
+###### Imputation using FCS-LMM method - mice.impute.2 l.pan function
+
+```{r Imputation of Missing Data in Chronic Hepatitis C Patient Utility Data - appendix}
+imp0 <- mice(impute_CREAT3_crrt_ID  , maxit=0)
+
+predmat <- imp0$predictorMatrix
+predmat["CREAT3","ID"] <- -2
+
+meth <- imp0$method
+meth["CREAT3"] <- "2l.pan"
+
+# use imputation to impute missing values
+library(mice)
+imputed_CREAT3_crrt <- mice::mice(data=impute_CREAT3_crrt_ID,method=meth,
+                       predictorMatrix=predmat,
+                       maxit=20,m=10,
+                       printFlag=TRUE)
+
+imp0 <- mice(impute_CREAT3_nocrrt_ID  , maxit=0)
+
+predmat <- imp0$predictorMatrix
+predmat["CREAT3","ID"] <- -2
+
+meth <- imp0$method
+meth["CREAT3"] <- "2l.pan"
+
+# use imputation to impute missing values
+
+imputed_CREAT3_nocrrt <- mice::mice(data=impute_CREAT3_nocrrt_ID,method=meth,
+                       predictorMatrix=predmat,
+                       maxit=20,m=10,
+                       printFlag=TRUE)
+
+
+```
+
 
 ###### Redundant code
 
