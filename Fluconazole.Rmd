@@ -642,6 +642,7 @@ ggplot(FlucTotIV_clean_imputed[!is.na(FlucTotIV_clean_imputed$DV),], aes(x=CREAT
 ```
 
 ### Check the distribution of imputed CREAT vs TIME
+
 ```{r CREAT per individual in each of 10 imputed CREAT}
 setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes/Plots/CREAT impute 01 dataset2")
 library(dplyr)

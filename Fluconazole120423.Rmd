@@ -2985,6 +2985,7 @@ B
 T<-W+(1+1/100)*B #0.04244056
 T
 ```
+
 ```{r confidence interval - T distribution}
 lambda<-(B+B/100)/T
 r=(lambda)/(1-lambda)
@@ -3106,6 +3107,7 @@ SE_CLcrrt<-sqrt(T_CLcrrt)
 RSE_CLcrrt<-SE_CLcrrt/CLcrrt*100 #8.46
 CLcrrt
 RSE_CLcrrt
+
 ```
 ##### For CLcrrt, the parameter estimate is 1.684 (8.46%)
 
@@ -3125,6 +3127,7 @@ lower_bound_CLcrrt<-CLcrrt-t_crit_CLcrrt*sqrt(T_CLcrrt) #1.40
 upper_bound_CLcrrt<-CLcrrt+t_crit_CLcrrt*sqrt(T_CLcrrt) #1.97
 lower_bound_CLcrrt
 upper_bound_CLcrrt
+
 ```
 
 #### Third of all, pooling CLr

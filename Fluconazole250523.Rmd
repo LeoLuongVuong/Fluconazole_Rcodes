@@ -5397,10 +5397,12 @@ PTA_pop_std_10_overall<-read.csv("PTA_pop_std_10_overall.csv")
 ```{r read my new dataframe, warning=FALSE}
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
 Pooledmodel_noCKDEPI_noadderr_BW<-read.csv("Pooling_Parameters_noCKDEPI_noadderr_BW.csv")
+
 ```
 
 ```{r create a new variable}
 Pooledmodel_noCKDEPI_noadderr_BW$Var<-(Pooledmodel_noCKDEPI_noadderr_BW$RSE*Pooledmodel_noCKDEPI_noadderr_BW$Estimates/100)^2
+
 ```
 
 
@@ -5419,6 +5421,7 @@ for (i in 1:10) {
 
 # Combine vectors into a data frame
 imputation_number <- data.frame(m, Theta, Total_Var)
+
 ```
 
 ```{r plot Theta over m, warning=FALSE}
@@ -5433,6 +5436,7 @@ Theta_over_m<-ggplot(imputation_number, aes(x = m)) +
   theme_bw() + theme(legend.position = "none")
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
 ggsave("theta_over_m_figs2.png", plot = Theta_over_m, dpi = 300, width = 8.27, height = 10.3)
+
 ```
 
 ```{r plot variance over m, warning=FALSE}
@@ -5446,6 +5450,7 @@ var_over_m<-ggplot(imputation_number, aes(x = m)) +
   theme_bw() + theme(legend.position = "none")
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
 ggsave("var_over_m_figs3.png", plot = var_over_m, dpi = 300, width = 8.27, height = 10.3)
+
 ```
 
 #### Table S3 appendix 040623

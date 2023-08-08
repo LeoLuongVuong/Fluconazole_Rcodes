@@ -548,58 +548,131 @@ shapiro.test(FlucTotIV_clean$Log_CREAT3)
 
 ```
 
-###### Meeting Erwin 180723
+###### Generating multiple CKDEPI over dosing intervals plot 070823
 
-```{r meeting Erwin 180723}
-filtered_data_observed <- FlucTotIV_clean %>%
+```{r calculating CKDEPI based on new equations}
+# 070823 code
+
+FlucTotIV_clean$CKDEPI <- ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT < 0.9,(142) * ((FlucTotIV_clean$CREAT/0.9)^-0.302) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT >= 0.9,(142) * ((FlucTotIV_clean$CREAT/0.9)^-1.200) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 2 & FlucTotIV_clean$CREAT < 0.7, (142) * ((FlucTotIV_clean$CREAT/0.7)^-0.241) * (0.9938^FlucTotIV_clean$AGE)*1.012, (142) * ((FlucTotIV_clean$CREAT/0.7)^-1.200) * (0.9938^FlucTotIV_clean$AGE)*1.012)))
+
+```
+
+```{r multiple CREAT over dosing intervals plot}
+library(dplyr)
+multiple_CKDEPI_int <- FlucTotIV_clean %>% #multiple CKDEPI values per a dosing interval dataset
 group_by(ID, OCC) %>%
 filter(n_distinct(CREAT, na.rm = TRUE) > 1) %>%
 filter(!is.na(CREAT))
-View(filtered_data_observed)
+View(multiple_CKDEPI_int)
 
 # Plot CREAT over TIME for each ID and OCC pair
-plot_data <- filtered_data_observed %>%
+plot_mul_CREAT <- multiple_CKDEPI_int %>%
 ggplot(aes(x = TIME, y = CREAT, group = ID, color = factor(ID))) +
 geom_line() +
 geom_point() +
 facet_wrap(~ ID + OCC, scales = "free") +
-labs(title = "CREAT over Time for ID and OCC pairs with unique_CREAT > 1",
+labs(title = "CREAT over Time for ID and OCC pairs with multiple CREAT values",
 x = "Time", y = "CREAT") +
 theme_minimal()
-plot_data
+plot_mul_CREAT
 
 # Plot CKDEPI over TIME for each ID and OCC pair
-plot_data <- filtered_data_observed %>%
+plot_mul_CKDEPI<- multiple_CKDEPI_int %>%
 ggplot(aes(x = TIME, y = CKDEPI, group = ID, color = factor(ID))) +
 geom_line() +
 geom_point() +
 facet_wrap(~ ID + OCC, scales = "free") +
-labs(title = "CKDEPI over Time for ID and OCC pairs with unique_CREAT > 1",
+labs(title = "CKDEPI over Time for ID and OCC pairs with multiple CREAT values",
 x = "Time", y = "CKDEPI") +
 theme_minimal()
-plot_data
+plot_mul_CKDEPI
+
+# Save the plot
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
+ggsave("multiple_CKDEPI_int.png", plot = plot_mul_CKDEPI, dpi = 300, width = 10, height = 8)
 
 ```
 
-```{r plot all the imputed CKDEPI at once}
-library(ggplot2)
-# CKDEPI plot
-CKDEPI_plot <- ggplot(filtered_data_long, aes(x = TIME, y = CKDEPI, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME",
-       x = "Time (h)", y = "CKDEPI (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
+###### Calculating delta_ckdepi within dosing intervals 070823
 
-# Print the plot
-CKDEPI_plot
+```{r delta CKDEPI of the maximum and minimum CKDEPI within a dosing interval}
+library(dplyr)
 
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI_plot.png", plot = CKDEPI_plot, dpi = 300, width = 10, height = 8)
+# Creating a dataset
+delta_CKDEPI <- multiple_CKDEPI_int %>%
+  group_by(ID, OCC) %>%
+  summarize(Delta_CKDEPI = max(CKDEPI, na.rm = TRUE) - min(CKDEPI, na.rm = TRUE))
+
+# calculate within dosing intervals variability (WIV)
+wiv<- mean(delta_CKDEPI$Delta_CKDEPI) #7.638913
+
+# View the resulting dataset
+View(delta_CKDEPI)
+
+wiv
+
+```
+
+###### Calculating delta_ckdepi between dosing intervals 070823
+
+```{r delta CKDEPI of the maximum and minimum CKDEPI between dosing interval per patient}
+
+library(dplyr)
+
+# between dosing interval variability in CKDEPI of a patient
+bet_int_var <- FlucTotIV_clean %>%
+  filter(unique_CREAT == 1) %>%
+  group_by(ID) %>%
+  summarize(delta_ckdepi = max(CKDEPI, na.rm = TRUE) - min(CKDEPI, na.rm = TRUE))
+
+# View the resulting bet_int_var dataset
+View(bet_int_var)
+
+# between interval variability (biv)
+biv<-mean(bet_int_var$delta_ckdepi[bet_int_var$delta_ckdepi!=0])
+biv #22.21876
+
+```
+
+###### Calculating delta_ckdepi between dosing intervals of imputed values 070823
+
+```{r read the first imputed dataset}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+Fluc_NONMEM_mul_impute_BW01 <- read.csv("Fluc_NONMEM_mul_impute_BW01.csv")
+
+```
+
+```{r creating unique_CREAT column for the 1st imputed dataset}
+Fluc_NONMEM_mul_impute_BW01 <- Fluc_NONMEM_mul_impute_BW01 %>%
+group_by(ID, OCC) %>%
+mutate(unique_CREAT = sum(CREAT!=-99)
+)
+
+```
+
+```{r delta CKDEPI of the maximum and minimum imputed CKDEPI between dosing intervals per patient}
+
+library(dplyr)
+
+# Creating bet_int_var_imputed dataset, calculating between dosing interval variation of the imputed CKDEPI values
+bet_int_var_imputed <- Fluc_NONMEM_mul_impute_BW01 %>%
+  filter(unique_CREAT == 0) %>%
+  group_by(ID) %>%
+  summarize(across(starts_with("CKDEPI"), ~ max(.) - min(.), na.rm = TRUE))
+
+# View the resulting dataset
+View(bet_int_var_imputed)
+
+# between interval variability (biv) of CKDEPI01 to CKDEPI10 within a single patient
+
+library(dplyr)
+
+# Calculate the average of CKDEPI01 to CKDEPI10 values excluding cells with 0
+average_excluding_zero <- bet_int_var_imputed %>%
+  summarize(across(starts_with("CKDEPI"), ~ mean(.[. != 0], na.rm = TRUE)))
+
+# View the resulting average
+View(average_excluding_zero)
 
 ```
 
@@ -1061,6 +1134,30 @@ FlucTotIV_clean$RATE <- as.numeric(FlucTotIV_clean$RATE)
 
 ```
 
+###### Convert all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
+
+```{r convert NAs to 0}
+FlucTotIV_clean$TAD[is.na(FlucTotIV_clean$TAD)] <- 0
+FlucTotIV_clean$AMT[is.na(FlucTotIV_clean$AMT)] <- 0
+FlucTotIV_clean$RATE[is.na(FlucTotIV_clean$RATE)] <- 0
+
+```
+
+```{r convert DV to 0 where TIME equals 0}
+FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
+
+```
+
+###### Creating crrt and non-crrt datasets
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+
+```
+
 ##### Then I build the imputation model for crrt dataset
 ##### These following codes are incorrect
 
@@ -1153,7 +1250,7 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","D
 
 ```
 
-##### Then imputing crrt and non-crrt models
+##### Then imputing crrt and non-crrt models using pmm default method
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset}
 library(mice)
@@ -1174,6 +1271,10 @@ for (i in 1:10) {
 }
 
 ```
+
+##### Then imputing crrt and non-crrt models using norm method (bayesian linear regression) - 080823
+
+
 
 #### Creat imputation datasets step 
 
@@ -1298,7 +1399,7 @@ subset <- subset %>%
 
 FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
 
-# Itlooks correct, perfect! 150723 14:03
+# It looks correct, perfect! 150723 14:03
 
 ```
 
@@ -3386,4 +3487,116 @@ summary(pool.fit)
 
 ```
 
+### Pooling parameters model with within dosing interval imputation 070823
 
+```{r set wd, warning=FALSE}
+setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
+Pooling_Parameters_noadderr<-read.csv("Pooling_Parameters_noadderr_070823.csv")
+
+```
+
+```{r calculate variance Theta Within and Between Subject variability for all}
+Pooling_Parameters_noadderr$Var<-(Pooling_Parameters_noadderr$RSE*Pooling_Parameters_noadderr$Estimates/100)^2
+
+CKDEPI<-mean(Pooling_Parameters_noadderr$Estimates[Pooling_Parameters_noadderr$Parameters == "CKDEPI"]) #0.4370929
+
+W_CKDEPI<-mean(Pooling_Parameters_noadderr$Var[Pooling_Parameters_noadderr$Parameters == "CKDEPI"]) #0.04594218 #within imputation variance
+
+B_CKDEPI<-var(Pooling_Parameters_noadderr$Estimates[Pooling_Parameters_noadderr$Parameters == "CKDEPI"]) #0.02165814 #between imputation variance
+
+CKDEPI
+W_CKDEPI
+B_CKDEPI
+
+```
+
+```{r total variance for all}
+m<-70
+T_CKDEPI<-W_CKDEPI+(1+1/m)*B_CKDEPI #0.06790972
+T_CKDEPI
+
+```
+
+```{r confidence interval - T distribution}
+m<-70 #number of imputations
+k<-12 #my model has 11 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+lambda_CKDEPI<-(B_CKDEPI+B_CKDEPI/m)/T_CKDEPI #proportion of variation attributable to the missing data
+r_CKDEPI<-(lambda_CKDEPI)/(1-lambda_CKDEPI) #relative increase in variance due to nonresponse
+v_old_CKDEPI<-(m-1)*(1+1/r_CKDEPI^2) #old degree of freedom
+v_com=n-k #degree of freedom of parameter estimate (CKDEPI) in the hypothetically complete data
+v_obs_CKDEPI=((v_com+1)/(v_com+3))*v_com*(1-lambda_CKDEPI) #observed data degrees of freedom that accounts for the missing information
+v_CKDEPI<-(v_old_CKDEPI*v_obs_CKDEPI)/(v_old_CKDEPI+v_obs_CKDEPI) #equals 85
+t_crit_CKDEPI <- qt(0.975, v_CKDEPI) #critical t-value with df 85 and alpha 0.05 (95%CI) #equals 1.988265
+lower_bound_CKDEPI<-CKDEPI-t_crit_CKDEPI*sqrt(T_CKDEPI) #-0.08103884
+upper_bound_CKDEPI<-CKDEPI+t_crit_CKDEPI*sqrt(T_CKDEPI) #0.9552246
+lower_bound_CKDEPI
+upper_bound_CKDEPI
+
+```
+
+#### Evaluate the adequacy of the number of imputations
+
+```{r read my new dataframe, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
+Pooledmodel_noCKDEPI_noadderr_BW<-read.csv("Pooling_Parameters_noadderr_070823.csv")
+
+```
+
+```{r create a new variable}
+Pooledmodel_noCKDEPI_noadderr_BW$Var<-(Pooledmodel_noCKDEPI_noadderr_BW$RSE*Pooledmodel_noCKDEPI_noadderr_BW$Estimates/100)^2
+
+```
+
+
+```{r calculate variance Theta Within and Between Subject variability for 70 imputations}
+# Create empty vectors
+m <- Theta <- W <- B <- Total_Var <- numeric(70)
+
+# Assign values to vectors using for loop
+for (i in 1:70) {
+  m[i] <- i
+  Theta[i] <- mean(Pooledmodel_noCKDEPI_noadderr_BW$Estimates[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  W[i] <- mean(Pooledmodel_noCKDEPI_noadderr_BW$Var[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  B[i] <- var(Pooledmodel_noCKDEPI_noadderr_BW$Estimates[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  Total_Var[i] <- W[i] + (1 + 1 / m[i]) * B[i]
+}
+
+# Combine vectors into a data frame
+imputation_number <- data.frame(m, Theta, Total_Var)
+
+```
+
+```{r plot Theta over m, warning=FALSE}
+library(ggplot2)
+Theta_over_m<-ggplot(imputation_number, aes(x = m)) +
+  geom_line(aes(y = Theta, color = "Parameter Estimate"), size = 1.0) +
+  geom_point(aes(y = Theta, color = "Parameter Estimate"), size = 2.5) + # Add points for Parameter Estimate
+  scale_color_manual(values = c("blue")) +
+  scale_x_continuous(breaks = seq(1, 70, 10), limits = c(1, 70))  +
+  labs(x = "Number of imputations", y = "CKDEPI effect Estimate", color = "Variables") +
+  theme_bw() + theme(legend.position = "none")
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+
+ggsave("theta_over_m_070823.png", plot = Theta_over_m, dpi = 300, width = 8.27, height = 10.3)
+
+#scale_y_continuous(breaks = seq(0.95, 1.01, 0.005), limits = c(0.95, 1.01))
+
+```
+
+```{r plot variance over m, warning=FALSE}
+var_over_m<-ggplot(imputation_number, aes(x = m)) +
+  geom_line(aes(y = Total_Var, color = "Total Variance"), size = 1.0) +
+  geom_point(aes(y = Total_Var, color = "Total Variance"), size = 2.5) + # Add points for Total Variance
+  scale_color_manual(values = c("orange")) +
+  scale_x_continuous(breaks = seq(2, 70, 10), limits = c(2, 70)) +
+  labs(x = "Number of imputations", y = "Total variance of BW effect estimate", color = "Variables") +
+  theme_bw() + theme(legend.position = "none")
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+
+ggsave("var_over_m_070823.png", plot = var_over_m, dpi = 300, width = 8.27, height = 10.3)
+
+        #scale_y_continuous(breaks = seq(0.035, 0.0405, 0.0005), limits = c(0.035, 0.0405))
+```
