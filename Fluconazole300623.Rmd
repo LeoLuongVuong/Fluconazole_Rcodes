@@ -449,8 +449,12 @@ FlucTotIV_clean <- FlucTotIV_clean %>%
 # View the updated FlucTotIV_clean data
 View(FlucTotIV_clean)
 
-# Fill all the remaining missing dosing_interval with 0
+# Fill all the remaining missing dosing_interval with 0 #Scenario 1
 FlucTotIV_clean$dosing_interval<-ifelse(is.na(FlucTotIV_clean$dosing_interval),0,FlucTotIV_clean$dosing_interval)
+
+# Instead of doing scenario 1, I will try scenario 2 where only the values of rows having TIME=0 be assigned to 0 - 140823
+
+FlucTotIV_clean$dosing_interval<-ifelse(FlucTotIV_clean$TIME==0,0,FlucTotIV_clean$dosing_interval)
 
 ```
 
@@ -1231,9 +1235,20 @@ lm_crrt_2 = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+CRRT+HOSP
 summary(lm_crrt_2)
 AIC(lm_crrt_2)
 
+## Model with dosing_interval as a predictor 140823
+
+# Testing 2nd scenario (cf above)
+lm_crrt_2_dos_int = lm(CREAT_DOS_INT ~ TIME+AMT+RATE+DV+AGE+BW2+SEX+LENGTH+OCC+CRRT+HOSPITAL+dosing_interval, data = FlucTotIV_clean_crrt)
+summary(lm_crrt_2_dos_int)
+AIC(lm_crrt_2_dos_int)
+
+# Very poor model with NA - Had better go with 1st scenario like before
+
 ```
 
 ###### AIC of lm_crrt_2 model equals 604, adjusted R-squared is 0.18, which is better than lm_crrt_1
+
+###### AIC of lm_crrt_2_dos_int model equals 606, adjusted R-squared is 0.18, which is slightly worse than lm_crrt_2 above - 140823
 
 ###### My third lm_crrt_3 model, which is lm_crrt_2 removing HOSPITAL
 
@@ -1582,6 +1597,10 @@ write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01_norm.csv",quote=F,row.names = FALSE)
 
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
+
 ```
 
 #### Second of all, my second imputed dataset (imputation 11th to 20th)
@@ -1795,7 +1814,12 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 ```
 
 ```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+## Model without dosing_interval as a predictor
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW02.csv",quote=F,row.names = FALSE)
+
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW02.csv",quote=F,row.names = FALSE)
 
 ```
@@ -2016,6 +2040,10 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW03.csv",quote=F,row.names = FALSE)
 
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW03.csv",quote=F,row.names = FALSE)
+
 ```
 
 #### Fourth of all, my fourth imputed dataset (imputation 31st to 40th)
@@ -2231,7 +2259,12 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 ```
 
 ```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+# Model without dosing_interval
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW04.csv",quote=F,row.names = FALSE)
+
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW04.csv",quote=F,row.names = FALSE)
 
 ```
@@ -2449,7 +2482,12 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 ```
 
 ```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+## Model without dosing_interval
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW05.csv",quote=F,row.names = FALSE)
+
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW05.csv",quote=F,row.names = FALSE)
 
 ```
@@ -2667,7 +2705,12 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 ```
 
 ```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+# Model without dosing_interval
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW06.csv",quote=F,row.names = FALSE)
+
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW06.csv",quote=F,row.names = FALSE)
 
 ```
@@ -2885,7 +2928,12 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 ```
 
 ```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+# Model without dosing_interval
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW07.csv",quote=F,row.names = FALSE)
+
+## Exporting NONMEM dataset for models with dosing_interval as a predictor - 140823
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW07.csv",quote=F,row.names = FALSE)
 
 ```
