@@ -435,6 +435,13 @@ new_column <- FlucTotIV_clean %>%
   group_by(ID) %>%
   mutate(dosing_interval = TIME - lag(TIME))
 
+# Create the dosing_interval column 080823
+new_column <- FlucTotIV_clean %>% 
+  filter(AMT!=0) %>%
+  arrange(ID, TIME) %>%
+  group_by(ID) %>%
+  mutate(dosing_interval = TIME - lag(TIME))
+
 # Merge the new column with the original FlucTotIV_clean data
 FlucTotIV_clean <- FlucTotIV_clean %>%
   left_join(new_column %>% select(ID, TIME, dosing_interval), by = c("ID", "TIME"))
@@ -634,7 +641,7 @@ biv #22.21876
 
 ```
 
-###### Calculating delta_ckdepi between dosing intervals of imputed values 070823
+###### Calculating delta_ckdepi between dosing intervals of imputed values (pmm method) 070823
 
 ```{r read the first imputed dataset}
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
@@ -673,6 +680,50 @@ average_excluding_zero <- bet_int_var_imputed %>%
 
 # View the resulting average
 View(average_excluding_zero)
+
+```
+
+###### Calculating delta_ckdepi between dosing intervals of imputed values (norm method) 080823
+
+```{r read the first imputed dataset}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+Fluc_NONMEM_mul_impute_BW01_norm <- read.csv("Fluc_NONMEM_mul_impute_BW01_norm.csv")
+
+```
+
+```{r creating unique_CREAT column for the 1st imputed dataset}
+Fluc_NONMEM_mul_impute_BW01_norm <- Fluc_NONMEM_mul_impute_BW01_norm %>%
+group_by(ID, OCC) %>%
+mutate(unique_CREAT = sum(CREAT!=-99)
+)
+
+```
+
+```{r delta CKDEPI of the maximum and minimum imputed CKDEPI between dosing intervals per patient}
+
+library(dplyr)
+
+# Creating bet_int_var_imputed dataset, calculating between dosing interval variation of the imputed CKDEPI values
+bet_int_var_imputed <- Fluc_NONMEM_mul_impute_BW01_norm %>%
+  filter(unique_CREAT == 0) %>%
+  group_by(ID) %>%
+  summarize(across(starts_with("CKDEPI"), ~ max(.) - min(.), na.rm = TRUE))
+
+# View the resulting dataset
+View(bet_int_var_imputed)
+
+# between interval variability (biv) of CKDEPI01 to CKDEPI10 within a single patient
+
+library(dplyr)
+
+# Calculate the average of CKDEPI01 to CKDEPI10 values excluding cells with 0
+average_excluding_zero <- bet_int_var_imputed %>%
+  summarize(across(starts_with("CKDEPI"), ~ mean(.[. != 0], na.rm = TRUE)))
+
+# View the resulting average
+View(average_excluding_zero)
+
+average_excluding_zero_norm<-average_excluding_zero
 
 ```
 
@@ -1210,6 +1261,13 @@ impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","
 
 ```
 
+```{r best imputation crrt dataset with dosing_interval}
+## Now I add dosing_interval as a predictor, and use pmm method 080823
+
+impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT","dosing_interval")]
+
+```
+
 ##### After that, I build the imputation model for no-crrt dataset
 
 ###### My first lm_nocrrt_1 model (which include all the possible predictors as above, not including CRRT of course)
@@ -1250,6 +1308,13 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","D
 
 ```
 
+```{r best imputation nocrrt dataset with dosing_interval}
+## Now I add dosing_interval as a predictor, and use pmm method 080823 (similar to above)
+
+impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT","dosing_interval")]
+
+```
+
 ##### Then imputing crrt and non-crrt models using pmm default method
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset}
@@ -1262,7 +1327,7 @@ for (i in 1:10) {
 
 ```
 
-```{r for impute_CREAT2_nocrrt dataset}
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset}
 library(mice)
 set.seed(123)
 imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,printFlag = FALSE)
@@ -1274,7 +1339,25 @@ for (i in 1:10) {
 
 ##### Then imputing crrt and non-crrt models using norm method (bayesian linear regression) - 080823
 
+```{r for impute_CREAT_DOS_INT_crrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt,m = 10,maxit=20,method="norm",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
 
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset}
+library(mice)
+set.seed(123)
+imputed_CREAT_DOS_INT_nocrrt<- mice(impute_CREAT_DOS_INT_nocrrt, m = 10,maxit=20,method="norm",printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
 
 #### Creat imputation datasets step 
 
@@ -1490,8 +1573,14 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 ```
 
 ```{r Fluc_NONMEM_mul_impute_BW01 dataset, warning=FALSE}
+
+## When using pmm method
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
 write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
+
+## When using norm method
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01_norm.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -3547,7 +3636,6 @@ Pooledmodel_noCKDEPI_noadderr_BW<-read.csv("Pooling_Parameters_noadderr_070823.c
 Pooledmodel_noCKDEPI_noadderr_BW$Var<-(Pooledmodel_noCKDEPI_noadderr_BW$RSE*Pooledmodel_noCKDEPI_noadderr_BW$Estimates/100)^2
 
 ```
-
 
 ```{r calculate variance Theta Within and Between Subject variability for 70 imputations}
 # Create empty vectors
