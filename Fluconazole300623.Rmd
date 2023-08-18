@@ -3736,3 +3736,52 @@ ggsave("var_over_m_070823.png", plot = var_over_m, dpi = 300, width = 8.27, heig
 
         #scale_y_continuous(breaks = seq(0.035, 0.0405, 0.0005), limits = c(0.035, 0.0405))
 ```
+
+### Pooling parameters model with within dosing interval imputation, dosing_interval as a predictor 150823
+
+```{r set wd, warning=FALSE}
+setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
+Pooling_Parameters_noadderr<-read.csv("Pooling_Parameters_noadderr_150823.csv")
+
+```
+
+```{r calculate variance Theta Within and Between Subject variability for all}
+Pooling_Parameters_noadderr$Var<-(Pooling_Parameters_noadderr$RSE*Pooling_Parameters_noadderr$Estimates/100)^2
+
+CKDEPI<-mean(Pooling_Parameters_noadderr$Estimates[Pooling_Parameters_noadderr$Parameters == "CKDEPI"]) #0.4874571
+
+W_CKDEPI<-mean(Pooling_Parameters_noadderr$Var[Pooling_Parameters_noadderr$Parameters == "CKDEPI"]) #0.04430767 #within imputation variance
+
+B_CKDEPI<-var(Pooling_Parameters_noadderr$Estimates[Pooling_Parameters_noadderr$Parameters == "CKDEPI"]) #0.01876773 #between imputation variance
+
+CKDEPI
+W_CKDEPI
+B_CKDEPI
+
+```
+
+```{r total variance for all}
+m<-70
+T_CKDEPI<-W_CKDEPI+(1+1/m)*B_CKDEPI #0.06334351
+T_CKDEPI
+
+```
+
+```{r confidence interval - T distribution}
+m<-70 #number of imputations
+k<-12 #my model has 11 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+lambda_CKDEPI<-(B_CKDEPI+B_CKDEPI/m)/T_CKDEPI #proportion of variation attributable to the missing data
+r_CKDEPI<-(lambda_CKDEPI)/(1-lambda_CKDEPI) #relative increase in variance due to nonresponse
+v_old_CKDEPI<-(m-1)*(1+1/r_CKDEPI^2) #old degree of freedom
+v_com=n-k #degree of freedom of parameter estimate (CKDEPI) in the hypothetically complete data
+v_obs_CKDEPI=((v_com+1)/(v_com+3))*v_com*(1-lambda_CKDEPI) #observed data degrees of freedom that accounts for the missing information
+v_CKDEPI<-(v_old_CKDEPI*v_obs_CKDEPI)/(v_old_CKDEPI+v_obs_CKDEPI) #equals 90.68601
+t_crit_CKDEPI <- qt(0.975, v_CKDEPI) #critical t-value with df 85 and alpha 0.05 (95%CI) #equals 1.98647
+lower_bound_CKDEPI<-CKDEPI-t_crit_CKDEPI*sqrt(T_CKDEPI) #-0.0125003
+upper_bound_CKDEPI<-CKDEPI+t_crit_CKDEPI*sqrt(T_CKDEPI) #0.9874146
+lower_bound_CKDEPI
+upper_bound_CKDEPI
+
+```
+
