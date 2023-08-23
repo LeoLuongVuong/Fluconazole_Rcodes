@@ -3785,3 +3785,63 @@ upper_bound_CKDEPI
 
 ```
 
+### Making diagnostic plot of CREAT over TIME observed vs imputed
+
+#### Reading imputed dataset
+
+```{r reading first imputed dataset}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int")
+Fluc_NONMEM_mul_impute_BW01 <- read.csv("Fluc_NONMEM_mul_impute_BW01.csv")
+
+```
+
+
+```{r CREAT over TIME imputed vs non-imputed}
+## Creat_Imputed variable indicating whether CREAT is missing or imputed
+## Value of 1 means yes, and 0 means no
+
+Fluc_NONMEM_mul_impute_BW01$Creat_Imputed<-ifelse(Fluc_NONMEM_mul_impute_BW01$CREAT==-99,1,0)
+
+## Making 10 plots with trend lines
+
+library(ggplot2)
+
+# Create a list to store the plots
+plot_list <- list()
+
+# Loop through CKDEPI01 to CKDEPI10
+for (i in 1:10) {
+  # Create a plot for each CKDEPI variable
+  plot <- ggplot(Fluc_NONMEM_mul_impute_BW01, aes(x = TIME, y = get(paste0("CKDEPI", sprintf("%02d", i))), color = factor(Creat_Imputed))) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +  # Add trend line
+    labs(title = paste("CKDEPI", sprintf("%02d", i), "over Time"),
+         x = "Time (h)", y = paste("eGFR (ml/min/1.73m2)"),
+         color = "Creatinine Imputed") + 
+    scale_color_discrete(labels = c("No", "Yes")) +
+    theme_minimal() +
+        scale_y_continuous(breaks = seq(0, 300, by = 20), limits = c(0, 300),expand = c(0,0)) +
+        scale_x_continuous(breaks = seq(0, 1100, by = 50), limits = c(0, 1100),expand = c(0,0)) +
+        theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+  ) 
+  
+  # Add the plot to the list
+  plot_list[[i]] <- plot
+}
+
+# Print and export the plots
+for (i in 1:10) {
+  # Print the plot
+  print(plot_list[[i]])
+  
+  # Export the plot to a high-quality image
+  setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int/diagnostic_plots")  
+  ggsave(paste("CKDEPI", sprintf("%02d", i), "_plot.png"), plot = plot_list[[i]], dpi = 300, width = 12, height = 8)
+}
+
+```
+
+
