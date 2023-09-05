@@ -3871,9 +3871,13 @@ FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
 
 ```{r crrt & non-crrt dataset, warning=FALSE}
 library(dplyr)
+
+#FlucTotIV_clean$CRRT<-as.factor(FlucTotIV_clean$CRRT)
+#FlucTotIV_clean$ID<-as.factor(FlucTotIV_clean$ID)
+        
 crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
-FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients$ID)
-FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients$ID))
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
 
 ```
 
@@ -3896,15 +3900,21 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","D
 ```
 
 ##### Then imputing crrt and non-crrt models using mice.impute.2l.pan function
+
 ##### These codes are based on page 112 Imputation of Missing Data in Chronic Hepatitis C Patient Utility Data thesis - University of Guelph
 
-```{r for impute_CREAT_DOS_INT_crrt dataset}
+##### Also based on chapter 7.6 Van Buuren's book
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method}
+
+# Adapted 050923
+
 library(mice)
 library(pan)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
-predmat["CREAT_DOS_INT", "ID"] <- -2
+predmat["CREAT_DOS_INT","HOSPITAL"] <- -2
 meth <- imp0$method
 meth["CREAT_DOS_INT"] <- "2l.pan"
 maxit <- 20
@@ -3916,13 +3926,16 @@ for (i in 1:10) {
 
 ```
 
-```{r for imputed_CREAT_DOS_INT_nocrrt dataset}
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pan method}
+
+# Adapted 050923
+
 library(mice)
 library(pan)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
-predmat["CREAT_DOS_INT", "ID"] <- -2
+predmat["CREAT_DOS_INT", "HOSPITAL"] <- -2
 meth <- imp0$method
 meth["CREAT_DOS_INT"] <- "2l.pan"
 maxit <- 20
@@ -3934,5 +3947,213 @@ for (i in 1:10) {
 
 ```
 
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method}
+
+# Adapted 050923
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","HOSPITAL"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method}
+
+# Adapted 050923
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "HOSPITAL"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.norm method}
+
+# Adapted 050923
+
+library(mice)
+library(pan)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","HOSPITAL"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.norm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.norm method}
+
+# Adapted 050923
+
+library(mice)
+library(pan)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "HOSPITAL"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.norm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
 ##### Helpful mice tutorial from youtube - 050923
+
+```{r youtube mice tutorial}
+# install.packages("mice")
+
+library(mice)
+
+# Using the dataset nhanes2 from the mice package
+?nhanes2
+summary(nhanes2)
+str(nhanes2) #important: factor variables defined as factors!
+md.pattern(nhanes2)
+
+# Applying to my dataset
+md.pattern(impute_CREAT_DOS_INT_crrt)
+# Interpreting the plot
+# - 49 obs where only CREAT_DOS_INT is missing
+# - 125 obs where only DV is missing
+# - 160 obs with both DV and CREAT_DOS_INT missing
+# - 89 obs with BW2, LENGTH and CREAT_DOS_INT missing
+# - 85 obs with BW2, LENGTH, DV and CREAT_DOS_INT missing
+
+# Ordinary regression with listwise exclusion of missing data
+reg.fit <- lm(chl ~ bmi + hyp, data=nhanes2)
+summary(reg.fit)
+
+# Multiple Imputation with the mice package
+#=========================================
+
+# 1. Imputation
+
+imp.data <- mice (data = nhanes2, m = 50, maxit = 10, seed = 12345, print=FALSE)
+
+# My imputation
+
+set.seed(123)
+imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,printFlag = FALSE)
+
+# Imputation diagnostic
+densityplot(imputed_CREAT_DOS_INT_crrt) #good plot
+stripplot(imputed_CREAT_DOS_INT_crrt) #good plot
+
+# checking if convergence is achieved
+plot(imputed_CREAT_DOS_INT_crrt) # no trend is observed, good!
+
+# Which methods were used?
+imp.data
+imputed_CREAT_DOS_INT_crrt # all pmm method
+
+#====================================================
+
+# (If you want to look at the imputed datasets:
+imp.datasets <- complete(imp.data, "long")
+imp.datasets
+# In general, I don't do this)
+
+# (If we wanted to change the method
+methods(mice)
+my.method <- c("2l.pan")
+
+imp.data2 <- mice (data = nhanes2, m = 50, maxit = 10, seed = 12345,
+method = my.method, print=FALSE) 
+imp.data2
+
+imputed_CREAT_DOS_INT_crrt2<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,method=my.method,seed=123,printFlag = FALSE)
+
+# But we use the default values from above for the rest of the tutorial)
+
+#====================================================
+
+# Checking if convergence was achieved
+plot(imp.data)
+
+# Checking if imputed data has plausible values
+stripplot(imp.data)
+
+#(for the changed estimation method:)
+stripplot(imp.data2)
+
+# 2. Regression for each imputed dataset
+
+reg.fit.mi <- with(imp.data, lm(chl ~ bmi + hyp))
+
+reg.fit.mi
+
+# Regression result for e.g. 3rd imputation
+summary(reg.fit.mi$analyses[[3]])
+
+# 3. Pooling the results
+
+pool.fit <- pool(reg.fit.mi)
+
+summary(pool.fit)
+
+# Technical information:
+pool.fit
+?mipo
+
+#R2
+
+pool.r2 <- pool.r.squared(reg.fit.mi)
+
+pool.r2
+
+# Comparison with listwise exclusion (again)
+summary(reg.fit)
+
+```
+
+##### Two level imputation chapter 7.6 - Van Buuren's book - 050923
+
+```{r trying 2l.pmm and 2l.pan (2l.norm) method as in the example}
+library(mice)
+library(miceadds) #to use 2l.pmm model
+
+methods <- c("2l.pan", "2l.pmm")
+result <- vector("list", length(methods))
+names(result) <- methods
+for (meth in methods) {
+ impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
+  pred <- make.predictorMatrix(impute_CREAT_DOS_INT_crrt)
+  pred["HOSPITAL"] <- -2
+  result[[meth]] <- mice(impute_CREAT_DOS_INT_crrt, pred = pred, meth = meth,
+                         m = 10, maxit = 20, print = FALSE, seed = 123)
+}
+
+```
 
