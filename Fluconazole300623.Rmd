@@ -633,11 +633,32 @@ wiv
 
 library(dplyr)
 
+# Creating a CKDEPI_DOS_INT column 060923
+
+FlucTotIV_clean$CKDEPI_DOS_INT <- ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT_DOS_INT < 0.9,(142) * ((FlucTotIV_clean$CREAT_DOS_INT/0.9)^-0.302) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT_DOS_INT >= 0.9,(142) * ((FlucTotIV_clean$CREAT_DOS_INT/0.9)^-1.200) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 2 & FlucTotIV_clean$CREAT_DOS_INT < 0.7, (142) * ((FlucTotIV_clean$CREAT_DOS_INT/0.7)^-0.241) * (0.9938^FlucTotIV_clean$AGE)*1.012, (142) * ((FlucTotIV_clean$CREAT_DOS_INT/0.7)^-1.200) * (0.9938^FlucTotIV_clean$AGE)*1.012)))
+
+# Creating a CKDEPI column 060923
+
+FlucTotIV_clean$CKDEPI <- ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT < 0.9,(142) * ((FlucTotIV_clean$CREAT/0.9)^-0.302) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 1 & FlucTotIV_clean$CREAT >= 0.9,(142) * ((FlucTotIV_clean$CREAT/0.9)^-1.200) * (0.9938^FlucTotIV_clean$AGE), ifelse(FlucTotIV_clean$SEX == 2 & FlucTotIV_clean$CREAT < 0.7, (142) * ((FlucTotIV_clean$CREAT/0.7)^-0.241) * (0.9938^FlucTotIV_clean$AGE)*1.012, (142) * ((FlucTotIV_clean$CREAT/0.7)^-1.200) * (0.9938^FlucTotIV_clean$AGE)*1.012)))
+
+
 # between dosing interval variability in CKDEPI of a patient
 bet_int_var <- FlucTotIV_clean %>%
   filter(unique_CREAT == 1) %>%
   group_by(ID) %>%
   summarize(delta_ckdepi = max(CKDEPI, na.rm = TRUE) - min(CKDEPI, na.rm = TRUE))
+
+# between dosing interval variability in CKDEPI_DOS_INT of a patient
+bet_int_var <- FlucTotIV_clean %>%
+  filter(unique_CREAT == 1) %>%
+  group_by(ID) %>%
+  summarize(delta_ckdepi = max(CKDEPI_DOS_INT, na.rm = TRUE) - min(CKDEPI_DOS_INT, na.rm = TRUE))
+
+# between dosing interval variability in CKDEPI_DOS_INT of a patient, excluding unique_CREAT == 0 (or we can consider within a patient as a whole)
+
+bet_int_var <- FlucTotIV_clean %>%
+  group_by(ID) %>%
+  summarize(delta_ckdepi = max(CKDEPI_DOS_INT, na.rm = TRUE) - min(CKDEPI_DOS_INT, na.rm = TRUE))
 
 # View the resulting bet_int_var dataset
 View(bet_int_var)
@@ -645,6 +666,10 @@ View(bet_int_var)
 # between interval variability (biv)
 biv<-mean(bet_int_var$delta_ckdepi[bet_int_var$delta_ckdepi!=0])
 biv #22.21876
+
+# between interval variability (biv) aggregating on ID
+biv<-mean(bet_int_var$delta_ckdepi[bet_int_var$delta_ckdepi!=0&bet_int_var$delta_ckdepi!=-Inf])
+biv #22.2518
 
 ```
 
@@ -674,6 +699,11 @@ bet_int_var_imputed <- Fluc_NONMEM_mul_impute_BW01 %>%
   group_by(ID) %>%
   summarize(across(starts_with("CKDEPI"), ~ max(.) - min(.), na.rm = TRUE))
 
+# only group by ID
+bet_int_var_imputed <- Fluc_NONMEM_mul_impute_BW01 %>%
+  group_by(ID) %>%
+  summarize(across(starts_with("CKDEPI"), ~ max(.) - min(.), na.rm = TRUE))
+
 # View the resulting dataset
 View(bet_int_var_imputed)
 
@@ -685,8 +715,19 @@ library(dplyr)
 average_excluding_zero <- bet_int_var_imputed %>%
   summarize(across(starts_with("CKDEPI"), ~ mean(.[. != 0], na.rm = TRUE)))
 
+# Adding a term to exclude NaN, but it seems not necessary! - 060923
+average_excluding_zero <- bet_int_var_imputed %>%
+  summarize(across(starts_with("CKDEPI"), ~ mean(.[. != 0 & !is.nan(.)], na.rm = TRUE)))
+
 # View the resulting average
 View(average_excluding_zero)
+
+# exporting average_excluding_zero of 2l.pan method 050923
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets")
+#write.csv(average_excluding_zero, "BIV_2lpan_ID.csv",quote=F,row.names = FALSE) #BIV = Between Interval Variability
+#write.csv(average_excluding_zero, "BIV_2lpmm_ID.csv",quote=F,row.names = FALSE)
+write.csv(average_excluding_zero, "BIV_2lpmm_ID_metric.csv",quote=F,row.names = FALSE)
+write.csv(average_excluding_zero, "BIV_2lnorm.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -767,291 +808,6 @@ imputed_CREAT3_nocrrt <- mice::mice(data=impute_CREAT3_nocrrt_ID,method=meth,
                        maxit=20,m=10,
                        printFlag=TRUE)
 
-
-```
-
-
-###### Redundant code
-
-```{r lm_crrt_1 linear model}
-lm_crrt_1 = lm(CREAT2 ~ TIME+AMT+RATE+DV+AGE+BW2+factor(SEX)+LENGTH+factor(CRRT) + dosing_interval, data = FlucTotIV_clean_crrt)
-summary(lm_crrt_1)
-AIC(lm_crrt_1)
-# I will forget this for a moment and select norm method (bayesian normal imputation method) for imputing CREAT3
-
-```
-
-```{r explore the missing data pattern after imputing}
-library(table1)
-table1(~ CREAT + CREAT_DOS_INT | HOSPITAL, data=FlucTotIV_clean,
-       render.continuous=c(.="Median [Q1-Q3]"))
-# Missingness goes from 81.1 to 59.3%
-
-```
-
-```{r make the plot for CREAT2 }
-
-# Filter the rows with unique_CREAT > 1
-library(dplyr)
-
-filtered_data <- FlucTotIV_clean_investigate %>%
-  group_by(ID, OCC) %>%
-  filter(unique_CREAT > 1 & sum(CREAT2_observed == 0) > 0 & sum(CREAT2_observed == 1) > 0) %>%
-  ungroup()
-
-```
-
-```{r plot of multiple observed CREAT2 over dosing intervals}
-filtered_data_observed <- FlucTotIV_clean %>%
-group_by(ID, OCC) %>%
-filter(n_distinct(CREAT2, na.rm = TRUE) > 1) %>%
-filter(!is.na(CREAT2))
-View(filtered_data_observed)
-
-```
-
-```{r adding new column CREAT2_observed}
-FlucTotIV_clean$CREAT2_observed <- ifelse(is.na(FlucTotIV_clean$CREAT2), 0, 1)
-
-```
-
-```{r redundant code}
-### Following this is a very long code
-
-# Plot CKDEPI01 over TIME, differentiating by CREAT2_observed
-CKDEPI01_plot<-ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) +  geom_point() +
-  facet_wrap(~ ID + OCC, scales="free") +
-  labs(title = "CKDEPI over TIME 01",
-       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m2") +
-  scale_color_discrete(name = "Creatinin Observed", labels = c("No", "Yes")) +
-  theme_minimal()
-
-# Load necessary libraries
-library(ggplot2)
-library(ggsave)
-
-# Create the plot 01
-CKDEPI01_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI01, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 01",
-       x = "Time (h)", y = "CKDEPI01 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI01_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI01_plot.png", plot = CKDEPI01_plot, dpi = 300, width = 10, height = 8)
-
-# Load necessary libraries
-library(ggplot2)
-library(ggsave)
-
-# Define the column names for CKDEPI02 to CKDEPI10
-ckdepi_cols <- paste0("CKDEPI", sprintf("%02d", 2:10))
-
-# Loop through the columns and create the plots
-for (col in ckdepi_cols) {
-  # Create the plot
-  plot <- ggplot(filtered_data, aes(x = TIME, y = .data[[col]], color = factor(CREAT2_observed))) +
-    geom_point() +
-    facet_wrap(~ ID + OCC, scales = "free") +
-    labs(title = paste("CKDEPI over TIME", substr(col, 7), sep = " "),
-         x = "Time (h)", y = paste(col, "(mL/min/1.73 m²)", sep = " "),
-         color = "Creatinin Observed") +
-    scale_color_discrete(labels = c("No", "Yes")) +
-    theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5))
-
-  # Print the plot
-  print(plot)
-
-  # Export the plot to a high-quality image
-  ggsave(paste0("CKDEPI", substr(col, 7), "_plot.png"), plot = plot, dpi = 300, width = 10, height = 8)
-}
-
-# CKDEPI 02
-CKDEPI02_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI02, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 02",
-       x = "Time (h)", y = "CKDEPI02 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI02_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI02_plot.png", plot = CKDEPI02_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI 03
-CKDEPI03_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI03, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 03",
-       x = "Time (h)", y = "CKDEPI03 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI03_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI03_plot.png", plot = CKDEPI03_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI 04
-CKDEPI04_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI04, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 04",
-       x = "Time (h)", y = "CKDEPI04 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI04_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI04_plot.png", plot = CKDEPI04_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI 05
-CKDEPI05_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI05, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 05",
-       x = "Time (h)", y = "CKDEPI05 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI05_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI05_plot.png", plot = CKDEPI05_plot, dpi = 300, width = 10, height = 8)
-
-CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 06",
-       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI06_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
-
-CKDEPI06_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI06, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 06",
-       x = "Time (h)", y = "CKDEPI06 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI06_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI06_plot.png", plot = CKDEPI06_plot, dpi = 300, width = 10, height = 8)
-
-#CKDEPI07
-CKDEPI07_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI07, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 07",
-       x = "Time (h)", y = "CKDEPI07 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI07_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI07_plot.png", plot = CKDEPI07_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI08
-CKDEPI08_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI08, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 08",
-       x = "Time (h)", y = "CKDEPI08 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI08_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI08_plot.png", plot = CKDEPI08_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI09
-CKDEPI09_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI09, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 09",
-       x = "Time (h)", y = "CKDEPI09 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI09_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI09_plot.png", plot = CKDEPI09_plot, dpi = 300, width = 10, height = 8)
-
-# CKDEPI10
-CKDEPI10_plot <- ggplot(filtered_data, aes(x = TIME, y = CKDEPI10, color = factor(CREAT2_observed))) + 
-  geom_point() +
-  facet_wrap(~ ID + OCC, scales = "free") +
-  labs(title = "CKDEPI over TIME 10",
-       x = "Time (h)", y = "CKDEPI10 (mL/min/1.73 m²)",
-       color = "Creatinin Observed") +  # Move color to the labs function
-  scale_color_discrete(labels = c("No", "Yes")) +  # Move labels to scale_color_discrete
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))  # Center the title
-
-# Print the plot
-CKDEPI10_plot
-
-# Export the plot to a high-quality image
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Imputed datasets")
-ggsave("CKDEPI10_plot.png", plot = CKDEPI10_plot, dpi = 300, width = 10, height = 8)
 
 ```
 
@@ -1483,7 +1239,7 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_co
 ##### This is not something to worry about, I was worry for nothing!
 ##### I was wrong again! Average CREAT per ID and OCC, where CREAT_DOS_INT is missing
 
-```{r average accross ID and OCC where CREAT_DOS_INT is missing}
+```{r average accross ID and OCC where CREAT_DOS_INT is missing, warning=FALSE}
 library(dplyr)
 
 # Create a subset of rows with missing CREAT_DOS_INT
@@ -1523,38 +1279,47 @@ Fluc_NONMEM_mul_impute$CKDEPI01 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc
 
 ```{r CKDEPI 02}
 Fluc_NONMEM_mul_impute$CKDEPI02 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT02 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT02 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT02/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 03}
 Fluc_NONMEM_mul_impute$CKDEPI03 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT03 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT03 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT03/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 04}
 Fluc_NONMEM_mul_impute$CKDEPI04 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT04 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT04 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT04/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 05}
 Fluc_NONMEM_mul_impute$CKDEPI05 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT05 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT05 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT05/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 06}
 Fluc_NONMEM_mul_impute$CKDEPI06 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT06 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT06 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT06/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 07}
 Fluc_NONMEM_mul_impute$CKDEPI07 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT07 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT07 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT07/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 08}
 Fluc_NONMEM_mul_impute$CKDEPI08 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT08 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT08 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT08/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 09}
 Fluc_NONMEM_mul_impute$CKDEPI09 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT09 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT09 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT09/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r CKDEPI 10}
 Fluc_NONMEM_mul_impute$CKDEPI10 <- ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 < 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-0.302) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 1 & Fluc_NONMEM_mul_impute$CREAT10 >= 0.9,(142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.9)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE), ifelse(Fluc_NONMEM_mul_impute$SEX == 2 & Fluc_NONMEM_mul_impute$CREAT10 < 0.7, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-0.241) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012, (142) * ((Fluc_NONMEM_mul_impute$CREAT10/0.7)^-1.200) * (0.9938^Fluc_NONMEM_mul_impute$AGE)*1.012)))
+
 ```
 
 ```{r median of observed CKDEPI}
@@ -3858,7 +3623,7 @@ write.csv(FlucTotIV_clean, "FlucTotIV_clean.csv",quote=F,row.names = FALSE)
 
 ```
 
-```{r reading new FlucTotIV_clean dataset}
+```{r reading new FlucTotIV_clean dataset, warning=FALSE}
 ### Doing this on 01/09/23
 setwd("D:/Projects/Fluconazole PopPK KU Leuven/Fluconazol_project/My datasets and R codes")
 FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
@@ -3871,10 +3636,6 @@ FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
 
 ```{r crrt & non-crrt dataset, warning=FALSE}
 library(dplyr)
-
-#FlucTotIV_clean$CRRT<-as.factor(FlucTotIV_clean$CRRT)
-#FlucTotIV_clean$ID<-as.factor(FlucTotIV_clean$ID)
-        
 crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
 FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients)
 FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
@@ -3887,7 +3648,7 @@ FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
 impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
 
 ### I add ID to the model in accordance with the thesis I cited below 280823
-impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT","ID")]
+impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
 
 ```
 
@@ -3895,7 +3656,16 @@ impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("TIME","RATE","AMT","DV","
 impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT")]
 
 ### I add ID to the model in accordance with the thesis I cited below 280823
-impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT","ID")]
+impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+```
+
+##### Another imputation strategy - 1 dataset for all - 060923
+
+```{r best imputation overall dataset}
+
+### I add ID to the model in accordance with the thesis I cited below 280823
+impute_CREAT_DOS_INT <- FlucTotIV_clean[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
 
 ```
 
@@ -3905,7 +3675,7 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("TIME","RATE","AMT","D
 
 ##### Also based on chapter 7.6 Van Buuren's book
 
-```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method}
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method, warning=FALSE}
 
 # Adapted 050923
 
@@ -3926,7 +3696,7 @@ for (i in 1:10) {
 
 ```
 
-```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pan method}
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pan method, warning=FALSE}
 
 # Adapted 050923
 
@@ -3947,7 +3717,7 @@ for (i in 1:10) {
 
 ```
 
-```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method}
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
 
 # Adapted 050923
 
@@ -3967,7 +3737,7 @@ for (i in 1:10) {
 
 ```
 
-```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method}
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method, warning=FALSE}
 
 # Adapted 050923
 
@@ -3996,7 +3766,7 @@ library(pan)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
-predmat["CREAT_DOS_INT","HOSPITAL"] <- -2
+predmat["CREAT_DOS_INT","ID"] <- -2
 meth <- imp0$method
 meth["CREAT_DOS_INT"] <- "2l.norm"
 maxit <- 20
@@ -4025,6 +3795,117 @@ nimp <- 10
 imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
 for (i in 1:10) {
         FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Clustering inside ID, instead of HOSPITAL as above
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method, warning=FALSE}
+
+# Adapted 050923
+
+library(mice)
+library(pan)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+# Can check with density and scatter plot
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pan method, warning=FALSE}
+
+# Adapted 050923
+
+library(mice)
+library(pan)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
+
+# Adapted 050923
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method, warning=FALSE}
+
+# Adapted 050923
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Imputation overall dataset 060923
+
+```{r for impute_CREAT_DOS_INT dataset 2l.pmm method,warning=FALSE}
+
+# Adapted 050923
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT <- mice::mice(data=impute_CREAT_DOS_INT,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+
+FlucTotIV_clean_imputed <- FlucTotIV_clean
+
+for (i in 1:10) {
+        FlucTotIV_clean_imputed[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT, action = i))$CREAT_DOS_INT
 }
 
 ```
@@ -4069,6 +3950,7 @@ imputed_CREAT_DOS_INT_crrt<- mice(impute_CREAT_DOS_INT_crrt, m = 10,maxit=20,pri
 
 # Imputation diagnostic
 densityplot(imputed_CREAT_DOS_INT_crrt) #good plot
+densityplot(imputed_CREAT_DOS_INT_nocrrt)
 stripplot(imputed_CREAT_DOS_INT_crrt) #good plot
 
 # checking if convergence is achieved
@@ -4157,3 +4039,68 @@ for (meth in methods) {
 
 ```
 
+##### Diagnostic plots for MI 130923
+
+```{r density plot}
+library(ggplot2) 
+ggplot(FlucTotIV_clean_imputed, aes(x = CREAT01)) + 
+        geom_density(aes(fill = "CREAT01"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT02, fill = "CREAT02"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT03, fill = "CREAT03"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT04, fill = "CREAT04"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT05, fill = "CREAT05"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT06, fill = "CREAT06"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT07, fill = "CREAT07"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT08, fill = "CREAT08"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT09, fill = "CREAT09"), alpha = 0.5) + 
+        geom_density(aes(x = CREAT10, fill = "CREAT10"), alpha = 0.5) +
+        geom_density(aes(x = CREAT, fill = "CREAT"), alpha = 0.5) +
+        scale_fill_manual(name = "Variable", values = c("CREAT01" = "blue", "CREAT02" = "lightblue", "CREAT03" = "green",
+                                                        "CREAT04" = "orange", "CREAT05" = "purple", "CREAT06" = "pink",
+                                                        "CREAT07" = "brown", "CREAT08" = "gray", "CREAT09" = "black",
+                                                        "CREAT10" = "yellow","CREAT" = "red")) +
+        xlab("Creatinine Levels") +
+        ylab("Density") +
+        ggtitle("Density Plot of 10 imputed creatinin vs the original creatinin")
+
+```
+
+##### Consider DV as a level 1 predictor for CREAT and adds its mean value to the imputation model 130923
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+predmat["CREAT_DOS_INT","DV"] <- 3
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method, warning=FALSE}
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+predmat["CREAT_DOS_INT","DV"] <- 3
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
