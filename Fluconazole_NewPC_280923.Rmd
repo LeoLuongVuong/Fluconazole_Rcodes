@@ -1,0 +1,372 @@
+---
+title: "Fluconazole_NewPC_280923"
+author: "Leo"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+### Doing MI - Clustering with ID - 2l.pan method - fixing negative values to 0 280923
+
+##### Reading the source dataset
+
+```{r reading new FlucTotIV_clean dataset, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes")
+FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
+
+```
+
+##### Converting variables into appropriate types
+
+```{r convert data types}
+
+FlucTotIV_clean$SEX <- as.factor(FlucTotIV_clean$SEX)
+FlucTotIV_clean$HOSPITAL <- as.factor(FlucTotIV_clean$HOSPITAL)
+FlucTotIV_clean$CRRT <- as.factor(FlucTotIV_clean$CRRT)
+FlucTotIV_clean$OCC <- as.factor(FlucTotIV_clean$OCC)
+FlucTotIV_clean$EVID <- as.factor(FlucTotIV_clean$EVID)
+
+```
+
+##### Converting all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
+
+```{r convert NAs to 0}
+
+FlucTotIV_clean$TAD[is.na(FlucTotIV_clean$TAD)] <- 0
+FlucTotIV_clean$AMT[is.na(FlucTotIV_clean$AMT)] <- 0
+FlucTotIV_clean$RATE[is.na(FlucTotIV_clean$RATE)] <- 0
+
+```
+
+```{r convert DV to 0 where TIME equals 0}
+
+FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
+
+```
+
+##### Creating crrt and non-crrt datasets
+
+```{r crrt & non-crrt dataset, warning=FALSE}
+
+library(dplyr)
+crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
+FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients)
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
+
+```
+
+##### Best imputation model for crrt and non-crrt datasets
+
+```{r best imputation crrt dataset}
+
+### I add ID to the model in accordance with the thesis I cited below 280823
+impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+```
+
+```{r best imputation nocrrt dataset}
+
+### I add ID to the model in accordance with the thesis I cited below 280823
+impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+```
+
+##### Then imputing crrt and non-crrt models using mice.impute.2l.pan function, clustering inside ID
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method, warning=FALSE}
+
+# Adapted 050923
+
+library(mice)
+library(pan)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+# Can check with density and scatter plot
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pan method, warning=FALSE}
+
+# Adapted 050923
+
+library(mice)
+library(pan)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+##### Adding BW and LENGTH to crrt and non-crrt datasets
+
+```{r adding BW to the FlucTotIV_clean_crrt dataset}
+
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
+
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
+}
+
+```
+
+```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
+
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
+}
+
+```
+
+```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
+
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
+}
+
+```
+
+##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+
+```{r combine into FlucTotIV_clean_imputed}
+
+FlucTotIV_clean_imputed <- rbind(FlucTotIV_clean_crrt, FlucTotIV_clean_nocrrt)
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed$ID, FlucTotIV_clean_imputed$HOSPITAL, FlucTotIV_clean_imputed$TIME), ]
+
+```
+
+##### Now average BW and LENGTH per each ID 
+
+```{r Integrating mean values to the original dataset}
+# Creating subset of hospital 3 and 4 patients
+subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
+
+# Creating new variables for mean values
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+subset[, bw_mean_cols] <- NA
+subset[, length_mean_cols] <- NA
+
+# Filling mean values per ID
+for (i in unique(subset$ID)) {
+  for (j in 1:10) {
+    bw_col <- paste0("BW", sprintf("%02d", 1:10))
+    length_col <- paste0("LENGTH", sprintf("%02d", 1:10))
+    bw_mean_col <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+    length_mean_col <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+    subset[subset$ID == i, bw_mean_col[j]] <- mean(subset[subset$ID == i, ][[bw_col[j]]], na.rm = TRUE)
+    subset[subset$ID == i, length_mean_col[j]] <- mean(subset[subset$ID == i, ][[length_col[j]]], na.rm = TRUE)
+  }
+}
+
+# Integrating mean values to the original dataset
+FlucTotIV_clean_imputed[, bw_mean_cols] <- NA
+FlucTotIV_clean_imputed[, length_mean_cols] <- NA
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, bw_mean_cols] <- subset[, bw_mean_cols]
+FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$ID %in% subset$ID, length_mean_cols] <- subset[, length_mean_cols]
+
+```
+
+```{r Replace values of 20 columns with mean values in hospital 3 and 4}
+# Replace values of 20 columns with mean values in hospital 3 and 4
+for (j in 1:10) {
+  bw_col <- paste0("BW", sprintf("%02d", j))
+  length_col <- paste0("LENGTH", sprintf("%02d", j))
+  bw_mean_col <- paste0("BW", sprintf("%02d", j), "_mean")
+  length_mean_col <- paste0("LENGTH", sprintf("%02d", j), "_mean")
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), bw_mean_col]
+  FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_col] <- FlucTotIV_clean_imputed[FlucTotIV_clean_imputed$HOSPITAL %in% c(3, 4), length_mean_col]
+}
+
+# Delete the 20 mean columns
+bw_mean_cols <- paste0("BW", sprintf("%02d", 1:10), "_mean")
+length_mean_cols <- paste0("LENGTH", sprintf("%02d", 1:10), "_mean")
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_cols), -one_of(length_mean_cols))
+
+```
+
+##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+
+```{r average accross ID and OCC where CREAT_DOS_INT is missing, warning=FALSE}
+library(dplyr)
+
+# Create a subset of rows with missing CREAT_DOS_INT
+subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
+
+# Calculate the mean values per ID and OCC
+mean_cols <- paste0("CREAT", sprintf("%02d", 1:10))
+subset <- subset %>%
+  group_by(ID, OCC) %>%
+  mutate(across(mean_cols, mean, na.rm = TRUE)) %>%
+  ungroup()
+
+# Replace the mean across ID and OCC in the actual dataset
+
+FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols] <- subset[, mean_cols]
+
+```
+
+##### Fixing all the negative imputed values to 0, then make violin plots of observed and imputed values
+
+```{r fixing negative values to 0}
+
+library(dplyr)
+
+# Replace negative values with 0 in CREAT01 to CREAT10 columns
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
+  mutate_at(vars(CREAT01:CREAT10), ~ ifelse(. < 0, 0, .))
+
+```
+
+```{r make violin plots of observed and imputed CREAT values}
+
+library(tidyr)
+
+# Assuming your dataset is named FlucTotIV_clean_imputed
+
+# Select the 11 columns by specifying their names explicitly
+CREAT_columns <- FlucTotIV_clean_imputed %>%
+  select(CREAT_DOS_INT, CREAT01, CREAT02, CREAT03, CREAT04, CREAT05, CREAT06, CREAT07, CREAT08, CREAT09, CREAT10)
+
+# Convert from wide to long
+CREAT_long_data <- CREAT_columns %>%
+  pivot_longer(cols = everything(), 
+               names_to = "Imputation", 
+               values_to = "Value")
+
+# Rename the levels of the "Imputation" column
+CREAT_long_data$Imputation <- factor(CREAT_long_data$Imputation, 
+                                levels = c("CREAT_DOS_INT", "CREAT01", "CREAT02", "CREAT03", "CREAT04", "CREAT05", "CREAT06", "CREAT07", "CREAT08", "CREAT09", "CREAT10"))
+
+library(ggplot2)
+
+# Define a custom color palette
+custom_palette <- c("skyblue", "lightgreen", "pink", "orange", "purple",
+                    "lightblue", "salmon", "gold", "lightpink", "lightgray", "lightcyan")
+
+# Create a violin plot with custom aesthetics
+violin_plot<- ggplot(data = CREAT_long_data, aes(x = Imputation, y = Value, fill = Imputation)) +
+  geom_violin(trim = FALSE) +
+  labs(title = "Violin Plot of Observed and 10 Imputed CREAT",
+       x = NULL,
+       y = "Serum Creatinine (mg/dl)") +
+  scale_x_discrete(labels = c("Observed", "Imputation 01", "Imputation 02", 
+                              "Imputation 03", "Imputation 04", "Imputation 05", 
+                              "Imputation 06", "Imputation 07", "Imputation 08", 
+                              "Imputation 09", "Imputation 10")) +
+  scale_fill_manual(values = custom_palette) +
+  theme_bw() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, color = "black", size = 16, face = "bold"),
+        axis.text.x = element_text(color = "black", size = 12),
+        axis.text.y = element_text(color = "black", size = 12),
+        axis.title.y = element_text(color = "black", size = 14, face = "bold"))
+
+# Exporting the plot
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/with_dos_int/diagnostic_plots/Violin plots")
+ggsave("obs_vs_imp_violin.png", plot = violin_plot, dpi = 300, width = 13, height = 7)
+
+```
+
+##### Calculating the CKDEPI of the imputed values
+
+```{r calculating CKDEPI01 to CKDEPI10 using a short code}
+
+library(dplyr)
+
+# Assuming FlucTotIV_clean_imputed is your dataset
+Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
+
+# Define a function to calculate CKDEPI for each CKDEPI column
+calculate_CKDEPI <- function(data, creatinine_column, sex_column, age_column, multiplier) {
+  CKDEPI <- ifelse(data[[sex_column]] == 1 & data[[creatinine_column]] < 0.9,
+                   multiplier * ((data[[creatinine_column]]/0.9)^-0.302) * (0.9938^data[[age_column]]),
+                   ifelse(data[[sex_column]] == 1 & data[[creatinine_column]] >= 0.9,
+                          multiplier * ((data[[creatinine_column]]/0.9)^-1.200) * (0.9938^data[[age_column]]),
+                          ifelse(data[[sex_column]] == 2 & data[[creatinine_column]] < 0.7,
+                                 multiplier * ((data[[creatinine_column]]/0.7)^-0.241) * (0.9938^data[[age_column]]) * 1.012,
+                                 multiplier * ((data[[creatinine_column]]/0.7)^-1.200) * (0.9938^data[[age_column]]) * 1.012)
+                   )
+  )
+  return(CKDEPI)
+}
+
+# Calculate CKDEPI01 to CKDEPI10
+for (i in 1:10) {
+  CKDEPI_column <- paste0("CKDEPI", sprintf("%02d", i))
+  Fluc_NONMEM_mul_impute[[CKDEPI_column]] <- calculate_CKDEPI(Fluc_NONMEM_mul_impute, 
+                                                               paste0("CREAT", sprintf("%02d", i)), 
+                                                               "SEX", "AGE", 142)
+}
+
+# View the resulting dataset
+View(Fluc_NONMEM_mul_impute)
+
+```
+
+##### Converting all NAs to -99
+
+```{r NAs to -99}
+
+Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
+
+```
+
+#####ing Convert back to NONMEM format
+
+```{r DV from 0 & -99 to "."}
+
+Fluc_NONMEM_mul_impute$DV <- ifelse(Fluc_NONMEM_mul_impute$DV %in% c(0, -99), ".", Fluc_NONMEM_mul_impute$DV)
+
+```
+
+```{r AMT TAD and RATE from 0 to "."}
+
+Fluc_NONMEM_mul_impute$TAD <- ifelse(Fluc_NONMEM_mul_impute$TAD == 0, ".", Fluc_NONMEM_mul_impute$TAD)
+Fluc_NONMEM_mul_impute$AMT <- ifelse(Fluc_NONMEM_mul_impute$AMT == 0, ".", Fluc_NONMEM_mul_impute$AMT)
+Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Fluc_NONMEM_mul_impute$RATE)
+
+```
+
+##### Exporting the dataset
+
+```{r select appropriate datasets}
+
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT","CREAT3","CRRT2","dosing_interval")]
+
+```
+
+```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+
+setwd("C:\Users\u0164053\OneDrive - KU Leuven\Fluconazole PoPPK\Fluconazol_project\My datasets and R codes\Imputed_dos_int_datasets\2l method")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW06.csv",quote=F,row.names = FALSE)
+
+```
+
+
