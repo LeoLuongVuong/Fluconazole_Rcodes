@@ -6,6 +6,9 @@ output: pdf_document
 ---
 
 ### Doing MI - Clustering with ID - 2l.pan method - fixing negative values to 0 280923
+### After that, Doing MI - Clustering with ID - 2l.pmm method - 011023
+
+# The 1st 10 imputations
 
 ##### Reading the source dataset
 
@@ -53,6 +56,11 @@ crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
 FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients)
 FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
 
+# Converting BW2 into BW
+
+FlucTotIV_clean_crrt$BW<-FlucTotIV_clean_crrt$BW2
+FlucTotIV_clean_nocrrt$BW<-FlucTotIV_clean_nocrrt$BW2
+
 ```
 
 ##### Best imputation model for crrt and non-crrt datasets
@@ -60,14 +68,18 @@ FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
 ```{r best imputation crrt dataset}
 
 ### I add ID to the model in accordance with the thesis I cited below 280823
-impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
+impute_CREAT_DOS_INT_crrt <- FlucTotIV_clean_crrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW","LENGTH", "CRRT","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+# Selecting BW instead of BW2 - 011023
 
 ```
 
 ```{r best imputation nocrrt dataset}
 
 ### I add ID to the model in accordance with the thesis I cited below 280823
-impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW2","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT")]
+impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AMT","DV","AGE","SEX","BW","LENGTH","OCC","HOSPITAL","CREAT_DOS_INT")]
+
+# Selecting BW instead of BW2 - 011023
 
 ```
 
@@ -117,37 +129,63 @@ for (i in 1:10) {
 
 ```
 
+##### Then imputing crrt and non-crrt models using mice.impute.2l.pmm function, clustering inside ID
+
+```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
+```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method, warning=FALSE}
+
+library(miceadds)
+set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pmm"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+```
+
 ##### Adding BW and LENGTH to crrt and non-crrt datasets
 
-```{r adding BW to the FlucTotIV_clean_crrt dataset}
+```{r using a shorter code to chieve this}
 
-for (i in 1:10) {
-        FlucTotIV_clean_crrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$BW2
+# Define a function to add variables to a dataset
+add_variables <- function(dataset, imputed_data, var_name) {
+  for (i in 1:10) {
+    new_var_name <- paste0(var_name, sprintf("%02d", i))
+    dataset[[new_var_name]] <- complete(imputed_data, action = i)[[var_name]]
+  }
+  return(dataset)
 }
 
-```
+# Apply the function to FlucTotIV_clean_crrt and FlucTotIV_clean_nocrrt
+FlucTotIV_clean_crrt <- add_variables(FlucTotIV_clean_crrt, imputed_CREAT_DOS_INT_crrt, "BW")
+FlucTotIV_clean_crrt <- add_variables(FlucTotIV_clean_crrt, imputed_CREAT_DOS_INT_crrt, "LENGTH")
 
-```{r adding LENGTH to the FlucTotIV_clean_crrt dataset}
-
-for (i in 1:10) {
-        FlucTotIV_clean_crrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$LENGTH
-}
-
-```
-
-```{r adding BW to the FlucTotIV_clean_nocrrt dataset}
-
-for (i in 1:10) {
-        FlucTotIV_clean_nocrrt[[paste0("BW", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$BW2
-}
-
-```
-
-```{r adding LENGTH to the FlucTotIV_clean_nocrrt dataset}
-
-for (i in 1:10) {
-        FlucTotIV_clean_nocrrt[[paste0("LENGTH", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$LENGTH
-}
+FlucTotIV_clean_nocrrt <- add_variables(FlucTotIV_clean_nocrrt, imputed_CREAT_DOS_INT_nocrrt, "BW")
+FlucTotIV_clean_nocrrt <- add_variables(FlucTotIV_clean_nocrrt, imputed_CREAT_DOS_INT_nocrrt, "LENGTH")
 
 ```
 
@@ -162,7 +200,7 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed
 
 ##### Now average BW and LENGTH per each ID 
 
-```{r Integrating mean values to the original dataset}
+```{r Integrating mean values to the original dataset, warning = FALSE}
 # Creating subset of hospital 3 and 4 patients
 subset <- FlucTotIV_clean_imputed %>% filter(HOSPITAL %in% c(3,4))
 
@@ -354,7 +392,7 @@ Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Flu
 
 ```
 
-##### Exporting the dataset
+##### Exporting BW dataset
 
 ```{r select appropriate datasets}
 
@@ -362,11 +400,51 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 
 ```
 
-```{r Fluc_NONMEM_mul_impute_BW02 dataset, warning=FALSE}
+```{r Fluc_NONMEM_mul_impute_BW01 dataset, warning=FALSE}
 
-setwd("C:\Users\u0164053\OneDrive - KU Leuven\Fluconazole PoPPK\Fluconazol_project\My datasets and R codes\Imputed_dos_int_datasets\2l method")
-write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW06.csv",quote=F,row.names = FALSE)
+# When using 2l.pan method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
+
+# When using 2l.pmm method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pmm")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
 
 ```
+
+##### Adding ARC column, using the CKDEPI cut-off of 96.5 ml/min
+
+```{r creating ARC01 to ARC10 columns corresponding to CKDEPI01 to CKDEPI10}
+
+# Define a vector of column names from CKDEPI01 to CKDEPI10
+ckdepi_cols <- paste0("CKDEPI", sprintf("%02d", 1:10))
+
+# Loop through each column and create the corresponding ARC column
+for (i in 1:10) {
+  col_name <- paste0("ARC", sprintf("%02d", i))
+  FlucTotIV_clean_imputed[[col_name]] <- as.integer(FlucTotIV_clean_imputed[[ckdepi_cols[i]]] >= 96.5)
+}
+
+# Creating a new dataset
+
+FlucTotIV_clean_imputed_ARC <- FlucTotIV_clean_imputed
+
+# Eliminating CKDEPI01 to CKDEPI10
+FlucTotIV_clean_imputed_ARC <- FlucTotIV_clean_imputed_ARC %>%
+  select(-CKDEPI01, -CKDEPI02, -CKDEPI03, -CKDEPI04, -CKDEPI05, 
+         -CKDEPI06, -CKDEPI07, -CKDEPI08, -CKDEPI09, -CKDEPI10)
+
+```
+
+##### Exporting ARC dataset
+
+```{r Fluc_NONMEM_mul_impute_ARC01 dataset, warning=FALSE}
+
+# When using 2l.pmm method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pmm")
+write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC01.csv",quote=F,row.names = FALSE)
+
+```
+
 
 
