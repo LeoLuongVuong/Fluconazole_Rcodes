@@ -8,7 +8,7 @@ output: pdf_document
 ### Doing MI - Clustering with ID - 2l.pan method - fixing negative values to 0 280923
 ### After that, Doing MI - Clustering with ID - 2l.pmm method - 011023
 
-# The 1st 10 imputations
+### For the whole 70 imputations - 2l.pan method - fixing negative to lowest possible value from CREAT - 041023
 
 ##### Reading the source dataset
 
@@ -87,11 +87,79 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AM
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method, warning=FALSE}
 
-# Adapted 050923
+# First 10 imputation
 
 library(mice)
 library(pan)
 set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(124)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(125)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(126)
+imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT","ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_crrt <- mice::mice(data=impute_CREAT_DOS_INT_crrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_crrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_crrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(127)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
 predmat["CREAT_DOS_INT","ID"] <- -2
@@ -110,11 +178,113 @@ for (i in 1:10) {
 
 ```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pan method, warning=FALSE}
 
-# Adapted 050923
+# First 10 imputation
 
 library(mice)
 library(pan)
 set.seed(123)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(124)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(125)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(126)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(127)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(128)
+imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
+predmat <- imp0$predictorMatrix
+predmat["CREAT_DOS_INT", "ID"] <- -2
+meth <- imp0$method
+meth["CREAT_DOS_INT"] <- "2l.pan"
+maxit <- 20
+nimp <- 10
+imputed_CREAT_DOS_INT_nocrrt <- mice::mice(data=impute_CREAT_DOS_INT_nocrrt,method=meth,predictorMatrix = predmat,maxit=maxit, m=nimp, printFlag = FALSE)
+for (i in 1:10) {
+        FlucTotIV_clean_nocrrt[[paste0("CREAT", sprintf("%02d", i))]] <- (complete(imputed_CREAT_DOS_INT_nocrrt, action = i))$CREAT_DOS_INT
+}
+
+# Next 10 imputation
+
+library(mice)
+library(pan)
+set.seed(129)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
 predmat["CREAT_DOS_INT", "ID"] <- -2
@@ -269,19 +439,34 @@ FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols]
 
 ```
 
-##### Fixing all the negative imputed values to 0, then make violin plots of observed and imputed values
+##### Fixing all the negative imputed values to 0 or minimum possible values
 
 ```{r fixing negative values to 0}
 
 library(dplyr)
 
-# Replace negative values with 0 in CREAT01 to CREAT10 columns
+# Probably before this, I need to calculate the % of negative values first
+negative_percentage_CREAT <- sapply(FlucTotIV_clean_imputed[, c("CREAT01", "CREAT02", "CREAT03", "CREAT04", "CREAT05", "CREAT06", "CREAT07", "CREAT08", "CREAT09", "CREAT10")], function(col) {
+  sum(col < 0, na.rm = TRUE) / length(col) * 100
+})
+# ranging from 1.8 to 4%
+
+View(negative_percentage_CREAT)
+str(negative_percentage_CREAT)
+
+# Replace negative values with respective min positive values of CREAT01 to CREAT10 columns - 02/10/23
 FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
-  mutate_at(vars(CREAT01:CREAT10), ~ ifelse(. < 0, 0, .))
+  mutate_at(vars(CREAT01:CREAT10), ~ ifelse(. < 0, min(.[. > 0]), .))
+
+# I'll try with the minimum observed value instead - 02/10/23
+FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
+  mutate_at(vars(CREAT01:CREAT10), ~ ifelse(. < 0, min(CREAT,na.rm=TRUE), .))
 
 ```
 
-```{r make violin plots of observed and imputed CREAT values}
+##### Making violin plot when fixing to 0 (2l.pan method)
+
+```{r make violin plots of observed and imputed CREAT values, warning=FALSE}
 
 library(tidyr)
 
@@ -368,6 +553,154 @@ View(Fluc_NONMEM_mul_impute)
 
 ```
 
+##### Making individual plots to compare between interval variability
+
+```{r making invidivual plots comparing BIV}
+
+# creating a new CREAT_imputed column
+
+Fluc_NONMEM_mul_impute$Creat_imputed<-ifelse(Fluc_NONMEM_mul_impute$unique_CREAT==0,1,0)
+
+# subset data that has both imputed and non-imputed CREAT
+
+library(dplyr)
+
+Imputed_ID <- Fluc_NONMEM_mul_impute %>%
+  group_by(ID) %>%
+  filter(all(c(0, 1) %in% Creat_imputed)) %>%
+  ungroup()
+
+# Count the number of distinct ID
+Imputed_ID %>%
+  distinct(ID) %>%
+  n_distinct()
+
+# Eliminate all the duplicates ID, OCC, unique_CREAT and Creat_imputed from Imputed_data dataset
+library(dplyr)
+
+unique_Imputed_ID <- Imputed_ID %>%
+  distinct(ID, OCC, unique_CREAT, Creat_imputed, .keep_all = TRUE)
+
+# Need to recalculate CKDEPI still. I use calculate_CKDEPI function from above
+
+unique_Imputed_ID[["CKDEPI"]] <- calculate_CKDEPI(unique_Imputed_ID, 
+                                                              "CREAT", 
+                                                               "SEX", "AGE", 142)
+
+# Relocate CKDEPI column right next to CKDEPI01
+library(dplyr)
+unique_Imputed_ID <- unique_Imputed_ID %>%
+  relocate(CKDEPI, .before = CKDEPI01)
+
+# Select patients with at least two OCC of unique_CREAT of at least 1
+library(dplyr)
+
+OCC_two_CREAT_ID <- unique_Imputed_ID %>%
+  group_by(ID) %>%
+  filter(n_distinct(OCC) >= 2 & sum(unique_CREAT >= 1, na.rm = TRUE) >= 2) %>%
+  select(ID) %>%
+  distinct()
+
+OCC_two_CREAT <- unique_Imputed_ID %>%
+  filter(ID %in% OCC_two_CREAT_ID$ID)
+
+# Converting from short to longer format
+
+library(tidyr)
+
+Imputed_Creat_Long <- OCC_two_CREAT %>%
+  pivot_longer(cols = c(CKDEPI01, CKDEPI02, CKDEPI03, CKDEPI04, CKDEPI05, CKDEPI06, CKDEPI07, CKDEPI08, CKDEPI09, CKDEPI10),                names_to = "Imputed_CKDEPI", 
+               values_to = "Value") %>%
+  select(ID,OCC,TIME, Imputed_CKDEPI, Creat_imputed, Value)
+
+# And making scatter plots
+
+library(ggplot2)
+library(gridExtra)
+
+Imputed_Creat_Long <- Imputed_Creat_Long %>%
+  mutate(Creat_imputed = factor(Creat_imputed, levels = c(0, 1), labels = c("No", "Yes")),  # Convert Creat_imputed to factor with labels
+         ID = as.integer(ID))  # Create a numerical ID for grouping
+
+# Define the title and label options
+title_options <- list(
+  label = "CKDEPI over Time of the first 10 imputations",
+  size = 14,
+  color = "black",
+  hjust = 0.5,
+  vjust = 1,
+  face = "bold"
+)
+
+x_label_options <- list(
+  label = "Time (h)",
+  size = 12,
+  color = "black",
+  hjust = 0.5,
+  vjust = 0
+)
+
+y_label_options <- list(
+  label = "CKDEPI (ml/min/1.73m2)",
+  size = 12,
+  color = "black",
+  hjust = 0,
+  vjust = 0.5,
+  angle = 0
+)
+
+axis_text_options <- list(
+  size = 10
+)
+
+legend_options <- list(
+  title = "CREAT Imputed",
+  size = 8
+)
+
+# Create a function to generate scatter plots with custom styling
+create_scatter_plots <- function(data, ids) {
+  max_value <- max(data[data$ID %in% ids, ]$Value)  # Maximum Value for setting y-axis limit
+  ggplot(data = data[data$ID %in% ids, ], aes(x = TIME, y = Value, color = Creat_imputed)) +
+    geom_point (size = 3, alpha = 1) +
+    facet_wrap(~ID, ncol = 2) +
+    labs(title = title_options,
+         x = x_label_options,
+         y = y_label_options) +
+    scale_color_manual(values = c("No" = "dodgerblue4", "Yes" = "goldenrod1"), 
+                       name = legend_options) +
+   scale_y_continuous(limits = c(0, max_value*1.1), breaks = seq(0, max_value*1.1, by = 10)) +
+   # Set y-axis limit
+    theme_bw() +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      axis.text = element_text(axis_text_options),
+      legend.position = "bottom"
+    )
+}
+
+# Split the patient IDs into groups of 2 for paneling
+id_groups <- split(unique(Imputed_Creat_Long$ID), ceiling(seq_along(unique(Imputed_Creat_Long$ID))/2))
+# Create the scatter plots in panels
+panel_plots <- lapply(id_groups, function(ids) {
+  create_scatter_plots(Imputed_Creat_Long, ids)
+})
+
+# Export the plots as high-resolution images
+output_dir <- "C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Plots/2l.pan method"
+#output_dir <- "C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Plots/2l.pmm method"
+if (!dir.exists(output_dir)) dir.create(output_dir)
+
+for (i in seq_along(panel_plots)) {
+  ggsave(filename = paste0(output_dir, "/scatter_plot_panel_", i, ".png"),
+         plot = panel_plots[[i]],
+         width = 10,
+         height = 7,
+         dpi = 300)
+}
+
+```
+
 ##### Converting all NAs to -99
 
 ```{r NAs to -99}
@@ -396,7 +729,7 @@ Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Flu
 
 ```{r select appropriate datasets}
 
-FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT","CREAT3","CRRT2","dosing_interval")]
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT","CREAT3","CRRT2","dosing_interval","Creat_imputed")]
 
 ```
 
@@ -404,7 +737,27 @@ FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_imput
 
 # When using 2l.pan method
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
-write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
+
+# First 10 imputation
+#write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
+
+# Next 10 imputation
+# write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW02.csv",quote=F,row.names = FALSE)
+
+# Next 10 imputation
+#write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW03.csv",quote=F,row.names = FALSE)
+
+# Next 10 imputation
+# write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW04.csv",quote=F,row.names = FALSE)
+
+# Next 10 imputation
+# write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW05.csv",quote=F,row.names = FALSE)
+
+# Next 10 imputation
+#write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW06.csv",quote=F,row.names = FALSE)
+
+# Next 10 imputation
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW07.csv",quote=F,row.names = FALSE)
 
 # When using 2l.pmm method
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pmm")
@@ -444,7 +797,403 @@ FlucTotIV_clean_imputed_ARC <- FlucTotIV_clean_imputed_ARC %>%
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pmm")
 write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC01.csv",quote=F,row.names = FALSE)
 
+# When using 2l.pan method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+
+# First 10 imputations
+#write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC01.csv",quote=F,row.names = FALSE)
+
+# The next 10 imputations
+# write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC02.csv",quote=F,row.names = FALSE)
+
+# The next 10 imputations
+# write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC03.csv",quote=F,row.names = FALSE)
+
+# The next 10 imputations
+# write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC04.csv",quote=F,row.names = FALSE)
+
+# The next 10 imputations
+# write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC05.csv",quote=F,row.names = FALSE)
+
+# The next 10 imputations
+# write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC06.csv",quote=F,row.names = FALSE)
+
+# The next 10 imputations
+write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC07.csv",quote=F,row.names = FALSE)
+
 ```
+
+##### Pooling parameters of 70 2l.pan imputed models - 051023
+
+```{r set wd, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Pooled_datasets")
+Pooling_Parameters_2l.pan<-read.csv("Pooling_Parameters_2l.pan_051023.csv",sep=";")
+
+```
+
+```{r calculate variance Theta Within and Between Subject variability for all}
+
+Pooling_Parameters_2l.pan$Var<-(Pooling_Parameters_2l.pan$RSE*Pooling_Parameters_2l.pan$Estimates/100)^2
+
+CKDEPI<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CKDEPI"]) #0.4794
+
+W_CKDEPI<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "CKDEPI"]) #0.0255248 #within imputation variance
+
+B_CKDEPI<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CKDEPI"]) #0.008850446 #between imputation variance
+
+CKDEPI
+W_CKDEPI
+B_CKDEPI
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_CKDEPI<-W_CKDEPI+(1+1/m)*B_CKDEPI #0.03450169
+T_CKDEPI
+
+```
+
+```{r confidence interval - T distribution}
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_CKDEPI<-(B_CKDEPI+B_CKDEPI/m)/T_CKDEPI #proportion of variation attributable to the missing data
+r_CKDEPI<-(lambda_CKDEPI)/(1-lambda_CKDEPI) #relative increase in variance due to nonresponse
+v_old_CKDEPI<-(m-1)*(1+1/r_CKDEPI^2) #old degree of freedom
+v_com=n-k #degree of freedom of parameter estimate (CKDEPI) in the hypothetically complete data
+v_obs_CKDEPI=((v_com+1)/(v_com+3))*v_com*(1-lambda_CKDEPI) #observed data degrees of freedom that accounts for the missing information
+v_CKDEPI<-(v_old_CKDEPI*v_obs_CKDEPI)/(v_old_CKDEPI+v_obs_CKDEPI) 
+t_crit_CKDEPI <- qt(0.975, v_CKDEPI) 
+
+lower_bound_CKDEPI<-CKDEPI-t_crit_CKDEPI*sqrt(T_CKDEPI) #0.1109361
+upper_bound_CKDEPI<-CKDEPI+t_crit_CKDEPI*sqrt(T_CKDEPI) #0.8478639
+
+lower_bound_CKDEPI
+upper_bound_CKDEPI
+
+```
+
+##### Evaluate the adequacy of the number of imputations
+
+```{r read my new dataframe, warning=FALSE}
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
+Pooledmodel_noCKDEPI_noadderr_BW<-read.csv("Pooling_Parameters_2l.pan_070823.csv")
+
+```
+
+```{r create a new variable}
+Pooledmodel_noCKDEPI_noadderr_BW$Var<-(Pooledmodel_noCKDEPI_noadderr_BW$RSE*Pooledmodel_noCKDEPI_noadderr_BW$Estimates/100)^2
+
+```
+
+```{r calculate variance Theta Within and Between Subject variability for 70 imputations}
+# Create empty vectors
+m <- Theta <- W <- B <- Total_Var <- numeric(70)
+
+# Assign values to vectors using for loop
+for (i in 1:70) {
+  m[i] <- i
+  Theta[i] <- mean(Pooledmodel_noCKDEPI_noadderr_BW$Estimates[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  W[i] <- mean(Pooledmodel_noCKDEPI_noadderr_BW$Var[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  B[i] <- var(Pooledmodel_noCKDEPI_noadderr_BW$Estimates[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  Total_Var[i] <- W[i] + (1 + 1 / m[i]) * B[i]
+}
+
+# Combine vectors into a data frame
+imputation_number <- data.frame(m, Theta, Total_Var)
+
+```
+
+```{r plot Theta over m, warning=FALSE}
+library(ggplot2)
+Theta_over_m<-ggplot(imputation_number, aes(x = m)) +
+  geom_line(aes(y = Theta, color = "Parameter Estimate"), size = 1.0) +
+  geom_point(aes(y = Theta, color = "Parameter Estimate"), size = 2.5) + # Add points for Parameter Estimate
+  scale_color_manual(values = c("blue")) +
+  scale_x_continuous(breaks = seq(1, 70, 10), limits = c(1, 70))  +
+  labs(x = "Number of imputations", y = "CKDEPI effect Estimate", color = "Variables") +
+  theme_bw() + theme(legend.position = "none")
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+
+ggsave("theta_over_m_070823.png", plot = Theta_over_m, dpi = 300, width = 8.27, height = 10.3)
+
+#scale_y_continuous(breaks = seq(0.95, 1.01, 0.005), limits = c(0.95, 1.01))
+
+```
+
+```{r plot variance over m, warning=FALSE}
+var_over_m<-ggplot(imputation_number, aes(x = m)) +
+  geom_line(aes(y = Total_Var, color = "Total Variance"), size = 1.0) +
+  geom_point(aes(y = Total_Var, color = "Total Variance"), size = 2.5) + # Add points for Total Variance
+  scale_color_manual(values = c("orange")) +
+  scale_x_continuous(breaks = seq(2, 70, 10), limits = c(2, 70)) +
+  labs(x = "Number of imputations", y = "Total variance of BW effect estimate", color = "Variables") +
+  theme_bw() + theme(legend.position = "none")
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+
+ggsave("var_over_m_070823.png", plot = var_over_m, dpi = 300, width = 8.27, height = 10.3)
+
+        #scale_y_continuous(breaks = seq(0.035, 0.0405, 0.0005), limits = c(0.035, 0.0405))
+```
+
+##### Making diagnostic plots of CKDEPI over TIME observed vs imputed; and density plot
+
+```{r reading first imputed dataset 2l.pan method,warning=FALSE}
+
+# For 2l.pan method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+Fluc_NONMEM_mul_impute_BW01 <- read.csv("Fluc_NONMEM_mul_impute_BW01.csv")
+
+# For 2l.pmm method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pmm")
+Fluc_NONMEM_mul_impute_BW01 <- read.csv("Fluc_NONMEM_mul_impute_BW01.csv")
+
+# Assigning -99 in CKDEPI and CREAT to NA
+Fluc_NONMEM_mul_impute_BW01$CKDEPI[Fluc_NONMEM_mul_impute_BW01$CKDEPI == -99] <- NA
+Fluc_NONMEM_mul_impute_BW01$CREAT[Fluc_NONMEM_mul_impute_BW01$CREAT == -99] <- NA
+
+# This will no longer be necessary as I already exported the new dataset FlucTotIV_clean in which I recalculated CKDEPI - 051023
+Fluc_NONMEM_mul_impute_BW01[["CKDEPI"]] <- calculate_CKDEPI(Fluc_NONMEM_mul_impute_BW01,"CREAT", 
+                                                            "SEX", "AGE", 142)
+
+```
+
+```{r CKDEPI over TIME imputed vs non-imputed}
+
+## Creat_Imputed variable indicating whether CREAT is missing or imputed
+## Value of 1 means yes, and 0 means no
+
+Fluc_NONMEM_mul_impute_BW01$Creat_Imputed<-ifelse(is.na(Fluc_NONMEM_mul_impute_BW01$CREAT),1,0)
+
+## Making 10 plots with trend lines
+
+library(ggplot2)
+
+# Create a list to store the plots
+plot_list <- list()
+
+# Loop through CKDEPI01 to CKDEPI10
+for (i in 1:10) {
+  # Create a plot for each CKDEPI variable
+  plot <- ggplot(Fluc_NONMEM_mul_impute_BW01, aes(x = TIME, y = get(paste0("CKDEPI", sprintf("%02d", i))), color = factor(Creat_Imputed))) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +  # Add trend line
+    labs(title = paste("CKDEPI", sprintf("%02d", i), "over Time"),
+         x = "Time (h)", y = paste("eGFR (ml/min/1.73m2)"),
+         color = "Creatinine Imputed") + 
+    scale_color_discrete(labels = c("No", "Yes")) +
+    theme_bw() +
+        scale_y_continuous(breaks = seq(0, 300, by = 20), limits = c(0, 300),expand = c(0,0)) +
+        scale_x_continuous(breaks = seq(0, 1100, by = 50), limits = c(0, 1100),expand = c(0,0)) +
+        theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+  ) 
+  
+  # Add the plot to the list
+  plot_list[[i]] <- plot
+}
+
+# Print and export the plots
+for (i in 1:10) {
+  # Print the plot
+  print(plot_list[[i]])
+  
+# Export the plot to a high-quality image
+
+  # 2l.pan method  
+  setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pan")  
+  ggsave(paste("CKDEPI", sprintf("%02d", i), "_plot.png"), plot = plot_list[[i]], dpi = 300, width = 12, height = 8)
+  # 2l.pmm method
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pmm")  
+  #ggsave(paste("CKDEPI", sprintf("%02d", i), "_plot.png"), plot = plot_list[[i]], dpi = 300, width = 12, height = 8)
+}
+
+```
+
+```{r density plot observed vs imputed, warning=FALSE}
+library(ggplot2)
+
+# Your dataset and initial plot code
+# Assuming your dataset is called Fluc_NONMEM_mul_impute_BW01
+# ...
+
+# Define the title and label options
+title_options <- list(
+  label = "Density plot of 10 imputed CKDEPI vs the original CKDEPI",
+  size = 14,
+  color = "black",
+  hjust = 0.5,
+  vjust = 1,
+  face = "bold"
+)
+
+x_label_options <- list(
+  label = "eGFR (ml/min/1.73m2)",
+  size = 12,
+  color = "black",
+  hjust = 0.5,
+  vjust = 0
+)
+
+y_label_options <- list(
+  label = "Density",
+  size = 12,
+  color = "black",
+  hjust = 0,
+  vjust = 0.5,
+  angle = 0
+)
+
+axis_text_options <- list(
+  size = 10
+)
+
+legend_options <- list(
+  title = "Variable",
+  size = 8
+)
+
+# Density plot first 10 imputations 
+density_plot<-ggplot(Fluc_NONMEM_mul_impute_BW01, aes(x = CKDEPI01)) + 
+  geom_density(aes(fill = "CKDEPI01"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI02, fill = "CKDEPI02"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI03, fill = "CKDEPI03"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI04, fill = "CKDEPI04"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI05, fill = "CKDEPI05"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI06, fill = "CKDEPI06"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI07, fill = "CKDEPI07"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI08, fill = "CKDEPI08"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI09, fill = "CKDEPI09"), alpha = 0.5) + 
+  geom_density(aes(x = CKDEPI10, fill = "CKDEPI10"), alpha = 0.5) +
+  geom_density(aes(x = CKDEPI, fill = "CKDEPI"), alpha = 0.5) +
+  theme_bw() +
+  scale_fill_manual(
+    name = "Variable",
+    values = c("CKDEPI01" = "blue", "CKDEPI02" = "lightblue", "CKDEPI03" = "green",
+               "CKDEPI04" = "orange", "CKDEPI05" = "purple", "CKDEPI06" = "pink",
+               "CKDEPI07" = "brown", "CKDEPI08" = "gray", "CKDEPI09" = "black",
+               "CKDEPI10" = "yellow","CKDEPI" = "red")
+  ) + labs(title = title_options,
+         x = x_label_options,
+         y = y_label_options) +
+  theme(
+      plot.title = element_text(hjust = 0.5),
+      axis.text = element_text(axis_text_options),
+      legend.position = "right"
+    )
+
+# 2l.pan method
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pan")  
+#ggsave("Density_2l.pan_051023.png", plot = density_plot, dpi = 300, width = 12, height = 8)
+
+# 2l.pmm method
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pmm")  
+ggsave("Density_2l.pmm_051023.png", plot = density_plot, dpi = 300, width = 12, height = 8)
+
+```
+
+##### These codes maybe redundant
+
+```{r scatter plot}
+
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+
+Imputed_Creat_Long <- Fluc_NONMEM_mul_impute_BW01 %>%
+  pivot_longer(cols = c(CKDEPI01, CKDEPI02, CKDEPI03, CKDEPI04, CKDEPI05, CKDEPI06, CKDEPI07, CKDEPI08, CKDEPI09, CKDEPI10),                names_to = "Imputed_CKDEPI", 
+               values_to = "Value") %>%
+  select(ID, OCC, TIME, Imputed_CKDEPI, Creat_Imputed, Value)
+
+Imputed_Creat_Long <- Imputed_Creat_Long %>%
+  mutate(Creat_Imputed = factor(Creat_Imputed, levels = c(0, 1), labels = c("No", "Yes")))
+
+# Define the title and label options
+title_options <- list(
+  label = "CKDEPI over Time of the first 10 imputations",
+  size = 14,
+  color = "black",
+  hjust = 0.5,
+  vjust = 1,
+  face = "bold"
+)
+
+x_label_options <- list(
+  label = "Time (h)",
+  size = 12,
+  color = "black",
+  hjust = 0.5,
+  vjust = 0
+)
+
+y_label_options <- list(
+  label = "CKDEPI (ml/min/1.73m2)",
+  size = 12,
+  color = "black",
+  hjust = 0,
+  vjust = 0.5,
+  angle = 0
+)
+
+axis_text_options <- list(
+  size = 10
+)
+
+legend_options <- list(
+  title = "CREAT Imputed",
+  size = 8
+)
+
+# Create a function to generate scatter plots with custom styling
+create_scatter_plots <- function(data, imputed_ckdepi) {
+  max_value <- max(data$Value)
+  ggplot(data = data, aes(x = TIME, y = Value, color = Creat_Imputed)) +
+    geom_point(size = 3, alpha = 1) +
+    labs(title = title_options,
+         x = x_label_options,
+         y = y_label_options) +
+    scale_color_manual(values = c("No" = "dodgerblue4", "Yes" = "goldenrod1"), 
+                       name = legend_options) +
+    scale_y_continuous(limits = c(0, max_value * 1.1), breaks = seq(0, max_value * 1.1, by = 10)) +
+    facet_wrap(~Imputed_CKDEPI, ncol = 2) +  # Facet by Imputed_CKDEPI
+    theme_bw() +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      axis.text = element_text(axis_text_options),
+      legend.position = "bottom"
+    )
+}
+
+# Create the scatter plots in panels
+imputed_ckdepi_levels <- unique(Imputed_Creat_Long$Imputed_CKDEPI)
+panel_plots <- lapply(imputed_ckdepi_levels, function(ckdepi) {
+  data_subset <- Imputed_Creat_Long[Imputed_Creat_Long$Imputed_CKDEPI == ckdepi, ]
+  create_scatter_plots(data_subset, ckdepi)
+})
+
+# Export the plots as high-resolution images
+output_dir <- "C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pmm"
+
+if (!dir.exists(output_dir)) dir.create(output_dir)
+
+for (i in seq_along(panel_plots)) {
+  ggsave(filename = paste0(output_dir, "/scatter_plot_panel_", i, ".png"),
+         plot = panel_plots[[i]],
+         width = 10,
+         height = 7,
+         dpi = 300)
+}
+
+```
+
 
 
 

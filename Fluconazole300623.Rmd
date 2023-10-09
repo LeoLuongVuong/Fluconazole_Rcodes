@@ -3563,7 +3563,6 @@ Fluc_NONMEM_mul_impute_BW01 <- read.csv("Fluc_NONMEM_mul_impute_BW01.csv")
 
 ```
 
-
 ```{r CREAT over TIME imputed vs non-imputed}
 ## Creat_Imputed variable indicating whether CREAT is missing or imputed
 ## Value of 1 means yes, and 0 means no
