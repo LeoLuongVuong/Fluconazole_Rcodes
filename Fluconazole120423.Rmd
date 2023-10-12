@@ -5942,7 +5942,7 @@ percentage<- successful_run/200
 summary(percentage)
 ```
 
-#### Model diagnostic - appendix
+#### Model diagnostic - GOF plots - appendix
 
 ##### First of all, base model
 ```{r setwd and read datafile, warning=FALSE}

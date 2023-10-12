@@ -1843,6 +1843,7 @@ ggsave("Density_2l.pmm_051023.png", plot = density_plot, dpi = 300, width = 12, 
 ```
 
 ### Making VPC - 111023
+
 #### First of all, calculate mean BW and CKDEPI of the total 70 imputations
 
 ```{r calculate mean BW and CKDEPI - BW_ave and CKDEPI_ave, warning=FALSE}
@@ -1904,6 +1905,8 @@ write.csv(datasets[[1]], "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = F
 
 ```
 
+#### Then making vpc, code copied from pcVPC_pooled.R
+
 
 
 ### Doing simulation - 091023
@@ -1917,5 +1920,95 @@ FlucTotIV_clean %>% filter (!is.na(CKDEPI)) %>% summarize(correlation = cor(CKDE
 
 ```
 
+#### Creating simulation datasets, seperately for CRRT and non-CRRT
+##### Here I try using previously created datasets
+
+```{r import virtual patient dataset dosing_08, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Simulation datasets")
+sim_dosing_01<-read.csv("dosing_08.csv")
+
+# With dose-finding simulation, we don't need a dense sampling strategy, since we only care about trough and AUC-24 target attainment
+
+```
+
+```{r checking normal distribution of CKDEPI}
+
+# Test if CKDEPI has a normal distribution
+library(dplyr)
+test <- FlucTotIV_clean %>% select(ID, CKDEPI,CRRT) %>% unique() %>% mutate(CKDEPI2 = log10(CKDEPI))
+library(ggplot2)
+
+test<-na.omit(test)
+
+# Making a qqplot
+qqnorm(test$CKDEPI, pch = 1, frame = FALSE)
+qqline(test$CKDEPI, col = "steelblue", lwd = 2)
+
+shapiro.test(test$CKDEPI) # p-value = 4.691e-11 - non-normal
+
+# For the log-transformed CKDEPI
+qqnorm(test$CKDEPI2, pch = 1, frame = FALSE)
+qqline(test$CKDEPI2, col = "steelblue", lwd = 2)
+
+shapiro.test(test$CKDEPI2) #p-value = 1.281e-15
+
+# normal distribution doesn't work
+
+```
+
+```{r comparing CKDEPI of CRRT vs non-CRRT}
+# comparing if CRRT vs non-CRRT patients have a different distribution
+
+crrt_ids<-unique(test$ID[test$CRRT == 1])
+
+# Perform Mann-Whitney U test
+non_parametric_test <- wilcox.test(CKDEPI ~ ifelse(ID %in% crrt_ids, "CRRT", "Non-CRRT"), data = test)
+
+# Print the test results
+print(non_parametric_test) #p=1.434e-12 #crrt & non-crrt patients have different CKDEPI distributions
+
+#CRRT and non-CRRT patients does not have a similar CKDEPI distribution
+
+# Summary statistics of CRRT vs non-CRRT patients
+library(dplyr)
+
+# Calculate summary statistics for CKDEPI for patients in crrt_ids
+summary_in_crrt <- test %>%
+  filter(ID %in% crrt_ids) %>%
+  summarize(
+    Mean_CKDEPI = mean(CKDEPI, na.rm = TRUE),
+    Median_CKDEPI = median(CKDEPI, na.rm = TRUE),
+    Min_CKDEPI = min(CKDEPI, na.rm = TRUE),
+    Max_CKDEPI = max(CKDEPI, na.rm = TRUE),
+    SD_CKDEPI = sd(CKDEPI, na.rm = TRUE)
+  )
+
+# Calculate summary statistics for CKDEPI for patients not in crrt_ids
+summary_not_in_crrt <- test %>%
+  filter(!ID %in% crrt_ids) %>%
+  summarize(
+    Mean_CKDEPI = mean(CKDEPI, na.rm = TRUE),
+    Median_CKDEPI = median(CKDEPI, na.rm = TRUE),
+    Min_CKDEPI = min(CKDEPI, na.rm = TRUE),
+    Max_CKDEPI = max(CKDEPI, na.rm = TRUE),
+    SD_CKDEPI = sd(CKDEPI, na.rm = TRUE)
+  )
+summary_in_crrt
+summary_not_in_crrt
+
+```
 
 
+```{r finetune dosing_08 dataset, warning=FALSE}
+
+# Eliminate all rows with PEAK == 1
+library(dplyr)
+sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
+
+# Eliminate PEAK column
+sim_dosing_01$PEAK<-NULL
+
+
+
+```

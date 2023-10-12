@@ -2085,7 +2085,7 @@ library(xpose4)
 library(vpc)
 #####################################
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_overall")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall")
 
 Number_of_simulations_performed <- 1000 ## Used as 'samples' argument in PsN vpc function. Needs to be a round number.
 
@@ -2104,8 +2104,8 @@ perc_CI <- c(0+(1-CI/100)/2, 1-(1-CI/100)/2)
 # Specify the bin times manually
 
 
-#bin_times <- c(0.304387974683544,3.73,9.74,14.865,21.225,39.035,72.24216)
-bin_times <- c(0.01549,1.33,1.77,3.665,5.81,7.275,9.6,10.77,12.3835,13.135,14.425,15.485,16.905,18.035,19.54,21.225,22.225,23.1585,24.63,25.52549) # new bin_times 200623
+bin_times <- c(0.304387974683544,3.73,9.74,14.865,21.225,39.035,72.24216)
+#bin_times <- c(0.01549,1.33,1.77,3.665,5.81,7.275,9.6,10.77,12.3835,13.135,14.425,15.485,16.905,18.035,19.54,21.225,22.225,23.1585,24.63,25.52549) # new bin_times 200623
 
 Number_of_bins <- length(bin_times)-1
 
@@ -2120,11 +2120,15 @@ Number_of_bins <- length(bin_times)-1
 files <- list.files(pattern = "1.npctab.dta", recursive = TRUE, include.dirs = TRUE)
 
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_overall/After_200623") #I adjusted the working directory a little bit on 200623
-#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_overall")
+#working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall/2l.pan'
+
+# Test my alternative strategy
+working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall/2l.pan/test'
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod_pooled <- read_nm_tables(paste('.\\',files,sep=""))
+#simulations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/vpc_simulation_overall.1.npctab.dta')
+simulations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/vpc_sim_overall.1.npctab.dta') #alternative approach
+dataframe_simulations_mod_pooled <- read_nonmem_table(simulations_tablefile_mod_pooled)
 dataframe_simulations_mod_pooled <- dataframe_simulations_mod_pooled[dataframe_simulations_mod_pooled$MDV == 0,]
 
 
@@ -2220,7 +2224,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod_pooled<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_overall'
+working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall/2l.pan'
 observations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/vpc_original_overall.npctab.dta')
 Obs_mod_pooled <- read_nonmem_table(observations_tablefile_mod_pooled)
 Obs_mod_pooled<- Obs_mod_pooled[Obs_mod_pooled$MDV == 0,]
@@ -2283,9 +2287,9 @@ CI_VPC_lin_mod_pooled <- ggplot() +
         
         
         ## Set bins
-        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
+        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='goldenrod1', alpha=0.25) +
+        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='dodgerblue4', alpha=0.25) +
+        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='dodgerblue4', alpha=0.25) +
         
         
         # Lines of the observations
@@ -2299,20 +2303,20 @@ CI_VPC_lin_mod_pooled <- ggplot() +
         
         
         ###### Set x & y axis limit, and their labels
-        #scale_x_continuous(limits = c(0, 72.24216), breaks = seq(0, 72.24216, by = 10), name = "Time since last dose (hours)", 
-                           #expand = c(0.01,0)) +
-        #scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
-                           #expand = c(0.01,0)) +
-        scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)", #changes I made in 200623
+        scale_x_continuous(limits = c(0, 72.24216), breaks = seq(0, 72.24216, by = 10), name = "Time since last dose (hours)", 
                            expand = c(0.01,0)) +
-        scale_y_continuous(limits = c(0, 70), breaks = seq(0, 70, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+        scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
                            expand = c(0.01,0)) +
+        #scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)", #changes I made in 200623
+                           #expand = c(0.01,0)) +
+        #scale_y_continuous(limits = c(0, 70), breaks = seq(0, 70, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                           #expand = c(0.01,0)) +
         
         
         ####### Set ggplot2 theme and settings
         theme_bw()+
         theme(axis.title=element_text(size=12),
-              axis.text = element_text(size = 12))+
+              axis.text = element_text(size = 10))+
         theme(strip.background = element_blank(),
               strip.text.x = element_blank(),legend.position="none") +
         
@@ -2330,12 +2334,14 @@ CI_VPC_lin_mod_pooled <- ggplot() +
 #ggtitle("VPC 01")
 
 ### save vpc overall
-#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_pooled")
-#ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 12, height = 7)
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_pooled/2l.method")
+# When I test the alternative approach
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_pooled/2l.method/test")
+ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 12, height = 7)
 
 ### save vpc overall for my PAGE poster 100623
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
-ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
+#ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
 
 ###################### Adjusting overall VPC 200623 #################################
 
