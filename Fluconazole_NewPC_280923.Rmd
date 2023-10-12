@@ -10,7 +10,7 @@ output: pdf_document
 
 ### For the whole 70 imputations - 2l.pan method - fixing negative to lowest possible value from CREAT - 041023
 
-##### Reading the source dataset
+#### Reading the source dataset
 
 ```{r reading new FlucTotIV_clean dataset, warning=FALSE}
 
@@ -19,7 +19,7 @@ FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
 
 ```
 
-##### Converting variables into appropriate types
+#### Converting variables into appropriate types
 
 ```{r convert data types}
 
@@ -31,7 +31,7 @@ FlucTotIV_clean$EVID <- as.factor(FlucTotIV_clean$EVID)
 
 ```
 
-##### Converting all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
+#### Converting all the NAs in TAD, AMT, RATE to 0, and First row of DV to 0
 
 ```{r convert NAs to 0}
 
@@ -47,7 +47,7 @@ FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
 
 ```
 
-##### Creating crrt and non-crrt datasets
+#### Creating crrt and non-crrt datasets
 
 ```{r crrt & non-crrt dataset, warning=FALSE}
 
@@ -63,7 +63,7 @@ FlucTotIV_clean_nocrrt$BW<-FlucTotIV_clean_nocrrt$BW2
 
 ```
 
-##### Best imputation model for crrt and non-crrt datasets
+#### Best imputation model for crrt and non-crrt datasets
 
 ```{r best imputation crrt dataset}
 
@@ -83,7 +83,7 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AM
 
 ```
 
-##### Then imputing crrt and non-crrt models using mice.impute.2l.pan function, clustering inside ID
+#### Then imputing crrt and non-crrt models using mice.impute.2l.pan function, clustering inside ID
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pan method, warning=FALSE}
 
@@ -299,7 +299,7 @@ for (i in 1:10) {
 
 ```
 
-##### Then imputing crrt and non-crrt models using mice.impute.2l.pmm function, clustering inside ID
+#### Then imputing crrt and non-crrt models using mice.impute.2l.pmm function, clustering inside ID
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
 
@@ -337,7 +337,7 @@ for (i in 1:10) {
 
 ```
 
-##### Adding BW and LENGTH to crrt and non-crrt datasets
+#### Adding BW and LENGTH to crrt and non-crrt datasets
 
 ```{r using a shorter code to chieve this}
 
@@ -359,7 +359,7 @@ FlucTotIV_clean_nocrrt <- add_variables(FlucTotIV_clean_nocrrt, imputed_CREAT_DO
 
 ```
 
-##### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
+#### Then combine 2 datasets into 1 FlucTotIV_clean_imputed dataset
 
 ```{r combine into FlucTotIV_clean_imputed}
 
@@ -368,7 +368,7 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed
 
 ```
 
-##### Now average BW and LENGTH per each ID 
+#### Now average BW and LENGTH per each ID 
 
 ```{r Integrating mean values to the original dataset, warning = FALSE}
 # Creating subset of hospital 3 and 4 patients
@@ -418,7 +418,7 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_co
 
 ```
 
-##### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
+#### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
 
 ```{r average accross ID and OCC where CREAT_DOS_INT is missing, warning=FALSE}
 library(dplyr)
@@ -439,7 +439,7 @@ FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols]
 
 ```
 
-##### Fixing all the negative imputed values to 0 or minimum possible values
+#### Fixing all the negative imputed values to 0 or minimum possible values
 
 ```{r fixing negative values to 0}
 
@@ -464,7 +464,7 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
 
 ```
 
-##### Making violin plot when fixing to 0 (2l.pan method)
+#### Making violin plot when fixing to 0 (2l.pan method)
 
 ```{r make violin plots of observed and imputed CREAT values, warning=FALSE}
 
@@ -517,7 +517,7 @@ ggsave("obs_vs_imp_violin.png", plot = violin_plot, dpi = 300, width = 13, heigh
 
 ```
 
-##### Calculating the CKDEPI of the imputed values
+#### Calculating the CKDEPI of the imputed values
 
 ```{r calculating CKDEPI01 to CKDEPI10 using a short code}
 
@@ -553,7 +553,7 @@ View(Fluc_NONMEM_mul_impute)
 
 ```
 
-##### Making individual plots to compare between interval variability
+#### Making individual plots to compare between interval variability
 
 ```{r making invidivual plots comparing BIV}
 
@@ -701,7 +701,7 @@ for (i in seq_along(panel_plots)) {
 
 ```
 
-##### Converting all NAs to -99
+#### Converting all NAs to -99
 
 ```{r NAs to -99}
 
@@ -709,7 +709,7 @@ Fluc_NONMEM_mul_impute[is.na(Fluc_NONMEM_mul_impute)] <- -99
 
 ```
 
-#####ing Convert back to NONMEM format
+#### Convert back to NONMEM format
 
 ```{r DV from 0 & -99 to "."}
 
@@ -725,7 +725,7 @@ Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Flu
 
 ```
 
-##### Exporting BW dataset
+#### Exporting BW dataset
 
 ```{r select appropriate datasets}
 
@@ -765,7 +765,7 @@ write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row
 
 ```
 
-##### Adding ARC column, using the CKDEPI cut-off of 96.5 ml/min
+#### Adding ARC column, using the CKDEPI cut-off of 96.5 ml/min
 
 ```{r creating ARC01 to ARC10 columns corresponding to CKDEPI01 to CKDEPI10}
 
@@ -789,7 +789,7 @@ FlucTotIV_clean_imputed_ARC <- FlucTotIV_clean_imputed_ARC %>%
 
 ```
 
-##### Exporting ARC dataset
+#### Exporting ARC dataset
 
 ```{r Fluc_NONMEM_mul_impute_ARC01 dataset, warning=FALSE}
 
@@ -823,18 +823,22 @@ write.csv(FlucTotIV_clean_imputed_ARC, "Fluc_NONMEM_mul_impute_ARC07.csv",quote=
 
 ```
 
-##### Pooling parameters of 70 2l.pan imputed models - 051023
+#### Pooling parameters of 70 2l.pan imputed models - 051023
 
 ```{r set wd, warning=FALSE}
 
+# Read in the dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Pooled_datasets")
 Pooling_Parameters_2l.pan<-read.csv("Pooling_Parameters_2l.pan_051023.csv",sep=";")
 
+# Creating Var (Variance) column 
+Pooling_Parameters_2l.pan$Var<-(Pooling_Parameters_2l.pan$RSE*Pooling_Parameters_2l.pan$Estimates/100)^2
+
 ```
 
-```{r calculate variance Theta Within and Between Subject variability for all}
+##### First of all, CKDEPI
 
-Pooling_Parameters_2l.pan$Var<-(Pooling_Parameters_2l.pan$RSE*Pooling_Parameters_2l.pan$Estimates/100)^2
+```{r calculate Mean Within and Between Subject variability for all}
 
 CKDEPI<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CKDEPI"]) #0.4794
 
@@ -877,29 +881,705 @@ upper_bound_CKDEPI
 
 ```
 
-##### Evaluate the adequacy of the number of imputations
+##### Second of all, CLcrrt
 
-```{r read my new dataframe, warning=FALSE}
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
-Pooledmodel_noCKDEPI_noadderr_BW<-read.csv("Pooling_Parameters_2l.pan_070823.csv")
+```{r calculate Mean Within and Between Subject variability for all}
+
+CLcrrt<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CLcrrt"]) #1.691857
+
+W_CLcrrt<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "CLcrrt"]) #0.018215 #within imputation variance
+
+B_CLcrrt<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CLcrrt"]) #2.113872e-05 #between imputation variance
+
+CLcrrt
+W_CLcrrt
+B_CLcrrt
 
 ```
 
-```{r create a new variable}
-Pooledmodel_noCKDEPI_noadderr_BW$Var<-(Pooledmodel_noCKDEPI_noadderr_BW$RSE*Pooledmodel_noCKDEPI_noadderr_BW$Estimates/100)^2
+```{r total variance for all}
+
+m<-70
+T_CLcrrt<-W_CLcrrt+(1+1/m)*B_CLcrrt #0.01823644
+T_CLcrrt
 
 ```
 
-```{r calculate variance Theta Within and Between Subject variability for 70 imputations}
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_CLcrrt<-(B_CLcrrt+B_CLcrrt/m)/T_CLcrrt #proportion of variation attributable to the missing data
+
+r_CLcrrt<-(lambda_CLcrrt)/(1-lambda_CLcrrt) #relative increase in variance due to nonresponse
+
+v_old_CLcrrt<-(m-1)*(1+1/r_CLcrrt^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (CLcrrt) in the hypothetically complete data
+
+v_obs_CLcrrt=((v_com+1)/(v_com+3))*v_com*(1-lambda_CLcrrt) #observed data degrees of freedom that accounts for the missing information
+
+v_CLcrrt<-(v_old_CLcrrt*v_obs_CLcrrt)/(v_old_CLcrrt+v_obs_CLcrrt)
+
+t_crit_CLcrrt <- qt(0.975, v_CLcrrt) 
+
+lower_bound_CLcrrt<-CLcrrt-t_crit_CLcrrt*sqrt(T_CLcrrt) #1.425197
+upper_bound_CLcrrt<-CLcrrt+t_crit_CLcrrt*sqrt(T_CLcrrt) #1.958517
+
+lower_bound_CLcrrt
+upper_bound_CLcrrt
+
+```
+
+##### Third of all, CLr
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+CLr<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CLr"]) #0.6262857
+
+W_CLr<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "CLr"]) #0.0009582094 #within imputation variance
+
+B_CLr<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CLr"]) #4.759834e-05
+#between imputation variance
+
+CLr
+W_CLr
+B_CLr
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_CLr<-W_CLr+(1+1/m)*B_CLr #0.001006488
+T_CLr
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_CLr<-(B_CLr+B_CLr/m)/T_CLr #proportion of variation attributable to the missing data
+
+r_CLr<-(lambda_CLr)/(1-lambda_CLr) #relative increase in variance due to nonresponse
+
+v_old_CLr<-(m-1)*(1+1/r_CLr^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (CLr) in the hypothetically complete data
+
+v_obs_CLr=((v_com+1)/(v_com+3))*v_com*(1-lambda_CLr) #observed data degrees of freedom that accounts for the missing information
+
+v_CLr<-(v_old_CLr*v_obs_CLr)/(v_old_CLr+v_obs_CLr)
+
+t_crit_CLr <- qt(0.975, v_CLr) 
+
+lower_bound_CLr<-CLr-t_crit_CLr*sqrt(T_CLr) #0.5636141
+upper_bound_CLr<-CLr+t_crit_CLr*sqrt(T_CLr) #0.6889574
+
+lower_bound_CLr
+upper_bound_CLr
+
+```
+
+##### Next, V1
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+V1<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "V1"]) #38.51857
+
+W_V1<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "V1"]) #11.20266 #within imputation variance
+
+B_V1<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "V1"]) #0.101824
+#between imputation variance
+
+V1
+W_V1
+B_V1
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_V1<-W_V1+(1+1/m)*B_V1 #11.30594
+T_V1
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_V1<-(B_V1+B_V1/m)/T_V1 #proportion of variation attributable to the missing data
+
+r_V1<-(lambda_V1)/(1-lambda_V1) #relative increase in variance due to nonresponse
+
+v_old_V1<-(m-1)*(1+1/r_V1^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (V1) in the hypothetically complete data
+
+v_obs_V1=((v_com+1)/(v_com+3))*v_com*(1-lambda_V1) #observed data degrees of freedom that accounts for the missing information
+
+v_V1<-(v_old_V1*v_obs_V1)/(v_old_V1+v_obs_V1)
+
+t_crit_V1 <- qt(0.975, v_V1) 
+
+lower_bound_V1<-V1-t_crit_V1*sqrt(T_V1) #31.87858
+upper_bound_V1<-V1+t_crit_V1*sqrt(T_V1) #45.15857
+
+lower_bound_V1
+upper_bound_V1
+
+```
+
+##### After that, Q
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+Q<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "Q"]) #12.33286
+
+W_Q<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "Q"]) #23.7237 #within imputation variance
+
+B_Q<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "Q"]) #0.05933954
+#between imputation variance
+
+Q
+W_Q
+B_Q
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_Q<-W_Q+(1+1/m)*B_Q #23.78388
+T_Q
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_Q<-(B_Q+B_Q/m)/T_Q #proportion of variation attributable to the missing data
+
+r_Q<-(lambda_Q)/(1-lambda_Q) #relative increase in variance due to nonresponse
+
+v_old_Q<-(m-1)*(1+1/r_Q^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (Q) in the hypothetically complete data
+
+v_obs_Q=((v_com+1)/(v_com+3))*v_com*(1-lambda_Q) #observed data degrees of freedom that accounts for the missing information
+
+v_Q<-(v_old_Q*v_obs_Q)/(v_old_Q+v_obs_Q)
+
+t_crit_Q <- qt(0.975, v_Q) 
+
+lower_bound_Q<-Q-t_crit_Q*sqrt(T_Q) #2.702697
+upper_bound_Q<-Q+t_crit_Q*sqrt(T_Q) #21.96302
+
+lower_bound_Q
+upper_bound_Q
+
+```
+
+##### Next, V2
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+V2<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "V2"]) #8.714286
+
+W_V2<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "V2"]) #9.882814 #within imputation variance
+
+B_V2<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "V2"]) #0.005677019
+#between imputation variance
+
+V2
+W_V2
+B_V2
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_V2<-W_V2+(1+1/m)*B_V2 #9.888572
+T_V2
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_V2<-(B_V2+B_V2/m)/T_V2 #proportion of variation attributable to the missing data
+
+r_V2<-(lambda_V2)/(1-lambda_V2) #relative increase in variance due to nonresponse
+
+v_old_V2<-(m-1)*(1+1/r_V2^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (V2) in the hypothetically complete data
+
+v_obs_V2=((v_com+1)/(v_com+3))*v_com*(1-lambda_V2) #observed data degrees of freedom that accounts for the missing information
+
+v_V2<-(v_old_V2*v_obs_V2)/(v_old_V2+v_obs_V2)
+
+t_crit_V2 <- qt(0.975, v_V2) 
+
+lower_bound_V2<-V2-t_crit_V2*sqrt(T_V2) #2.504844
+upper_bound_V2<-V2+t_crit_V2*sqrt(T_V2) #14.92373
+
+lower_bound_V2
+upper_bound_V2
+
+```
+
+##### Next, BW
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+BW<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "BW"]) #1.032786
+
+W_BW<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "BW"]) #0.03541545 #within imputation variance
+
+B_BW<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "BW"]) #0.0003502578
+#between imputation variance
+
+BW
+W_BW
+B_BW
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_BW<-W_BW+(1+1/m)*B_BW #0.03577071
+T_BW
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_BW<-(B_BW+B_BW/m)/T_BW #proportion of variation attributable to the missing data
+
+r_BW<-(lambda_BW)/(1-lambda_BW) #relative increase in variance due to nonresponse
+
+v_old_BW<-(m-1)*(1+1/r_BW^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (BW) in the hypothetically complete data
+
+v_obs_BW=((v_com+1)/(v_com+3))*v_com*(1-lambda_BW) #observed data degrees of freedom that accounts for the missing information
+
+v_BW<-(v_old_BW*v_obs_BW)/(v_old_BW+v_obs_BW)
+
+t_crit_BW <- qt(0.975, v_BW) 
+
+lower_bound_BW<-BW-t_crit_BW*sqrt(T_BW) #0.659294
+upper_bound_BW<-BW+t_crit_BW*sqrt(T_BW) #1.406277
+
+lower_bound_BW
+upper_bound_BW
+
+```
+
+##### Next, Cov_CLr_V1
+
+```{r for this special case I need preliminary treatment}
+
+# First of all, replacing the Var with the values in RSE column
+
+library(dplyr)
+
+Pooling_Parameters_2l.pan <- Pooling_Parameters_2l.pan %>%
+  mutate(Var = ifelse(Parameters == "Cov_CLr_V1", RSE^2, Var))
+
+# Second of all, replacing the values of the RSE column
+
+Pooling_Parameters_2l.pan <- Pooling_Parameters_2l.pan %>%
+mutate(RSE = ifelse(Parameters == "Cov_CLr_V1", (RSE/Estimates)*100, RSE))
+
+```
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+Cov_CLr_V1<-mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "Cov_CLr_V1"]) #0.07843
+
+W_Cov_CLr_V1<-mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "Cov_CLr_V1"]) #0.001475356 #within imputation variance
+
+B_Cov_CLr_V1<-var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "Cov_CLr_V1"]) #1.735083e-05
+#between imputation variance
+
+Cov_CLr_V1
+W_Cov_CLr_V1
+B_Cov_CLr_V1
+
+```
+
+```{r total variance for all}
+
+m<-70
+T_Cov_CLr_V1<-W_Cov_CLr_V1+(1+1/m)*B_Cov_CLr_V1 #0.001492955
+T_Cov_CLr_V1
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_Cov_CLr_V1<-(B_Cov_CLr_V1+B_Cov_CLr_V1/m)/T_Cov_CLr_V1 #proportion of variation attributable to the missing data
+
+r_Cov_CLr_V1<-(lambda_Cov_CLr_V1)/(1-lambda_Cov_CLr_V1) #relative increase in variance due to nonresponse
+
+v_old_Cov_CLr_V1<-(m-1)*(1+1/r_Cov_CLr_V1^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (Cov_CLr_V1) in the hypothetically complete data
+
+v_obs_Cov_CLr_V1=((v_com+1)/(v_com+3))*v_com*(1-lambda_Cov_CLr_V1) #observed data degrees of freedom that accounts for the missing information
+
+v_Cov_CLr_V1<-(v_old_Cov_CLr_V1*v_obs_Cov_CLr_V1)/(v_old_Cov_CLr_V1+v_obs_Cov_CLr_V1)
+
+t_crit_Cov_CLr_V1 <- qt(0.975, v_Cov_CLr_V1) 
+
+lower_bound_Cov_CLr_V1<-Cov_CLr_V1-t_crit_Cov_CLr_V1*sqrt(T_Cov_CLr_V1) #0.002126054
+upper_bound_Cov_CLr_V1<-Cov_CLr_V1+t_crit_Cov_CLr_V1*sqrt(T_Cov_CLr_V1) #0.1547339
+
+lower_bound_Cov_CLr_V1
+upper_bound_Cov_CLr_V1
+
+```
+
+##### Thereafter, with IIVs and Prop.Err, they are variance terms, so I will log-transform them first, then use Rubin's Rule to pool the parameter estimates, then back-transform to get the actual esmates
+
+```{r create a log-transformed Log column}
+
+Pooling_Parameters_2l.pan$Log<-log(Pooling_Parameters_2l.pan$Estimates)
+
+```
+
+```{r create a Var_Log variable}
+
+# Variance of the log-transformed variable
+
+Pooling_Parameters_2l.pan$Var_Log<-(1/(Pooling_Parameters_2l.pan$Estimates))^2*Pooling_Parameters_2l.pan$Var #Var(log(x))=[1/(mean(x))]^2*var(x) (log(x) in R is actually ln(x))
+
+```
+
+##### First, we deal with IIV_CLcrrt log-transformed estimate - IIV_CLcrrt_log, then back-transform to IIV_CLcrrt
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+IIV_CLcrrt_log<-mean(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "IIV_CLcrrt"]) #1.723017
+
+W_IIV_CLcrrt_log<-mean(Pooling_Parameters_2l.pan$Var_Log[Pooling_Parameters_2l.pan$Parameters == "IIV_CLcrrt"]) #0.1443013 #within imputation variance
+
+B_IIV_CLcrrt_log<-var(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "IIV_CLcrrt"]) #0.0001843056 #between imputation variance
+
+IIV_CLcrrt_log
+W_IIV_CLcrrt_log
+B_IIV_CLcrrt_log
+
+```
+
+```{r total variance for log-transformed variable}
+
+m<-70
+T_IIV_CLcrrt_log<-W_IIV_CLcrrt_log+(1+1/m)*B_IIV_CLcrrt_log #0.1444883
+T_IIV_CLcrrt_log
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_IIV_CLcrrt_log<-(B_IIV_CLcrrt_log+B_IIV_CLcrrt_log/m)/T_IIV_CLcrrt_log #proportion of variation attributable to the missing data
+
+r_IIV_CLcrrt_log<-(lambda_IIV_CLcrrt_log)/(1-lambda_IIV_CLcrrt_log) #relative increase in variance due to nonresponse
+
+v_old_IIV_CLcrrt_log<-(m-1)*(1+1/r_IIV_CLcrrt_log^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (IIV_CLcrrt_log) in the hypothetically complete data
+
+v_obs_IIV_CLcrrt_log=((v_com+1)/(v_com+3))*v_com*(1-lambda_IIV_CLcrrt_log) #observed data degrees of freedom that accounts for the missing information
+
+v_IIV_CLcrrt_log<-(v_old_IIV_CLcrrt_log*v_obs_IIV_CLcrrt_log)/(v_old_IIV_CLcrrt_log+v_obs_IIV_CLcrrt_log)
+
+t_crit_IIV_CLcrrt_log <- qt(0.975, v_IIV_CLcrrt_log) 
+
+lower_bound_IIV_CLcrrt_log<-IIV_CLcrrt_log-t_crit_IIV_CLcrrt_log*sqrt(T_IIV_CLcrrt_log) #-2.47361
+upper_bound_IIV_CLcrrt_log<-IIV_CLcrrt_log+t_crit_IIV_CLcrrt_log*sqrt(T_IIV_CLcrrt_log) #-0.9724246
+
+lower_bound_IIV_CLcrrt_log
+upper_bound_IIV_CLcrrt_log
+
+```
+
+```{r back transform IIV_CLcrrt_log to IIV_CLcrrt}
+
+IIV_CLcrrt<-exp(IIV_CLcrrt_log) #0.1785267
+
+lower_bound_IIV_CLcrrt<-exp(lower_bound_IIV_CLcrrt_log) #0.08428006
+
+upper_bound_IIV_CLcrrt<-exp(upper_bound_IIV_CLcrrt_log) #0.378165
+
+IIV_CLcrrt
+
+lower_bound_IIV_CLcrrt
+
+upper_bound_IIV_CLcrrt
+
+```
+
+##### Second, we deal with IIV_CLr log-transformed estimate - IIV_CLr_log, then back-transform to IIV_CLr
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+IIV_CLr_log<-mean(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "IIV_CLr"]) #-1.511388
+
+W_IIV_CLr_log<-mean(Pooling_Parameters_2l.pan$Var_Log[Pooling_Parameters_2l.pan$Parameters == "IIV_CLr"]) #0.0377679 #within imputation variance
+
+B_IIV_CLr_log<-var(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "IIV_CLr"]) #0.001016345 #between imputation variance
+
+IIV_CLr_log
+W_IIV_CLr_log
+B_IIV_CLr_log
+
+```
+
+```{r total variance for log-transformed variable}
+
+m<-70
+T_IIV_CLr_log<-W_IIV_CLr_log+(1+1/m)*B_IIV_CLr_log #0.001016345
+T_IIV_CLr_log
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_IIV_CLr_log<-(B_IIV_CLr_log+B_IIV_CLr_log/m)/T_IIV_CLr_log #proportion of variation attributable to the missing data
+
+r_IIV_CLr_log<-(lambda_IIV_CLr_log)/(1-lambda_IIV_CLr_log) #relative increase in variance due to nonresponse
+
+v_old_IIV_CLr_log<-(m-1)*(1+1/r_IIV_CLr_log^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (IIV_CLr_log) in the hypothetically complete data
+
+v_obs_IIV_CLr_log=((v_com+1)/(v_com+3))*v_com*(1-lambda_IIV_CLr_log) #observed data degrees of freedom that accounts for the missing information
+
+v_IIV_CLr_log<-(v_old_IIV_CLr_log*v_obs_IIV_CLr_log)/(v_old_IIV_CLr_log+v_obs_IIV_CLr_log)
+
+t_crit_IIV_CLr_log <- qt(0.975, v_IIV_CLr_log) 
+
+lower_bound_IIV_CLr_log<-IIV_CLr_log-t_crit_IIV_CLr_log*sqrt(T_IIV_CLr_log) #-1.900422
+upper_bound_IIV_CLr_log<-IIV_CLr_log+t_crit_IIV_CLr_log*sqrt(T_IIV_CLr_log) #-1.122355
+
+lower_bound_IIV_CLr_log
+upper_bound_IIV_CLr_log
+
+```
+
+```{r back transform IIV_CLr_log to IIV_CLr}
+
+IIV_CLr<-exp(IIV_CLr_log) #0.2206035
+
+lower_bound_IIV_CLr<-exp(lower_bound_IIV_CLr_log) #0.1495055
+
+upper_bound_IIV_CLr<-exp(upper_bound_IIV_CLr_log) #0.3255125
+
+IIV_CLr
+
+lower_bound_IIV_CLr
+
+upper_bound_IIV_CLr
+
+```
+
+##### After that, we deal with IIV_V1 log-transformed estimate - IIV_V1_log, then back-transform to IIV_V1
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+IIV_V1_log<-mean(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "IIV_V1"]) #-1.240382
+
+W_IIV_V1_log<-mean(Pooling_Parameters_2l.pan$Var_Log[Pooling_Parameters_2l.pan$Parameters == "IIV_V1"]) #0.0452367 #within imputation variance
+
+B_IIV_V1_log<-var(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "IIV_V1"]) #0.0001839721 #between imputation variance
+
+IIV_V1_log
+W_IIV_V1_log
+B_IIV_V1_log
+
+```
+
+```{r total variance for log-transformed variable}
+
+m<-70
+T_IIV_V1_log<-W_IIV_V1_log+(1+1/m)*B_IIV_V1_log #0.0454233
+T_IIV_V1_log
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_IIV_V1_log<-(B_IIV_V1_log+B_IIV_V1_log/m)/T_IIV_V1_log #proportion of variation attributable to the missing data
+
+r_IIV_V1_log<-(lambda_IIV_V1_log)/(1-lambda_IIV_V1_log) #relative increase in variance due to nonresponse
+
+v_old_IIV_V1_log<-(m-1)*(1+1/r_IIV_V1_log^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (IIV_V1_log) in the hypothetically complete data
+
+v_obs_IIV_V1_log=((v_com+1)/(v_com+3))*v_com*(1-lambda_IIV_V1_log) #observed data degrees of freedom that accounts for the missing information
+
+v_IIV_V1_log<-(v_old_IIV_V1_log*v_obs_IIV_V1_log)/(v_old_IIV_V1_log+v_obs_IIV_V1_log)
+
+t_crit_IIV_V1_log <- qt(0.975, v_IIV_V1_log) 
+
+lower_bound_IIV_V1_log<-IIV_V1_log-t_crit_IIV_V1_log*sqrt(T_IIV_V1_log) #-1.661241
+upper_bound_IIV_V1_log<-IIV_V1_log+t_crit_IIV_V1_log*sqrt(T_IIV_V1_log) #-0.8195228
+
+lower_bound_IIV_V1_log
+upper_bound_IIV_V1_log
+
+```
+
+```{r back transform IIV_V1_log to IIV_V1}
+
+IIV_V1<-exp(IIV_V1_log) #0.2892737
+
+lower_bound_IIV_V1<-exp(lower_bound_IIV_V1_log) #0.1899032
+
+upper_bound_IIV_V1<-exp(upper_bound_IIV_V1_log) #0.4406419
+
+IIV_V1
+
+lower_bound_IIV_V1
+
+upper_bound_IIV_V1
+
+```
+
+##### Finally, we deal with PropErr log-transformed estimate - PropErr_log, then back-transform to PropErr
+
+```{r calculate Mean Within and Between Subject variability for all}
+
+PropErr_log<-mean(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "PropErr"]) #-3.593393
+
+W_PropErr_log<-mean(Pooling_Parameters_2l.pan$Var_Log[Pooling_Parameters_2l.pan$Parameters == "PropErr"]) #0.01827621 #within imputation variance
+
+B_PropErr_log<-var(Pooling_Parameters_2l.pan$Log[Pooling_Parameters_2l.pan$Parameters == "PropErr"]) #6.42266e-05
+ #between imputation variance
+
+PropErr_log
+W_PropErr_log
+B_PropErr_log
+
+```
+
+```{r total variance for log-transformed variable}
+
+m<-70
+T_PropErr_log<-W_PropErr_log+(1+1/m)*B_PropErr_log #0.01834136
+T_PropErr_log
+
+```
+
+```{r confidence interval - T distribution}
+
+m<-70 #number of imputations
+k<-12 #my model has 12 parameters (including 6 fixed effects parameters and 6 random effect parameters where covariance is one of them)
+n<-177
+
+lambda_PropErr_log<-(B_PropErr_log+B_PropErr_log/m)/T_PropErr_log #proportion of variation attributable to the missing data
+
+r_PropErr_log<-(lambda_PropErr_log)/(1-lambda_PropErr_log) #relative increase in variance due to nonresponse
+
+v_old_PropErr_log<-(m-1)*(1+1/r_PropErr_log^2) #old degree of freedom
+
+v_com=n-k #degree of freedom of parameter estimate (PropErr_log) in the hypothetically complete data
+
+v_obs_PropErr_log=((v_com+1)/(v_com+3))*v_com*(1-lambda_PropErr_log) #observed data degrees of freedom that accounts for the missing information
+
+v_PropErr_log<-(v_old_PropErr_log*v_obs_PropErr_log)/(v_old_PropErr_log+v_obs_PropErr_log)
+
+t_crit_PropErr_log <- qt(0.975, v_PropErr_log) 
+
+lower_bound_PropErr_log<-PropErr_log-t_crit_PropErr_log*sqrt(T_PropErr_log) #-3.860824
+upper_bound_PropErr_log<-PropErr_log+t_crit_PropErr_log*sqrt(T_PropErr_log) #-3.325962
+
+lower_bound_PropErr_log
+upper_bound_PropErr_log
+
+```
+
+```{r back transform PropErr_log to PropErr}
+
+PropErr<-exp(PropErr_log) #0.02750484
+
+lower_bound_PropErr<-exp(lower_bound_PropErr_log) #0.02105065
+
+upper_bound_PropErr<-exp(upper_bound_PropErr_log) #0.03593792
+
+PropErr
+
+lower_bound_PropErr
+
+upper_bound_PropErr
+
+```
+
+#### Evaluate the adequacy of the number of imputations (for later - 091023)
+
+```{r set wd, warning=FALSE}
+
+# Read in the dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Pooled_datasets")
+Pooling_Parameters_2l.pan<-read.csv("Pooling_Parameters_2l.pan_051023.csv",sep=";")
+
+# Creating Var (Variance) column 
+Pooling_Parameters_2l.pan$Var<-(Pooling_Parameters_2l.pan$RSE*Pooling_Parameters_2l.pan$Estimates/100)^2
+
+```
+
+```{r calculate variance Theta Within and Between Subject variability for 70 imputations, warning=FALSE}
+
 # Create empty vectors
 m <- Theta <- W <- B <- Total_Var <- numeric(70)
 
 # Assign values to vectors using for loop
 for (i in 1:70) {
   m[i] <- i
-  Theta[i] <- mean(Pooledmodel_noCKDEPI_noadderr_BW$Estimates[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
-  W[i] <- mean(Pooledmodel_noCKDEPI_noadderr_BW$Var[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
-  B[i] <- var(Pooledmodel_noCKDEPI_noadderr_BW$Estimates[Pooledmodel_noCKDEPI_noadderr_BW$Parameters == "CKDEPI" & Pooledmodel_noCKDEPI_noadderr_BW$Model <= i])
+  Theta[i] <- mean(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CKDEPI" & Pooling_Parameters_2l.pan$Model <= i])
+  W[i] <- mean(Pooling_Parameters_2l.pan$Var[Pooling_Parameters_2l.pan$Parameters == "CKDEPI" & Pooling_Parameters_2l.pan$Model <= i])
+  B[i] <- var(Pooling_Parameters_2l.pan$Estimates[Pooling_Parameters_2l.pan$Parameters == "CKDEPI" & Pooling_Parameters_2l.pan$Model <= i])
   Total_Var[i] <- W[i] + (1 + 1 / m[i]) * B[i]
 }
 
@@ -909,40 +1589,102 @@ imputation_number <- data.frame(m, Theta, Total_Var)
 ```
 
 ```{r plot Theta over m, warning=FALSE}
+
 library(ggplot2)
+
+x_label_options <- list(
+  label = "Number of imputations",
+  size = 12,
+  color = "black",
+  hjust = 0.5,
+  vjust = 0,
+  face = "bold"
+)
+
+y_label_options <- list(
+  label = "CKDEPI effect Estimate",
+  size = 12,
+  color = "black",
+  hjust = 0,
+  vjust = 0.5,
+  angle = 0,
+  face = "bold"
+)
+
+axis_text_options <- list(
+  size = 10
+)
+
 Theta_over_m<-ggplot(imputation_number, aes(x = m)) +
   geom_line(aes(y = Theta, color = "Parameter Estimate"), size = 1.0) +
   geom_point(aes(y = Theta, color = "Parameter Estimate"), size = 2.5) + # Add points for Parameter Estimate
-  scale_color_manual(values = c("blue")) +
-  scale_x_continuous(breaks = seq(1, 70, 10), limits = c(1, 70))  +
-  labs(x = "Number of imputations", y = "CKDEPI effect Estimate", color = "Variables") +
-  theme_bw() + theme(legend.position = "none")
+  scale_color_manual(values = c("dodgerblue4")) +
+  scale_x_continuous(breaks = seq(0, 70, 10), limits = c(0, 70))  +
+  scale_y_continuous(breaks = seq(0, 0.55, 0.05), limits = c(0, 0.55)) +
+  labs(x = x_label_options,
+         y = y_label_options) +
+  theme_bw() + 
+  theme(axis.text = element_text(axis_text_options),
+        legend.position = "none")
+Theta_over_m
 
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#labs(x = "Number of imputations", y = "CKDEPI effect Estimate", color = "Variables") +
 
-ggsave("theta_over_m_070823.png", plot = Theta_over_m, dpi = 300, width = 8.27, height = 10.3)
+# Exporting the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pan")  
 
-#scale_y_continuous(breaks = seq(0.95, 1.01, 0.005), limits = c(0.95, 1.01))
+ggsave("theta_over_m_091023.png", plot = Theta_over_m, dpi = 300, width = 12, height = 8)
 
 ```
 
 ```{r plot variance over m, warning=FALSE}
+
+library(ggplot2)
+
+x_label_options <- list(
+  label = "Number of imputations",
+  size = 12,
+  color = "black",
+  hjust = 0.5,
+  vjust = 0,
+  face = "bold"
+)
+
+y_label_options <- list(
+  label = "Total variance of CKDEPI effect estimate",
+  size = 12,
+  color = "black",
+  hjust = 0,
+  vjust = 0.5,
+  angle = 0,
+  face = "bold"
+)
+
+axis_text_options <- list(
+  size = 10
+)
+
 var_over_m<-ggplot(imputation_number, aes(x = m)) +
   geom_line(aes(y = Total_Var, color = "Total Variance"), size = 1.0) +
   geom_point(aes(y = Total_Var, color = "Total Variance"), size = 2.5) + # Add points for Total Variance
-  scale_color_manual(values = c("orange")) +
-  scale_x_continuous(breaks = seq(2, 70, 10), limits = c(2, 70)) +
-  labs(x = "Number of imputations", y = "Total variance of BW effect estimate", color = "Variables") +
-  theme_bw() + theme(legend.position = "none")
+  scale_color_manual(values = c("goldenrod1")) +
+  scale_x_continuous(breaks = seq(0, 70, 10), limits = c(0, 70))  +
+  scale_y_continuous(breaks = seq(0, 0.042, 0.003), limits = c(0, 0.042)) +
+  labs(x = x_label_options,
+         y = y_label_options) +
+  theme_bw() + 
+  theme(axis.text = element_text(axis_text_options),
+        legend.position = "none")
+var_over_m
 
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+# Exporting the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pan")  
 
-ggsave("var_over_m_070823.png", plot = var_over_m, dpi = 300, width = 8.27, height = 10.3)
+ggsave("var_over_m_091023.png", plot = var_over_m, dpi = 300, width = 12, height = 8)
 
-        #scale_y_continuous(breaks = seq(0.035, 0.0405, 0.0005), limits = c(0.035, 0.0405))
 ```
 
-##### Making diagnostic plots of CKDEPI over TIME observed vs imputed; and density plot
+#### Making diagnostic plots of CKDEPI over TIME observed vs imputed; and density plot
 
 ```{r reading first imputed dataset 2l.pan method,warning=FALSE}
 
@@ -1100,100 +1842,80 @@ ggsave("Density_2l.pmm_051023.png", plot = density_plot, dpi = 300, width = 12, 
 
 ```
 
-##### These codes maybe redundant
+### Making VPC - 111023
+#### First of all, calculate mean BW and CKDEPI of the total 70 imputations
 
-```{r scatter plot}
+```{r calculate mean BW and CKDEPI - BW_ave and CKDEPI_ave, warning=FALSE}
 
-library(ggplot2)
-library(gridExtra)
+# Set wd
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+
 library(dplyr)
+library(readr)
 
-Imputed_Creat_Long <- Fluc_NONMEM_mul_impute_BW01 %>%
-  pivot_longer(cols = c(CKDEPI01, CKDEPI02, CKDEPI03, CKDEPI04, CKDEPI05, CKDEPI06, CKDEPI07, CKDEPI08, CKDEPI09, CKDEPI10),                names_to = "Imputed_CKDEPI", 
-               values_to = "Value") %>%
-  select(ID, OCC, TIME, Imputed_CKDEPI, Creat_Imputed, Value)
+# Create a list to store all datasets
+datasets <- list()
+# Repeat Steps 1 and 2 for the other datasets
+for (i in 1:7) {
+  # Generate the dataset name
+  dataset_name <- paste0("Fluc_NONMEM_mul_impute_BW0", i, ".csv")
+  
+  # Read the dataset
+  data  <- read.csv(dataset_name)
 
-Imputed_Creat_Long <- Imputed_Creat_Long %>%
-  mutate(Creat_Imputed = factor(Creat_Imputed, levels = c(0, 1), labels = c("No", "Yes")))
-
-# Define the title and label options
-title_options <- list(
-  label = "CKDEPI over Time of the first 10 imputations",
-  size = 14,
-  color = "black",
-  hjust = 0.5,
-  vjust = 1,
-  face = "bold"
-)
-
-x_label_options <- list(
-  label = "Time (h)",
-  size = 12,
-  color = "black",
-  hjust = 0.5,
-  vjust = 0
-)
-
-y_label_options <- list(
-  label = "CKDEPI (ml/min/1.73m2)",
-  size = 12,
-  color = "black",
-  hjust = 0,
-  vjust = 0.5,
-  angle = 0
-)
-
-axis_text_options <- list(
-  size = 10
-)
-
-legend_options <- list(
-  title = "CREAT Imputed",
-  size = 8
-)
-
-# Create a function to generate scatter plots with custom styling
-create_scatter_plots <- function(data, imputed_ckdepi) {
-  max_value <- max(data$Value)
-  ggplot(data = data, aes(x = TIME, y = Value, color = Creat_Imputed)) +
-    geom_point(size = 3, alpha = 1) +
-    labs(title = title_options,
-         x = x_label_options,
-         y = y_label_options) +
-    scale_color_manual(values = c("No" = "dodgerblue4", "Yes" = "goldenrod1"), 
-                       name = legend_options) +
-    scale_y_continuous(limits = c(0, max_value * 1.1), breaks = seq(0, max_value * 1.1, by = 10)) +
-    facet_wrap(~Imputed_CKDEPI, ncol = 2) +  # Facet by Imputed_CKDEPI
-    theme_bw() +
-    theme(
-      plot.title = element_text(hjust = 0.5),
-      axis.text = element_text(axis_text_options),
-      legend.position = "bottom"
-    )
+  # Create "BW_ave0i" in the current dataset
+  data  <- data  %>%
+    mutate(!!paste0("BW_ave0", i) := rowMeans(select(data , BW01:BW10), na.rm = TRUE))
+  
+   # Create "CKDEPI_ave0i" in the current dataset
+  data  <- data  %>%
+    mutate(!!paste0("CKDEPI_ave0", i) := rowMeans(select(data , CKDEPI01:CKDEPI10), na.rm = TRUE))
+  
+  # Add the dataset to the list
+  
+  datasets[[i]] <- data 
+  
 }
 
-# Create the scatter plots in panels
-imputed_ckdepi_levels <- unique(Imputed_Creat_Long$Imputed_CKDEPI)
-panel_plots <- lapply(imputed_ckdepi_levels, function(ckdepi) {
-  data_subset <- Imputed_Creat_Long[Imputed_Creat_Long$Imputed_CKDEPI == ckdepi, ]
-  create_scatter_plots(data_subset, ckdepi)
-})
+# Combine the datasets by columns
+combined_dataset <- bind_cols(datasets)
 
-# Export the plots as high-resolution images
-output_dir <- "C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/diagnostic_plots/2l.pmm"
+# Calculate the mean of "BW_ave01" to "BW_ave07" columns and create "BW_ave"
+combined_dataset <- combined_dataset %>%
+  mutate(BW_ave = rowMeans(select(., starts_with("BW_ave0")), na.rm = TRUE))
 
-if (!dir.exists(output_dir)) dir.create(output_dir)
+# Calculate the mean of "CKDEPI_ave01" to "CKDEPI_ave07" columns and create "CKDEPI_ave"
+combined_dataset <- combined_dataset %>%
+  mutate(CKDEPI_ave = rowMeans(select(., starts_with("CKDEPI_ave0")), na.rm = TRUE))
 
-for (i in seq_along(panel_plots)) {
-  ggsave(filename = paste0(output_dir, "/scatter_plot_panel_", i, ".png"),
-         plot = panel_plots[[i]],
-         width = 10,
-         height = 7,
-         dpi = 300)
-}
+# Add "BW_ave" to the "Fluc_NONMEM_mul_impute_BW01.csv" dataset
+datasets[[1]]$BW_ave<-combined_dataset$BW_ave
+
+# Add "CKDEPI_ave" to the "Fluc_NONMEM_mul_impute_BW01.csv" dataset
+datasets[[1]]$CKDEPI_ave<-combined_dataset$CKDEPI_ave
+
+# Excluding "BW_ave01" column
+datasets[[1]]$BW_ave01<-NULL
+datasets[[1]]$CKDEPI_ave01<-NULL
+
+# Exporting the dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan/vpc")
+write.csv(datasets[[1]], "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = FALSE)
 
 ```
 
+
+
+### Doing simulation - 091023
+#### First of all, check the correlation between BW & CKDEPI
+
+```{r correlation BW & CKDEPI}
+
+cor(FlucTotIV_clean$CKDEPI,FlucTotIV_clean$BW2) #Equal NA
+# Note: in cor(x,y), y needs to have compatible dimensions to x
+FlucTotIV_clean %>% filter (!is.na(CKDEPI)) %>% summarize(correlation = cor(CKDEPI, BW2,method="pearson")) #-0.175662 #weak negative #Ask Erwin if it can be ignored?
+
+```
 
 
 

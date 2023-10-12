@@ -5747,12 +5747,14 @@ upper_bound_Cov_CLr_V1
 ##### Thereafter, with IIVs and Prop.Err, they are variance terms, so I will log-transform them first, then use Rubin's Rule to pool the parameter estimates, then back-transform to get the actual esmates 
 
 ###### First of all, create a new column called Log (the log-tranformed parameter estimates)
+
 ```{r create a log-transformed Log column}
 Pooledmodel_noadderr_BW$Log<-log(Pooledmodel_noadderr_BW$Estimates)
 
 ```
 
 ###### Then create a Var_Log variable, which is the variance of the log-transformed variable
+
 ```{r create a Var_Log variable}
 Pooledmodel_noadderr_BW$Var_Log<-(1/(Pooledmodel_noadderr_BW$Estimates))^2*Pooledmodel_noadderr_BW$Var #Var(log(x))=[1/(mean(x))]^2*var(x) (log(x) in R is actually ln(x))
 ```
