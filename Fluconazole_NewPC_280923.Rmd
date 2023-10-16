@@ -1910,13 +1910,29 @@ write.csv(datasets[[1]], "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = F
 
 
 ### Doing simulation - 091023
-#### First of all, check the correlation between BW & CKDEPI
+#### First of all, check the correlation between BW & CKDEPI - overall
 
 ```{r correlation BW & CKDEPI}
 
 cor(FlucTotIV_clean$CKDEPI,FlucTotIV_clean$BW2) #Equal NA
 # Note: in cor(x,y), y needs to have compatible dimensions to x
 FlucTotIV_clean %>% filter (!is.na(CKDEPI)) %>% summarize(correlation = cor(CKDEPI, BW2,method="pearson")) #-0.175662 #weak negative #Ask Erwin if it can be ignored?
+
+```
+
+#### Then check the correlation between BW & CKDEPI - non-CRRT patients
+
+```{r correlation BW & CKDEPI}
+
+# Identify all patients on CRRT
+crrt_ids<-unique(FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 1])
+
+# Dataset of all non-CRRT patients
+FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID %in% crrt_ids)
+
+# Correlation coefficient
+# Note: in cor(x,y), y needs to have compatible dimensions to x
+FlucTotIV_clean_nocrrt %>% filter (!is.na(CKDEPI)) %>% summarize(correlation = cor(CKDEPI, BW2,method="pearson")) #-0.2432515 #weak negative #Ask Erwin if it can be ignored - still relatively low
 
 ```
 
@@ -1932,7 +1948,7 @@ sim_dosing_01<-read.csv("dosing_08.csv")
 
 ```
 
-```{r checking normal distribution of CKDEPI}
+```{r checking normal distribution of CKDEPI - overall dataset}
 
 # Test if CKDEPI has a normal distribution
 library(dplyr)
@@ -1957,7 +1973,57 @@ shapiro.test(test$CKDEPI2) #p-value = 1.281e-15
 
 ```
 
-```{r comparing CKDEPI of CRRT vs non-CRRT}
+```{r checking normal distribution of CKDEPI - non-CRRT dataset}
+
+# Test if CKDEPI has a normal distribution
+library(dplyr)
+test <- FlucTotIV_clean_nocrrt %>% select(ID, CKDEPI) %>% unique() %>% mutate(CKDEPI2 = log10(CKDEPI))
+library(ggplot2)
+
+test<-na.omit(test)
+
+# Making a qqplot
+qqnorm(test$CKDEPI, pch = 1, frame = FALSE)
+qqline(test$CKDEPI, col = "steelblue", lwd = 2)
+
+shapiro.test(test$CKDEPI) # p-value = 3.807e-09 - non-normal
+
+# For the log-transformed CKDEPI
+qqnorm(test$CKDEPI2, pch = 1, frame = FALSE)
+qqline(test$CKDEPI2, col = "steelblue", lwd = 2)
+
+shapiro.test(test$CKDEPI2) #p-value = 2.2e-16
+
+# normal distribution doesn't work
+
+```
+
+```{r checking normal distribution of BW - non-CRRT dataset}
+
+# Test if BW2 has a normal distribution
+library(dplyr)
+test <- FlucTotIV_clean_nocrrt %>% select(ID, BW2) %>% unique() %>% mutate(BW = log10(BW2))
+library(ggplot2)
+
+test<-na.omit(test)
+
+# Making a qqplot
+qqnorm(test$BW2, pch = 1, frame = FALSE)
+qqline(test$BW2, col = "steelblue", lwd = 2)
+
+shapiro.test(test$BW2) # p-value = 0.03124 - non-normal
+
+# For the log-transformed BW
+qqnorm(test$BW, pch = 1, frame = FALSE)
+qqline(test$BW, col = "steelblue", lwd = 2)
+
+shapiro.test(test$BW) #p-value = 0.09443 - still quite small
+
+# normal distribution doesn't work
+
+```
+
+```{r comparing CKDEPI of CRRT vs non-CRRT - not necessary anymore}
 # comparing if CRRT vs non-CRRT patients have a different distribution
 
 crrt_ids<-unique(test$ID[test$CRRT == 1])
@@ -2012,3 +2078,320 @@ sim_dosing_01$PEAK<-NULL
 
 
 ```
+
+### Clindamycin side project 131023
+
+#### Import the dataset that I've created
+
+```{r Clindamycin_APriori & Clindamycin_APosteriori datasets,warning=FALSE}
+
+# Load a ";" seperated file
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Clindamycin_APriori<-read.csv("Clindamycin_APriori.csv",sep=";")
+
+# Export to a comma seperated file
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+write.csv(Clindamycin_APriori, "Clindamycin_APriori.csv",quote=F,row.names = FALSE)
+
+# Similarly for a Posteriori dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Clindamycin_APosteriori<-read.csv("Clindamycin_APosteriori.csv",sep=";")
+
+# Export to a "," seperated file
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+write.csv(Clindamycin_APosteriori, "Clindamycin_APosteriori.csv",quote=F,row.names = FALSE)
+
+# Read my Mod1_Run01 model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod1_Run01<-read.csv("Mod1_Run01.csv",check.names = FALSE, sep="")
+
+# Read my Mod2_Run01 model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod2_Run01<-read.csv("Mod2_Run01.csv",check.names = FALSE, sep="")
+
+```
+
+### CKDEPI & Fluc conc over Time plots
+
+#### CKDEPI over Time plots
+
+```{r investigating CKDEPI over TIME in CRRT patients, warning=FALSE}
+
+# Import the dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
+FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
+
+# Change DV from 0 to NA
+FlucTotIV_clean$DV <-ifelse(FlucTotIV_clean$DV==0,NA,FlucTotIV_clean$DV)
+
+# Define a function to calculate CKDEPI from CREAT
+calculate_CKDEPI <- function(data, creatinine_column, sex_column, age_column, multiplier) {
+  CKDEPI <- ifelse(data[[sex_column]] == 1 & data[[creatinine_column]] < 0.9,
+                   multiplier * ((data[[creatinine_column]]/0.9)^-0.302) * (0.9938^data[[age_column]]),
+                   ifelse(data[[sex_column]] == 1 & data[[creatinine_column]] >= 0.9,
+                          multiplier * ((data[[creatinine_column]]/0.9)^-1.200) * (0.9938^data[[age_column]]),
+                          ifelse(data[[sex_column]] == 2 & data[[creatinine_column]] < 0.7,
+                                 multiplier * ((data[[creatinine_column]]/0.7)^-0.241) * (0.9938^data[[age_column]]) * 1.012,
+                                 multiplier * ((data[[creatinine_column]]/0.7)^-1.200) * (0.9938^data[[age_column]]) * 1.012)
+                   )
+  )
+  return(CKDEPI)
+}
+
+# Define a new column CKDEPI_DOS_INT from CREAT_DOS_INT
+FlucTotIV_clean[["CKDEPI_DOS_INT"]] <- calculate_CKDEPI(FlucTotIV_clean,"CREAT_DOS_INT", 
+                                                            "SEX", "AGE", 142)
+
+# Get unique IDs with CRRT == 1 only
+library(dplyr)
+FlucTotIV_clean <- FlucTotIV_clean %>%filter(!HOSPITAL%in%c(3,4))
+crrt_1_ids <- unique(FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 1 & !FlucTotIV_clean$ID %in% FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 0]]) #ids of those who have CRRT all the time 
+
+library(ggplot2)
+
+# Select 5 random patients from crrt_IDs
+set.seed(123) # set seed for reproducibility
+crrt_IDs_1 <- sample(crrt_1_ids, size = 5, replace = FALSE)
+
+# Create a subset of the original data frame with the selected patients
+CRRT_subset_1 <- FlucTotIV_clean %>% 
+        filter(ID %in% crrt_IDs_1)
+CRRT_subset_2 <- FlucTotIV_clean %>% 
+        filter(ID %in% crrt_1_ids) %>% 
+        filter(!(ID %in% crrt_IDs_1))
+
+# First plot
+CKDEPI_DOS_INT_time_crrt_01<-ggplot() +
+        geom_line(data = CRRT_subset_1, aes(x = TIME, y = CKDEPI_DOS_INT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_subset_1, aes(x = TIME, y = CKDEPI_DOS_INT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(17)) +
+        scale_color_manual(values = c("red")) +
+        labs(title = "CKDEPI over Time for 5 Random Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CKDEPI (ml/min/1.73m2)") +
+        theme_bw() +
+        geom_rect(data = CRRT_subset_1[CRRT_subset_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("CKDEPI_DOS_INT_time_crrt_01.png", plot = CKDEPI_DOS_INT_time_crrt_01, dpi = 300, width = 10, height = 5)
+
+# Second plot
+CKDEPI_DOS_INT_time_crrt_02<-ggplot() +
+        geom_line(data = CRRT_subset_2, aes(x = TIME, y = CKDEPI_DOS_INT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_subset_2, aes(x = TIME, y = CKDEPI_DOS_INT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(17)) +
+        scale_color_manual(values = c("red")) +
+        labs(title = "CKDEPI over Time for 5 remaing Patients with CRRT on all the time on both sampling & dosing days", x = "Time (hours)", y = "CKDEPI (ml/min/1.73m2)") +
+        theme_bw() +
+        geom_rect(data = CRRT_subset_2[CRRT_subset_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+ggsave("CKDEPI_DOS_INT_time_crrt_02.png", plot = CKDEPI_DOS_INT_time_crrt_02, dpi = 300, width = 10, height = 5)
+
+
+#### I make the same plot for those who are on CRRT on & off on the whole treatment period
+
+# First selecting the ID of those who have CRRT non-missing and CRRT on and off
+library(dplyr)
+miscel_IDs <- FlucTotIV_clean %>%
+        group_by(ID) %>% 
+        summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
+        filter(has_both_crrt) %>% 
+        pull(ID) #equal 16
+miscel_IDs<-as.character(miscel_IDs)
+
+#library(ggplot2)
+# Select 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_1 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_1)
+
+# First plot
+CKDEPI_DOS_INT_time_miscel_01<-ggplot() +
+        geom_line(data = CRRT_miscel_1, aes(x = TIME, y = CKDEPI_DOS_INT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_1, aes(x = TIME, y = CKDEPI_DOS_INT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CKDEPI over Time for Patients with CRRT on and off 01", x = "Time (hours)", y = "CKDEPI (ml/min/1.73m2)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_1[CRRT_miscel_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+
+# Export the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Exploratory data analysis/CKDEPI over TIME")
+ggsave("CKDEPI_DOS_INT_time_miscel_01.png", plot = CKDEPI_DOS_INT_time_miscel_01, dpi = 300, width = 10, height = 5)
+
+# Select another 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_2 <- sample(setdiff(miscel_IDs, miscel_IDs_1), size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_2 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_2)
+
+# Second plot
+CKDEPI_DOS_INT_time_miscel_02<-ggplot() +
+        geom_line(data = CRRT_miscel_2, aes(x = TIME, y = CKDEPI_DOS_INT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_2, aes(x = TIME, y = CKDEPI_DOS_INT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CKDEPI over Time for Patients with CRRT on and off 02", x = "Time (hours)", y = "CKDEPI (ml/min/1.73m2)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_2[CRRT_miscel_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+# Export the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Exploratory data analysis/CKDEPI over TIME")
+ggsave("CKDEPI_DOS_INT_time_miscel_02.png", plot = CKDEPI_DOS_INT_time_miscel_02, dpi = 300, width = 10, height = 5)
+
+## And finally, select the remaining 4 patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_3 <- setdiff(miscel_IDs, c(miscel_IDs_1,miscel_IDs_2))
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_3 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_3)
+
+# Third plot
+CKDEPI_DOS_INT_time_miscel_03<-ggplot() +
+        geom_line(data = CRRT_miscel_3, aes(x = TIME, y = CKDEPI_DOS_INT, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_3, aes(x = TIME, y = CKDEPI_DOS_INT, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "CKDEPI over Time for Patients with CRRT on and off 03", x = "Time (hours)", y = "CKDEPI (ml/min/1.73m2)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_3[CRRT_miscel_3$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+
+# Export the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Exploratory data analysis/CKDEPI over TIME")
+ggsave("CKDEPI_DOS_INT_time_miscel_03.png", plot = CKDEPI_DOS_INT_time_miscel_03, dpi = 300, width = 10, height = 5)
+
+```
+
+#### Fluc Conc over Time plots
+
+```{r investigating Fluc Conc over TIME in CRRT patients, warning=FALSE}
+
+# Import the dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
+FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
+
+# Change DV from 0 to NA
+FlucTotIV_clean$DV <-ifelse(FlucTotIV_clean$DV==0,NA,FlucTotIV_clean$DV)
+
+# Define a function to calculate CKDEPI from CREAT
+calculate_CKDEPI <- function(data, creatinine_column, sex_column, age_column, multiplier) {
+  CKDEPI <- ifelse(data[[sex_column]] == 1 & data[[creatinine_column]] < 0.9,
+                   multiplier * ((data[[creatinine_column]]/0.9)^-0.302) * (0.9938^data[[age_column]]),
+                   ifelse(data[[sex_column]] == 1 & data[[creatinine_column]] >= 0.9,
+                          multiplier * ((data[[creatinine_column]]/0.9)^-1.200) * (0.9938^data[[age_column]]),
+                          ifelse(data[[sex_column]] == 2 & data[[creatinine_column]] < 0.7,
+                                 multiplier * ((data[[creatinine_column]]/0.7)^-0.241) * (0.9938^data[[age_column]]) * 1.012,
+                                 multiplier * ((data[[creatinine_column]]/0.7)^-1.200) * (0.9938^data[[age_column]]) * 1.012)
+                   )
+  )
+  return(CKDEPI)
+}
+
+# Define a new column CKDEPI_DOS_INT from CREAT_DOS_INT
+FlucTotIV_clean[["CKDEPI_DOS_INT"]] <- calculate_CKDEPI(FlucTotIV_clean,"CREAT_DOS_INT", 
+                                                            "SEX", "AGE", 142)
+
+#### I make the same plot for those who are on CRRT on & off on the whole treatment period
+
+# First selecting the ID of those who have CRRT non-missing and CRRT on and off
+library(dplyr)
+miscel_IDs <- FlucTotIV_clean %>%
+        group_by(ID) %>% 
+        summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
+        filter(has_both_crrt) %>% 
+        pull(ID) #equal 16
+miscel_IDs<-as.character(miscel_IDs)
+
+#library(ggplot2)
+# Select 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_1 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_1)
+
+# First plot
+DV_time_miscel_01<-ggplot() +
+        geom_line(data = CRRT_miscel_1, aes(x = TIME, y = DV, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_1, aes(x = TIME, y = DV, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "DV over Time for Patients with CRRT on and off 01", x = "Time (hours)", y = "DV (mg/L)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_1[CRRT_miscel_1$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+
+# Export the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Exploratory data analysis/DV over TIME")
+ggsave("DV_time_miscel_01.png", plot = DV_time_miscel_01, dpi = 300, width = 10, height = 5)
+
+# Select another 6 random patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_2 <- sample(setdiff(miscel_IDs, miscel_IDs_1), size = 6, replace = FALSE)
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_2 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_2)
+
+# Second plot
+DV_time_miscel_02<-ggplot() +
+        geom_line(data = CRRT_miscel_2, aes(x = TIME, y = DV, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_2, aes(x = TIME, y = DV, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "DV over Time for Patients with CRRT on and off 02", x = "Time (hours)", y = "DV (mg/L)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_2[CRRT_miscel_2$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+# Export the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Exploratory data analysis/DV over TIME")
+ggsave("DV_time_miscel_02.png", plot = DV_time_miscel_02, dpi = 300, width = 10, height = 5)
+
+## And finally, select the remaining 4 patients from miscel_IDs
+set.seed(123) # set seed for reproducibility
+miscel_IDs_3 <- setdiff(miscel_IDs, c(miscel_IDs_1,miscel_IDs_2))
+
+# create a subset of the original data frame with the 6 patients
+CRRT_miscel_3 <- FlucTotIV_clean %>% 
+        filter(ID %in% miscel_IDs_3)
+
+# Third plot
+DV_time_miscel_03<-ggplot() +
+        geom_line(data = CRRT_miscel_3, aes(x = TIME, y = DV, group = ID, color = factor(CRRT)), size = 1) +
+        geom_point(data = CRRT_miscel_3, aes(x = TIME, y = DV, shape = factor(CRRT)), size = 2) +
+        scale_shape_manual(values = c(16, 17)) +
+        scale_color_manual(values = c("black", "red")) +
+        labs(title = "DV over Time for Patients with CRRT on and off 03", x = "Time (hours)", y = "DV (mg/L)") +
+        theme_bw() +
+        geom_rect(data = CRRT_miscel_3[CRRT_miscel_3$CRRT == 1, ], aes(xmin = TIME, xmax = TIME+0.1, ymin = -Inf, ymax = Inf),
+                  fill = "grey", alpha = 0.2) +
+        facet_wrap(~ ID, scales = "free") +
+        guides(shape = guide_legend(title = "CRRT"), color = guide_legend(title = "CRRT")) 
+
+# Export the plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Exploratory data analysis/DV over TIME")
+ggsave("DV_time_miscel_03.png", plot = DV_time_miscel_03, dpi = 300, width = 10, height = 5)
+
+```
+
+
