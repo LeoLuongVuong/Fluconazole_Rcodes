@@ -1905,8 +1905,34 @@ write.csv(datasets[[1]], "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = F
 
 ```
 
-#### Then making vpc, code copied from pcVPC_pooled.R
+#### Then making vpc, code is in pcVPC_pooled.R
 
+#### Refine the dataset to make another vpc
+
+```{r read another vpc, warning=FALSE}
+
+# Refine vpc datasets, exclude all having either DV>70 or TAD>25.5
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan/vpc")
+
+Fluc_NONMEM_mul_impute_BW01 <- read.csv("Fluc_NONMEM_mul_impute_BW01.csv")
+
+Fluc_NONMEM_mul_impute_BW01$DV<-as.numeric(Fluc_NONMEM_mul_impute_BW01$DV)
+
+Fluc_NONMEM_mul_impute_BW01$TAD<-as.numeric(Fluc_NONMEM_mul_impute_BW01$TAD)
+
+# The refined dataset
+Fluc_NONMEM_mul_impute_BW01_refined <- Fluc_NONMEM_mul_impute_BW01 %>%
+  filter((TAD <= 25.5|is.na(DV)))
+Fluc_NONMEM_mul_impute_BW01_refined <- Fluc_NONMEM_mul_impute_BW01_refined %>%
+  filter((DV <= 70|is.na(DV)))
+
+# Exclude into refined dataset
+
+
+
+
+
+```
 
 
 ### Doing simulation - 091023
@@ -1937,16 +1963,8 @@ FlucTotIV_clean_nocrrt %>% filter (!is.na(CKDEPI)) %>% summarize(correlation = c
 ```
 
 #### Creating simulation datasets, seperately for CRRT and non-CRRT
-##### Here I try using previously created datasets
 
-```{r import virtual patient dataset dosing_08, warning=FALSE}
-
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Simulation datasets")
-sim_dosing_01<-read.csv("dosing_08.csv")
-
-# With dose-finding simulation, we don't need a dense sampling strategy, since we only care about trough and AUC-24 target attainment
-
-```
+##### First of all, explore the covariate characteristics of my actual dataset
 
 ```{r checking normal distribution of CKDEPI - overall dataset}
 
@@ -2065,6 +2083,37 @@ summary_not_in_crrt
 
 ```
 
+```{r comparing BW of CRRT vs non-CRRT}
+
+library(dplyr)
+test <- FlucTotIV_clean %>% select(ID, BW2,CRRT) %>% unique() %>% mutate(BW = log10(BW2))
+library(ggplot2)
+
+# comparing if CRRT vs non-CRRT patients have a different distribution
+
+crrt_ids<-unique(test$ID[test$CRRT == 1])
+
+# Perform Mann-Whitney U test
+non_parametric_test <- wilcox.test(BW2 ~ ifelse(ID %in% crrt_ids, "CRRT", "Non-CRRT"), data = test)
+
+# Print the test results
+print(non_parametric_test) #p=0.8322 #crrt & non-crrt patients have the same BW distributions
+
+#CRRT and non-CRRT patients have a similar BW distribution
+
+```
+
+##### Secondly, creating virtual patient dataset
+##### Strategy: make seperate datasets for CRRT & non-CRRT patients. With non-CRRT patients: CKDEPI sampled from non-CRRT events distribution, BW sampled from total BW distribution. For CRRT patients, BW sampled from total BW distribution.
+
+```{r import virtual patient dataset dosing_08, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Simulation datasets")
+sim_dosing_01<-read.csv("dosing_08.csv")
+
+# With dose-finding simulation, we don't need a dense sampling strategy, since we only care about trough and AUC-24 target attainment
+
+```
 
 ```{r finetune dosing_08 dataset, warning=FALSE}
 
@@ -2075,7 +2124,151 @@ sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
 # Eliminate PEAK column
 sim_dosing_01$PEAK<-NULL
 
+# Convert CRRT into 0
+sim_dosing_01$CRRT<-0
 
+# summary statistics for CKDEPI in non-CRRT patients
+summary(FlucTotIV_clean$CKDEPI[FlucTotIV_clean$CRRT == 0])
+
+# Min 5 - max 215 - so I will try firstly distance = 10, and then = 5.
+# Note: Normal kidney function is from 90 to 120 mL/min/1.73 m2
+
+# Creat a new column "CKDEPI" for sim_dosing_01 dataset
+library(dplyr)
+sim_dosing_01 <- sim_dosing_01 %>%
+  mutate(CKDEPI = ifelse(ID == 1, 5, 5 + (ID - 1) * 10))
+
+# Delete all the rows with CKDEPI > 215
+library(dplyr)
+
+sim_dosing_01 <- sim_dosing_01 %>%
+  filter(CKDEPI <= 215)
+
+# Change ID into ID_CKDEPI
+sim_dosing_01 <- sim_dosing_01 %>%
+  rename(ID_CKDEPI = ID)
+
+# Replicate each ID_CKDEPI 100 times
+sim_dosing_01<-sim_dosing_01 %>%
+  group_by(ID_CKDEPI) %>%
+  slice(rep(1:n(), each = 100)) %>%
+  ungroup()
+
+# Assign an ID for each replication
+sim_dosing_01 <- sim_dosing_01 %>%
+  arrange(TIME) %>%
+  group_by(TIME) %>%
+  mutate(ID = row_number()) %>%
+  ungroup()
+
+##  Assign a unique BW per each ID
+library(dplyr)
+library(purrr)
+library(ecdf)
+
+# Step 1: Get unique, non-missing values of BW2 from FlucTotIV_clean
+unique_BW2 <- FlucTotIV_clean %>%
+  distinct(BW2, .keep_all = TRUE) %>%
+  filter(!is.na(BW2)) %>%
+  pull(BW2)
+
+# Create a new dataset "new_dataset" with ID from 1 to 2200
+new_dataset <- data.frame(ID = 1:2200)
+
+# Step 2: Create an ECDF based on unique BW2 values
+ecdf_BW2 <- ecdf(unique_BW2)
+
+# Create a vector to store the sampled BWs
+sampled_BWs <- numeric(0)
+
+# Loop 22 times to get 22 sets of 100 random values
+for (i in 1:22) {
+  # Generate random values from the ECDF
+  random_values <- runif(100)
+
+  # Map the random values to the empirical distribution using the inverse transform sampling method
+  sampled_BW <- round(quantile(unique_BW2, random_values), 1)
+
+  # Append the sampled BWs to the vector
+  sampled_BWs <- c(sampled_BWs, sampled_BW)
+}
+
+# Assuming new_dataset is your data frame with IDs
+new_dataset$BW <- sampled_BWs
+
+# Now, you have "new_dataset" with unique BW values for each set of 100 IDs
+
+# Merge "new_dataset" with "sim_dosing_01" dataset based on ID
+sim_dosing_01 <- sim_dosing_01 %>%
+  left_join(new_dataset, by = "ID")
+
+# Rename BW
+sim_dosing_01$BW.x<-NULL
+sim_dosing_01 <- sim_dosing_01 %>%
+  rename(BW = BW.y)
+
+# Eliminate ID_CKDEPI, change the name of the dataset
+sim_CKDEPI_01<-sim_dosing_01 %>%
+  select(ID_CKDEPI, ID, everything())
+sim_CKDEPI_01$ID_CKDEPI<-NULL
+
+# Sort sim_CKDEPI_01 according to ID
+sim_CKDEPI_01 <- sim_CKDEPI_01 %>%
+  arrange(ID)
+
+# Export sim_CKDEPI_01 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(sim_CKDEPI_01, "sim_CKDEPI_01.csv",quote=F,row.names = FALSE)
+
+# Minimize the dataset, only get what is needed. Specifically I only interested in day 1,2,6,7,13&14
+# So eliminate all the rows with DAY do not belong to those above days
+sim_CKDEPI_01_min<-sim_CKDEPI_01%>%filter(DAY%in%c(1,2,6,7,13,14))
+
+# Then Export sim_CKDEPI_01_min dataset (min stands for minimize)
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(sim_CKDEPI_01_min, "sim_CKDEPI_01_min.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r analyse the simulation output file, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
+simulations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/sim_CKDEPI_01_min.1.npctab.dta') 
+dataframe_simulations_mod_pooled <- read_nonmem_table(simulations_tablefile_mod_pooled)
+
+# Extract only the trough events
+CKDEPI_dos_01 <- dataframe_simulations_mod_pooled[dataframe_simulations_mod_pooled$TROUGH == 1,]
+
+# Convert ID into numeric
+CKDEPI_dos_01$ID<-as.integer(CKDEPI_dos_01$ID)
+
+# Create a new variable AUC24 for each ID
+CKDEPI_dos_01 <- CKDEPI_dos_01 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+CKDEPI_dos_01<- CKDEPI_dos_01 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+CKDEPI_dos_01$fAUC<- CKDEPI_dos_01$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and CKDEPI columns
+PTA_01 <- subset(CKDEPI_dos_01, select = c("ID", "DV", "fAUC", "DAY", "CKDEPI"))
+
+# Calculate percentage of DV >= 7.5 per DAY per CKDEPI (PTA_Cmin_75)
+PTA_01$PTA_Cmin_75 <- 100 * ave(PTA_01$DV >= 7.5, PTA_01$DAY, PTA_01$CKDEPI, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per CKDEPI (PTA_Cmin_80)
+PTA_01$PTA_Cmin_80 <- 100 * ave(PTA_01$DV >= 80, PTA_01$DAY, PTA_01$CKDEPI, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per CKDEPI (PTA_fAUC_200)
+PTA_01$PTA_fAUC_200 <- 100 * ave(PTA_01$fAUC >= 200, PTA_01$DAY, PTA_01$CKDEPI, FUN = mean)
+
+# Create PTA_01_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and CKDEPI
+PTA_01_overall <- unique(PTA_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "CKDEPI")])
 
 ```
 
@@ -2394,4 +2587,74 @@ ggsave("DV_time_miscel_03.png", plot = DV_time_miscel_03, dpi = 300, width = 10,
 
 ```
 
+#### Checking VPC 171023 - copy from the code of 200623
+
+##### Check the summary of the dosing intervals
+
+```{r FlucTotIV_clean_int dataset}
+
+FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
+# FlucTotIV_clean_int <- FlucTotIV_clean[!is.na(FlucTotIV_clean$AMT),]
+# 171023
+library(dplyr)
+FlucTotIV_clean_int <- FlucTotIV_clean%>%filter(AMT!=0)
+
+```
+
+##### Calculating dosing intervals per patient
+
+```{r checking dosing intervals}
+library(dplyr)
+
+dosing_intervals <- FlucTotIV_clean_int %>%
+  arrange(ID, TIME) %>%
+  group_by(ID) %>%
+  mutate(dosing_interval = TIME - lag(TIME)) 
+
+summary(dosing_intervals$dosing_interval)
+
+library(dplyr)
+
+dosing_intervals<-ungroup(dosing_intervals)
+dosing_intervals <- dosing_intervals[!is.na(dosing_intervals$dosing_interval), ]
+percentage_12_24 <- dosing_intervals %>%
+  filter((dosing_interval < 13 & dosing_interval > 11) | (dosing_interval < 25 & dosing_interval > 23)) %>%
+  summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
+percentage_12_24
+# 86.34713% dosing interval are within 12 hours or 24 hours
+
+percentage_below_12 <- dosing_intervals %>%
+  filter((dosing_interval < 11)) %>%
+  summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
+percentage_below_12
+# 3.485839% dosing interval are below 12 hours
+
+percentage_above_24 <- dosing_intervals %>%
+  filter((dosing_interval >25)) %>%
+  summarize(percentage = (n() / nrow(dosing_intervals)) * 100)
+percentage_above_24
+# 1.670298% dosing interval are above 24 hours
+
+```
+
+##### Identify patients with high concentration
+
+```{r identifying high concentration patients}
+library(dplyr)
+
+FlucTotIV_clean$TAD<-as.numeric(FlucTotIV_clean$TAD)
+FlucTotIV_clean$DV<-as.numeric(FlucTotIV_clean$DV)
+FlucTotIV_clean$HOSPITAL<-as.factor(FlucTotIV_clean$HOSPITAL)
+
+high_rows <- FlucTotIV_clean %>% #identify patients with high trough concentration
+  filter(TAD >= 23, TAD <= 25.5, DV > 50) %>% #regardless of 25 or 25.5, the results remain the same
+  distinct(ID)
+#5 patient IDs 117 122 126 139 144
+
+long_rows <- FlucTotIV_clean %>% #identify patients with >25.5 TAD trough concentration
+  filter(TAD > 25.5, DV>0) %>%
+  distinct(ID)
+#18 patient IDs, 9 from HOSPITAL 2, 1 from HOS 5, 1 from HOS 7 & 7 from HOS 8
+
+```
 

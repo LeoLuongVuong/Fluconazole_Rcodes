@@ -5951,18 +5951,23 @@ library(dplyr)
 sorted_data <- FlucTotIV_clean %>%
   arrange(ID, OCC, AMT, TIME)
 View(sorted_data)
+
 ```
 
 ##### Check the summary of the dosing intervals
 
 ```{r FlucTotIV_clean_int dataset}
+
 FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
-FlucTotIV_clean_int <- FlucTotIV_clean[!is.na(FlucTotIV_clean$AMT), ]
+# FlucTotIV_clean_int <- FlucTotIV_clean[!is.na(FlucTotIV_clean$AMT),]
+# 171023
+FlucTotIV_clean_int <- FlucTotIV_clean%>%filter()
 
 ```
+
 ##### Calculating dosing intervals per patient
 
-```{r}
+```{r checking dosing intervals}
 library(dplyr)
 
 dosing_intervals <- FlucTotIV_clean_int %>%
@@ -5993,6 +5998,7 @@ percentage_above_24 <- dosing_intervals %>%
 percentage_above_24
 
 ```
+
 ##### Identify patients with high concentration
 
 ```{r identifying high concentration patients}
