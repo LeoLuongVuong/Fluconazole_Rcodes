@@ -1927,10 +1927,8 @@ Fluc_NONMEM_mul_impute_BW01_refined <- Fluc_NONMEM_mul_impute_BW01_refined %>%
   filter((DV <= 70|is.na(DV)))
 
 # Exclude into refined dataset
-
-
-
-
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan/vpc")
+write.csv(Fluc_NONMEM_mul_impute_BW01_refined, "Fluc_NONMEM_mul_impute_BW01_refined.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -2103,8 +2101,10 @@ print(non_parametric_test) #p=0.8322 #crrt & non-crrt patients have the same BW 
 
 ```
 
-##### Secondly, creating virtual patient dataset
+##### Secondly, creating virtual patient datasets
 ##### Strategy: make seperate datasets for CRRT & non-CRRT patients. With non-CRRT patients: CKDEPI sampled from non-CRRT events distribution, BW sampled from total BW distribution. For CRRT patients, BW sampled from total BW distribution.
+
+##### Firstly, the effect of CKDEPI in non-CRRT patients
 
 ```{r import virtual patient dataset dosing_08, warning=FALSE}
 
@@ -2220,9 +2220,9 @@ sim_CKDEPI_01 <- sim_CKDEPI_01 %>%
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
 write.csv(sim_CKDEPI_01, "sim_CKDEPI_01.csv",quote=F,row.names = FALSE)
 
-# Minimize the dataset, only get what is needed. Specifically I only interested in day 1,2,6,7,13&14
-# So eliminate all the rows with DAY do not belong to those above days
-sim_CKDEPI_01_min<-sim_CKDEPI_01%>%filter(DAY%in%c(1,2,6,7,13,14))
+# Here I have another _min dataset, where all dosing events need to be kept, and eliminate all redundant dummy lines
+sim_CKDEPI_01_min <- sim_CKDEPI_01 %>%
+  filter((DAY %in% c(3, 4, 5, 8, 9, 10, 11, 12) & TAD == 0) | (!DAY %in% c(3, 4,5, 8, 9, 10, 11, 12)))
 
 # Then Export sim_CKDEPI_01_min dataset (min stands for minimize)
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
@@ -2230,19 +2230,254 @@ write.csv(sim_CKDEPI_01_min, "sim_CKDEPI_01_min.csv",quote=F,row.names = FALSE)
 
 ```
 
-```{r analyse the simulation output file, warning=FALSE}
+```{r testing the standard dosing 800 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_CKD_01_min dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+sim_CKDEPI_01_min<-read.csv("sim_CKDEPI_01_min.csv")
+#sim_CKDEPI_01<-read.csv("sim_CKDEPI_01.csv")
+
+View(sim_CKDEPI_01_min)
+sim_CKDEPI_01_min$AMT<-ifelse(sim_CKDEPI_01_min$TIME==0,800,ifelse(sim_CKDEPI_01_min$TAD==0,400,0))
+
+# Export sim_CKDEPI_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(sim_CKDEPI_01_min, "sim_CKDEPI_02.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 03 1000 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_CKD_01_min dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+sim_CKDEPI_01_min<-read.csv("sim_CKDEPI_01_min.csv")
+
+View(sim_CKDEPI_01_min)
+sim_CKDEPI_01_min$AMT<-ifelse(sim_CKDEPI_01_min$TIME==0,1000,ifelse(sim_CKDEPI_01_min$TAD==0,400,0))
+
+# Export sim_CKDEPI_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(sim_CKDEPI_01_min, "sim_CKDEPI_03.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 04 1200 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_CKD_01_min dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+sim_CKDEPI_01_min<-read.csv("sim_CKDEPI_01_min.csv")
+
+View(sim_CKDEPI_01_min)
+sim_CKDEPI_01_min$AMT<-ifelse(sim_CKDEPI_01_min$TIME==0,1200,ifelse(sim_CKDEPI_01_min$TAD==0,400,0))
+
+# Export sim_CKDEPI_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(sim_CKDEPI_01_min, "sim_CKDEPI_04.csv",quote=F,row.names = FALSE)
+
+```
+
+##### Next, effect of BW in non-CRRT patients
+
+```{r import virtual patient dataset dosing_08, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Simulation datasets")
+sim_dosing_01<-read.csv("dosing_08.csv")
+
+# With dose-finding simulation, we don't need a dense sampling strategy, since we only care about trough and AUC-24 target attainment
+
+```
+
+```{r finetune dosing_08 dataset, warning=FALSE}
+
+# Eliminate all rows with PEAK == 1
+library(dplyr)
+sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
+
+# Eliminate PEAK column
+sim_dosing_01$PEAK<-NULL
+
+# Convert CRRT into 0
+sim_dosing_01$CRRT<-0
+
+# Change ID into ID_BW
+sim_dosing_01 <- sim_dosing_01 %>%
+  rename(ID_BW = ID)
+
+# Replicate each ID_CKDEPI 100 times
+sim_dosing_01<-sim_dosing_01 %>%
+  group_by(ID_BW) %>%
+  slice(rep(1:n(), each = 100)) %>%
+  ungroup()
+
+# Assign an ID for each replication
+sim_dosing_01 <- sim_dosing_01 %>%
+  arrange(TIME) %>%
+  group_by(TIME) %>%
+  mutate(ID = row_number()) %>%
+  ungroup()
+
+##  Assign a unique CKDEPI per each ID
+library(dplyr)
+library(purrr)
+
+# Step 1: Get unique, non-missing values of CKDEPI from FlucTotIV_clean with CRRT = 0
+unique_CKDEPI <- FlucTotIV_clean %>% filter (CRRT==0) %>%
+  filter(!is.na(CKDEPI)) %>%
+  pull(CKDEPI)
+
+# Create a new dataset "new_dataset" with ID from 1 to 2500
+new_dataset <- data.frame(ID = 1:2500)
+
+# Step 2: Create an ECDF based on unique CKDEPI values
+ecdf_CKDEPI <- ecdf(unique_CKDEPI)
+
+# Create a vector to store the sampled CKDEPIs
+sampled_CKDEPIs <- numeric(0)
+
+# Loop 25 times to get 25 sets of 100 random values
+for (i in 1:25) {
+  # Generate random values from the ECDF
+  random_values <- runif(100)
+
+  # Map the random values to the empirical distribution using the inverse transform sampling method
+  sampled_CKDEPI <- round(quantile(unique_CKDEPI, random_values), 1)
+
+  # Append the sampled CKDEPIs to the vector
+  sampled_CKDEPIs <- c(sampled_CKDEPIs, sampled_CKDEPI)
+}
+
+# Assuming new_dataset is your data frame with IDs
+new_dataset$CKDEPI <- sampled_CKDEPIs
+
+# Now, you have "new_dataset" with unique BW values for each set of 100 IDs
+
+# Merge "new_dataset" with "sim_dosing_01" dataset based on ID
+sim_dosing_01 <- sim_dosing_01 %>%
+  left_join(new_dataset, by = "ID")
+
+# Eliminate ID_BW, change the name of the dataset
+sim_BW_01<-sim_dosing_01 %>%
+  select(ID_BW, ID, everything())
+sim_BW_01$ID_BW<-NULL
+
+# Sort sim_BW_01 according to ID
+sim_BW_01 <- sim_BW_01 %>%
+  arrange(ID)
+
+# Export sim_BW_01 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_01, "sim_BW_01.csv",quote=F,row.names = FALSE)
+
+# Minimizing the dataset where all dosing events are kept, and all redundant dummy lines can be eliminated
+sim_BW_01_min <- sim_BW_01 %>%
+  filter((DAY %in% c(3, 4, 5, 8, 9, 10, 11, 12) & TAD == 0) | (!DAY %in% c(3, 4,5, 8, 9, 10, 11, 12)))
+
+# Then Export sim_BW_noCRRT_01 dataset (min stands for minimize)
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_01_min, "sim_BW_noCRRT_01.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 02 the CKDEPI optimized dosing 1200 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_noCRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_noCRRT_01<-read.csv("sim_BW_noCRRT_01.csv")
+
+View(sim_BW_noCRRT_01)
+sim_BW_noCRRT_01$AMT<-ifelse(sim_BW_noCRRT_01$TIME==0,1200,ifelse(sim_BW_noCRRT_01$TAD==0,400,0))
+
+# Export sim_BW_noCRRT_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_noCRRT_01, "sim_BW_noCRRT_02.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 03 of 1000 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_noCRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_noCRRT_01<-read.csv("sim_BW_noCRRT_01.csv")
+
+View(sim_BW_noCRRT_01)
+sim_BW_noCRRT_01$AMT<-ifelse(sim_BW_noCRRT_01$TIME==0,1000,ifelse(sim_BW_noCRRT_01$TAD==0,400,0))
+
+# Export sim_BW_noCRRT_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_noCRRT_01, "sim_BW_noCRRT_03.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 04 of 800 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_noCRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_noCRRT_01<-read.csv("sim_BW_noCRRT_01.csv")
+
+View(sim_BW_noCRRT_01)
+sim_BW_noCRRT_01$AMT<-ifelse(sim_BW_noCRRT_01$TIME==0,800,ifelse(sim_BW_noCRRT_01$TAD==0,400,0))
+
+# Export sim_BW_noCRRT_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_noCRRT_01, "sim_BW_noCRRT_04.csv",quote=F,row.names = FALSE)
+
+```
+
+##### Thirdly, effect of BW in CRRT patients
+
+```{r import virtual patient dataset dosing_08, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Simulation datasets")
+sim_dosing_01<-read.csv("dosing_08.csv")
+
+# With dose-finding simulation, we don't need a dense sampling strategy, since we only care about trough and AUC-24 target attainment
+
+```
+
+```{r finetune dosing_08 dataset, warning=FALSE}
+
+# Eliminate all rows with PEAK == 1
+library(dplyr)
+sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
+
+# Eliminate PEAK column
+sim_dosing_01$PEAK<-NULL
+
+# BW CRRT sim dataset
+sim_BW_CRRT_01 <- sim_dosing_01 %>%
+  filter((DAY %in% c(3, 4, 5, 8, 9, 10, 11, 12) & TAD == 0) | (!DAY %in% c(3, 4,5, 8, 9, 10, 11, 12)))
+
+sim_BW_CRRT_01$CKDEPI<-0
+
+# Then Export sim_BW_01_min dataset (min stands for minimize)
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_01.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Analyzing simulation datasets
+
+##### Firstly, CKDEPI effect output datasets
+
+```{r for the 1200 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
 library(xpose)
 library(xpose4)
 library(vpc)
 library(PsNR)
-working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
-simulations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/sim_CKDEPI_01_min.1.npctab.dta') 
-dataframe_simulations_mod_pooled <- read_nonmem_table(simulations_tablefile_mod_pooled)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_01_min.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
 
 # Extract only the trough events
-CKDEPI_dos_01 <- dataframe_simulations_mod_pooled[dataframe_simulations_mod_pooled$TROUGH == 1,]
+CKDEPI_dos_01 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
 
 # Convert ID into numeric
 CKDEPI_dos_01$ID<-as.integer(CKDEPI_dos_01$ID)
@@ -2270,7 +2505,472 @@ PTA_01$PTA_fAUC_200 <- 100 * ave(PTA_01$fAUC >= 200, PTA_01$DAY, PTA_01$CKDEPI, 
 # Create PTA_01_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and CKDEPI
 PTA_01_overall <- unique(PTA_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "CKDEPI")])
 
+# Export PTA_dos_01 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(PTA_01_overall, "PTA_dos_01.csv",quote=F,row.names = FALSE)
+
 ```
+
+```{r for the 800 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_02.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+CKDEPI_dos_02 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+CKDEPI_dos_02$ID<-as.integer(CKDEPI_dos_02$ID)
+
+# Create a new variable AUC24 for each ID
+CKDEPI_dos_02 <- CKDEPI_dos_02 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+CKDEPI_dos_02<- CKDEPI_dos_02 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+CKDEPI_dos_02$fAUC<- CKDEPI_dos_02$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and CKDEPI columns
+PTA_02 <- subset(CKDEPI_dos_02, select = c("ID", "DV", "fAUC", "DAY", "CKDEPI"))
+
+# Calculate percentage of DV >= 7.5 per DAY per CKDEPI (PTA_Cmin_75)
+PTA_02$PTA_Cmin_75 <- 100 * ave(PTA_02$DV >= 7.5, PTA_02$DAY, PTA_02$CKDEPI, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per CKDEPI (PTA_Cmin_80)
+PTA_02$PTA_Cmin_80 <- 100 * ave(PTA_02$DV >= 80, PTA_02$DAY, PTA_02$CKDEPI, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per CKDEPI (PTA_fAUC_200)
+PTA_02$PTA_fAUC_200 <- 100 * ave(PTA_02$fAUC >= 200, PTA_02$DAY, PTA_02$CKDEPI, FUN = mean)
+
+# Create PTA_02_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and CKDEPI
+PTA_02_overall <- unique(PTA_02[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "CKDEPI")])
+
+# Export PTA_dos_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(PTA_02_overall, "PTA_dos_02.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1000 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_03.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+CKDEPI_dos_03 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+CKDEPI_dos_03$ID<-as.integer(CKDEPI_dos_03$ID)
+
+# Create a new variable AUC24 for each ID
+CKDEPI_dos_03 <- CKDEPI_dos_03 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+CKDEPI_dos_03<- CKDEPI_dos_03 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+CKDEPI_dos_03$fAUC<- CKDEPI_dos_03$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and CKDEPI columns
+PTA_03 <- subset(CKDEPI_dos_03, select = c("ID", "DV", "fAUC", "DAY", "CKDEPI"))
+
+# Calculate percentage of DV >= 7.5 per DAY per CKDEPI (PTA_Cmin_75)
+PTA_03$PTA_Cmin_75 <- 100 * ave(PTA_03$DV >= 7.5, PTA_03$DAY, PTA_03$CKDEPI, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per CKDEPI (PTA_Cmin_80)
+PTA_03$PTA_Cmin_80 <- 100 * ave(PTA_03$DV >= 80, PTA_03$DAY, PTA_03$CKDEPI, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per CKDEPI (PTA_fAUC_200)
+PTA_03$PTA_fAUC_200 <- 100 * ave(PTA_03$fAUC >= 200, PTA_03$DAY, PTA_03$CKDEPI, FUN = mean)
+
+# Create PTA_03_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and CKDEPI
+PTA_03_overall <- unique(PTA_03[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "CKDEPI")])
+
+# Export PTA_dos_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(PTA_03_overall, "PTA_dos_03.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1200 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_04.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+CKDEPI_dos_04 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+CKDEPI_dos_04$ID<-as.integer(CKDEPI_dos_04$ID)
+
+# Create a new variable AUC24 for each ID
+CKDEPI_dos_04 <- CKDEPI_dos_04 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+CKDEPI_dos_04<- CKDEPI_dos_04 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+CKDEPI_dos_04$fAUC<- CKDEPI_dos_04$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and CKDEPI columns
+PTA_04 <- subset(CKDEPI_dos_04, select = c("ID", "DV", "fAUC", "DAY", "CKDEPI"))
+
+# Calculate percentage of DV >= 7.5 per DAY per CKDEPI (PTA_Cmin_75)
+PTA_04$PTA_Cmin_75 <- 100 * ave(PTA_04$DV >= 7.5, PTA_04$DAY, PTA_04$CKDEPI, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per CKDEPI (PTA_Cmin_80)
+PTA_04$PTA_Cmin_80 <- 100 * ave(PTA_04$DV >= 80, PTA_04$DAY, PTA_04$CKDEPI, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per CKDEPI (PTA_fAUC_200)
+PTA_04$PTA_fAUC_200 <- 100 * ave(PTA_04$fAUC >= 200, PTA_04$DAY, PTA_04$CKDEPI, FUN = mean)
+
+# Create PTA_04_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and CKDEPI
+PTA_04_overall <- unique(PTA_04[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "CKDEPI")])
+
+# Export PTA_dos_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+write.csv(PTA_04_overall, "PTA_dos_04.csv",quote=F,row.names = FALSE)
+
+```
+
+##### Secondly, BW non-CRRT effect output datasets
+
+```{r for the 1200 LD & 800 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_01.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_noCRRT_dos_01 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_noCRRT_dos_01$ID<-as.integer(BW_noCRRT_dos_01$ID)
+
+# Create a new variable AUC24 for each ID
+BW_noCRRT_dos_01 <- BW_noCRRT_dos_01 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_noCRRT_dos_01<- BW_noCRRT_dos_01 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_noCRRT_dos_01$fAUC<- BW_noCRRT_dos_01$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_noCRRT_01 <- subset(BW_noCRRT_dos_01, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_noCRRT_01$PTA_Cmin_75 <- 100 * ave(PTA_noCRRT_01$DV >= 7.5, PTA_noCRRT_01$DAY, PTA_noCRRT_01$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_noCRRT_01$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_01$DV >= 80, PTA_noCRRT_01$DAY, PTA_noCRRT_01$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_noCRRT_01$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_01$fAUC >= 200, PTA_noCRRT_01$DAY, PTA_noCRRT_01$BW, FUN = mean)
+
+# Create PTA_noCRRT_01_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_01_overall <- unique(PTA_noCRRT_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_01 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_noCRRT_01_overall, "PTA_noCRRT_dos_01.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1200 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_02.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_noCRRT_dos_02 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_noCRRT_dos_02$ID<-as.integer(BW_noCRRT_dos_02$ID)
+
+# Create a new variable AUC24 for each ID
+BW_noCRRT_dos_02 <- BW_noCRRT_dos_02 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_noCRRT_dos_02<- BW_noCRRT_dos_02 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_noCRRT_dos_02$fAUC<- BW_noCRRT_dos_02$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_noCRRT_02 <- subset(BW_noCRRT_dos_02, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_noCRRT_02$PTA_Cmin_75 <- 100 * ave(PTA_noCRRT_02$DV >= 7.5, PTA_noCRRT_02$DAY, PTA_noCRRT_02$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_noCRRT_02$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_02$DV >= 80, PTA_noCRRT_02$DAY, PTA_noCRRT_02$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_noCRRT_02$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_02$fAUC >= 200, PTA_noCRRT_02$DAY, PTA_noCRRT_02$BW, FUN = mean)
+
+# Create PTA_noCRRT_02_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_02_overall <- unique(PTA_noCRRT_02[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_noCRRT_02_overall, "PTA_noCRRT_dos_02.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1000 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_03.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_noCRRT_dos_03 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_noCRRT_dos_03$ID<-as.integer(BW_noCRRT_dos_03$ID)
+
+# Create a new variable AUC24 for each ID
+BW_noCRRT_dos_03 <- BW_noCRRT_dos_03 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_noCRRT_dos_03<- BW_noCRRT_dos_03 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_noCRRT_dos_03$fAUC<- BW_noCRRT_dos_03$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_noCRRT_03 <- subset(BW_noCRRT_dos_03, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_noCRRT_03$PTA_Cmin_75 <- 100 * ave(PTA_noCRRT_03$DV >= 7.5, PTA_noCRRT_03$DAY, PTA_noCRRT_03$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_noCRRT_03$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_03$DV >= 80, PTA_noCRRT_03$DAY, PTA_noCRRT_03$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_noCRRT_03$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_03$fAUC >= 200, PTA_noCRRT_03$DAY, PTA_noCRRT_03$BW, FUN = mean)
+
+# Create PTA_noCRRT_03_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_03_overall <- unique(PTA_noCRRT_03[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_noCRRT_03_overall, "PTA_noCRRT_dos_03.csv",quote=F,row.names = FALSE)
+
+```
+
+##### Thirdly, BW CRRT effect output datasets
+
+```{r for the 1200 LD & 800 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_01.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_01 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_01$ID<-as.integer(BW_CRRT_dos_01$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_01 <- BW_CRRT_dos_01 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_01<- BW_CRRT_dos_01 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_01$fAUC<- BW_CRRT_dos_01$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_01 <- subset(BW_CRRT_dos_01, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_01$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_01$DV >= 7.5, PTA_CRRT_01$DAY, PTA_CRRT_01$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_01$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_01$DV >= 80, PTA_CRRT_01$DAY, PTA_CRRT_01$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_01$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_01$fAUC >= 200, PTA_CRRT_01$DAY, PTA_CRRT_01$BW, FUN = mean)
+
+# Create PTA_CRRT_01_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_01_overall <- unique(PTA_CRRT_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_01 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_01_overall, "PTA_CRRT_dos_01.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Plotting PTA datasets
+##### CKDEPI - non CRRT
+
+```{r PTA_02_overall to PTA_04_overall datasets}
+
+# PTA_02_overall to PTA_04_overall datasets corresspond to 800 to 1200 LD & 400 MD
+
+## Day 1
+library(ggplot2)
+
+# Import PTA_dos_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+PTA_dos_02<-read.csv("PTA_dos_02.csv")
+# Add regimen
+PTA_dos_02$Regimen<-1
+
+# Import PTA_dos_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+PTA_dos_03<-read.csv("PTA_dos_03.csv")
+# Add regimen
+PTA_dos_03$Regimen<-2
+
+# Import PTA_dos_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
+PTA_dos_04<-read.csv("PTA_dos_04.csv")
+# Add regimen
+PTA_dos_04$Regimen<-3
+
+# Combine 3 PTA datasets into 1 - PTA_CKDEPI
+PTA_CKDEPI<-rbind(PTA_dos_02,PTA_dos_03,PTA_dos_04)
+
+# Plotting day 1 to day 14
+PTA_NOCRRT200_DAY1<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 1,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = c("black", "dodgerblue4", "goldenrod1"),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
+                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_NOCRRT200_DAY1
+
+## Day 2
+PTA_NOCRRT200_DAY2<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 2,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 2") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = c("black", "dodgerblue4", "goldenrod1"),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
+                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_NOCRRT200_DAY2
+
+## Day 7
+PTA_NOCRRT200_DAY7<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 7,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = c("black", "dodgerblue4", "goldenrod1"),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
+                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_NOCRRT200_DAY7
+
+## Day 14
+PTA_NOCRRT200_DAY14<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 14,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = c("black", "dodgerblue4", "goldenrod1"),name = "Dosing regimen",
+                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
+                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_NOCRRT200_DAY14
+
+
+
+## Combining these 4 plots into 1
+library(cowplot)
+
+grid_CKDEPI <- plot_grid(PTA_NOCRRT200_DAY1, PTA_NOCRRT200_DAY2, PTA_NOCRRT200_DAY7, PTA_NOCRRT200_DAY14, nrow = 2, align = "v")
+
+title <- ggdraw() + 
+  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+
+# Arrange the title and grid using plot_grid()
+grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1))
+
+# Export the combined plots
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+ggsave("grid_CKDEPI.png", grid_CKDEPI, dpi = 300, width = 16, height = 8.27)
+
+```
+
 
 ### Clindamycin side project 131023
 
@@ -2303,6 +3003,7 @@ setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side 
 Mod2_Run01<-read.csv("Mod2_Run01.csv",check.names = FALSE, sep="")
 
 ```
+
 
 ### CKDEPI & Fluc conc over Time plots
 

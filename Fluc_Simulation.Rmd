@@ -1257,6 +1257,7 @@ PTA_NOCRRT200_DAY1<-  ggplot(PTA_overall[PTA_overall$CRRT == 0 & PTA_overall$DAY
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_NOCRRT200_DAY1
 ```
+
 ##### Day 2
 ```{r PTA AUC 200 mgxh/L day 2 CRRT patients}
 library(ggplot2)
@@ -1310,6 +1311,7 @@ library(ggplot2)
                                 "18 mg/kg q24h (day 1)  / 12 mg/kg q24h")) +
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_NOCRRT200_DAY2
+
 ```
 
 ##### Day 7
