@@ -2429,6 +2429,38 @@ write.csv(sim_BW_noCRRT_01, "sim_BW_noCRRT_04.csv",quote=F,row.names = FALSE)
 
 ```
 
+```{r testing dosing 05 of 1400 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_noCRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_noCRRT_01<-read.csv("sim_BW_noCRRT_01.csv")
+
+View(sim_BW_noCRRT_01)
+sim_BW_noCRRT_01$AMT<-ifelse(sim_BW_noCRRT_01$TIME==0,1400,ifelse(sim_BW_noCRRT_01$TAD==0,400,0))
+
+# Export sim_BW_noCRRT_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_noCRRT_01, "sim_BW_noCRRT_05.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 06 of 1600 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_noCRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_noCRRT_01<-read.csv("sim_BW_noCRRT_01.csv")
+
+View(sim_BW_noCRRT_01)
+sim_BW_noCRRT_01$AMT<-ifelse(sim_BW_noCRRT_01$TIME==0,1600,ifelse(sim_BW_noCRRT_01$TAD==0,400,0))
+
+# Export sim_BW_noCRRT_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_noCRRT_01, "sim_BW_noCRRT_06.csv",quote=F,row.names = FALSE)
+
+```
+
 ##### Thirdly, effect of BW in CRRT patients
 
 ```{r import virtual patient dataset dosing_08, warning=FALSE}
@@ -2458,6 +2490,102 @@ sim_BW_CRRT_01$CKDEPI<-0
 # Then Export sim_BW_01_min dataset (min stands for minimize)
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_01.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 02 800 LD & 400 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_CRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_CRRT_01<-read.csv("sim_BW_CRRT_01.csv")
+
+View(sim_BW_CRRT_01)
+sim_BW_CRRT_01$AMT<-ifelse(sim_BW_CRRT_01$TIME==0,800,ifelse(sim_BW_noCRRT_01$TAD==0,400,0))
+
+# Export sim_BW_CRRT_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_02.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 03 1000 LD & 600 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_CRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_CRRT_01<-read.csv("sim_BW_CRRT_01.csv")
+
+View(sim_BW_CRRT_01)
+sim_BW_CRRT_01$AMT<-ifelse(sim_BW_CRRT_01$TIME==0,1000,ifelse(sim_BW_noCRRT_01$TAD==0,600,0))
+
+# Export sim_BW_CRRT_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_03.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 04 1000 LD & 800 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_CRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_CRRT_01<-read.csv("sim_BW_CRRT_01.csv")
+
+View(sim_BW_CRRT_01)
+sim_BW_CRRT_01$AMT<-ifelse(sim_BW_CRRT_01$TIME==0,1000,ifelse(sim_BW_noCRRT_01$TAD==0,800,0))
+
+# Export sim_BW_CRRT_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_04.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 05 1400 LD & 800 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_CRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_CRRT_01<-read.csv("sim_BW_CRRT_01.csv")
+
+View(sim_BW_CRRT_01)
+sim_BW_CRRT_01$AMT<-ifelse(sim_BW_CRRT_01$TIME==0,1400,ifelse(sim_BW_noCRRT_01$TAD==0,800,0))
+
+# Export sim_BW_CRRT_05 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_05.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 06 1600 LD & 800 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_CRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_CRRT_01<-read.csv("sim_BW_CRRT_01.csv")
+
+View(sim_BW_CRRT_01)
+sim_BW_CRRT_01$AMT<-ifelse(sim_BW_CRRT_01$TIME==0,1600,ifelse(sim_BW_noCRRT_01$TAD==0,800,0))
+
+# Export sim_BW_CRRT_06 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_06.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r testing dosing 07 1800 LD & 800 MD, warning=FALSE}
+
+# Change the dosing regimen using sim_BW_CRRT_01 dataset above
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+sim_BW_CRRT_01<-read.csv("sim_BW_CRRT_01.csv")
+
+View(sim_BW_CRRT_01)
+sim_BW_CRRT_01$AMT<-ifelse(sim_BW_CRRT_01$TIME==0,1800,ifelse(sim_BW_noCRRT_01$TAD==0,800,0))
+
+# Export sim_BW_CRRT_07 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_07.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -2789,6 +2917,144 @@ write.csv(PTA_noCRRT_03_overall, "PTA_noCRRT_dos_03.csv",quote=F,row.names = FAL
 
 ```
 
+```{r for the 800 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_04.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_noCRRT_dos_04 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_noCRRT_dos_04$ID<-as.integer(BW_noCRRT_dos_04$ID)
+
+# Create a new variable AUC24 for each ID
+BW_noCRRT_dos_04 <- BW_noCRRT_dos_04 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_noCRRT_dos_04<- BW_noCRRT_dos_04 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_noCRRT_dos_04$fAUC<- BW_noCRRT_dos_04$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_noCRRT_04 <- subset(BW_noCRRT_dos_04, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_noCRRT_04$PTA_Cmin_75 <- 100 * ave(PTA_noCRRT_04$DV >= 7.5, PTA_noCRRT_04$DAY, PTA_noCRRT_04$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_noCRRT_04$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_04$DV >= 80, PTA_noCRRT_04$DAY, PTA_noCRRT_04$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_noCRRT_04$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_04$fAUC >= 200, PTA_noCRRT_04$DAY, PTA_noCRRT_04$BW, FUN = mean)
+
+# Create PTA_noCRRT_04_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_04_overall <- unique(PTA_noCRRT_04[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_noCRRT_04_overall, "PTA_noCRRT_dos_04.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1400 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_05.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_noCRRT_dos_05 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_noCRRT_dos_05$ID<-as.integer(BW_noCRRT_dos_05$ID)
+
+# Create a new variable AUC24 for each ID
+BW_noCRRT_dos_05 <- BW_noCRRT_dos_05 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_noCRRT_dos_05<- BW_noCRRT_dos_05 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_noCRRT_dos_05$fAUC<- BW_noCRRT_dos_05$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_noCRRT_05 <- subset(BW_noCRRT_dos_05, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_noCRRT_05$PTA_Cmin_75 <- 100 * ave(PTA_noCRRT_05$DV >= 7.5, PTA_noCRRT_05$DAY, PTA_noCRRT_05$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_noCRRT_05$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_05$DV >= 80, PTA_noCRRT_05$DAY, PTA_noCRRT_05$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_noCRRT_05$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_05$fAUC >= 200, PTA_noCRRT_05$DAY, PTA_noCRRT_05$BW, FUN = mean)
+
+# Create PTA_noCRRT_05_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_05_overall <- unique(PTA_noCRRT_05[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_05 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_noCRRT_05_overall, "PTA_noCRRT_dos_05.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1600 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_06.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_noCRRT_dos_06 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_noCRRT_dos_06$ID<-as.integer(BW_noCRRT_dos_06$ID)
+
+# Create a new variable AUC24 for each ID
+BW_noCRRT_dos_06 <- BW_noCRRT_dos_06 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_noCRRT_dos_06<- BW_noCRRT_dos_06 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_noCRRT_dos_06$fAUC<- BW_noCRRT_dos_06$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_noCRRT_06 <- subset(BW_noCRRT_dos_06, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_noCRRT_06$PTA_Cmin_75 <- 100 * ave(PTA_noCRRT_06$DV >= 7.5, PTA_noCRRT_06$DAY, PTA_noCRRT_06$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_noCRRT_06$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_06$DV >= 80, PTA_noCRRT_06$DAY, PTA_noCRRT_06$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_noCRRT_06$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_06$fAUC >= 200, PTA_noCRRT_06$DAY, PTA_noCRRT_06$BW, FUN = mean)
+
+# Create PTA_noCRRT_06_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_06_overall <- unique(PTA_noCRRT_06[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_noCRRT_dos_06 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_noCRRT_06_overall, "PTA_noCRRT_dos_06.csv",quote=F,row.names = FALSE)
+
+```
+
 ##### Thirdly, BW CRRT effect output datasets
 
 ```{r for the 1200 LD & 800 MD, warning=FALSE}
@@ -2831,9 +3097,101 @@ PTA_CRRT_01$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_01$fAUC >= 200, PTA_CRRT_01$DAY, 
 # Create PTA_CRRT_01_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
 PTA_CRRT_01_overall <- unique(PTA_CRRT_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
 
-# Export PTA_noCRRT_dos_01 dataset
+# Export PTA_CRRT_dos_01 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 write.csv(PTA_CRRT_01_overall, "PTA_CRRT_dos_01.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 800 LD & 400 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_02.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_02 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_02$ID<-as.integer(BW_CRRT_dos_02$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_02 <- BW_CRRT_dos_02 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_02<- BW_CRRT_dos_02 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_02$fAUC<- BW_CRRT_dos_02$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_02 <- subset(BW_CRRT_dos_02, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_02$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_02$DV >= 7.5, PTA_CRRT_02$DAY, PTA_CRRT_02$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_02$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_02$DV >= 80, PTA_CRRT_02$DAY, PTA_CRRT_02$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_02$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_02$fAUC >= 200, PTA_CRRT_02$DAY, PTA_CRRT_02$BW, FUN = mean)
+
+# Create PTA_CRRT_02_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_02_overall <- unique(PTA_CRRT_02[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_CRRT_dos_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_02_overall, "PTA_CRRT_dos_02.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1000 LD & 600 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_03.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_03 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_03$ID<-as.integer(BW_CRRT_dos_03$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_03 <- BW_CRRT_dos_03 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_03<- BW_CRRT_dos_03 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_03$fAUC<- BW_CRRT_dos_03$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_03 <- subset(BW_CRRT_dos_03, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_03$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_03$DV >= 7.5, PTA_CRRT_03$DAY, PTA_CRRT_03$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_03$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_03$DV >= 80, PTA_CRRT_03$DAY, PTA_CRRT_03$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_03$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_03$fAUC >= 200, PTA_CRRT_03$DAY, PTA_CRRT_03$BW, FUN = mean)
+
+# Create PTA_CRRT_03_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_03_overall <- unique(PTA_CRRT_03[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_CRRT_dos_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_03_overall, "PTA_CRRT_dos_03.csv",quote=F,row.names = FALSE)
 
 ```
 
