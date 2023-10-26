@@ -2786,6 +2786,7 @@ library(xpose)
 library(xpose4)
 library(vpc)
 library(PsNR)
+library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_01.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3064,6 +3065,7 @@ library(xpose)
 library(xpose4)
 library(vpc)
 library(PsNR)
+library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_01.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3099,7 +3101,8 @@ PTA_CRRT_01_overall <- unique(PTA_CRRT_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fA
 
 # Export PTA_CRRT_dos_01 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-write.csv(PTA_CRRT_01_overall, "PTA_CRRT_dos_01.csv",quote=F,row.names = FALSE)
+#write.csv(PTA_CRRT_01_overall, "PTA_CRRT_dos_01.csv",quote=F,row.names = FALSE)
+PTA_CRRT_dos_01<-read.csv("PTA_CRRT_dos_01.csv")
 
 ```
 
@@ -3110,6 +3113,7 @@ library(xpose)
 library(xpose4)
 library(vpc)
 library(PsNR)
+library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_02.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3145,7 +3149,8 @@ PTA_CRRT_02_overall <- unique(PTA_CRRT_02[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fA
 
 # Export PTA_CRRT_dos_02 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-write.csv(PTA_CRRT_02_overall, "PTA_CRRT_dos_02.csv",quote=F,row.names = FALSE)
+#write.csv(PTA_CRRT_02_overall, "PTA_CRRT_dos_02.csv",quote=F,row.names = FALSE)
+PTA_CRRT_dos_02<-read.csv("PTA_CRRT_dos_02.csv")
 
 ```
 
@@ -3156,6 +3161,7 @@ library(xpose)
 library(xpose4)
 library(vpc)
 library(PsNR)
+library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_03.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3191,7 +3197,196 @@ PTA_CRRT_03_overall <- unique(PTA_CRRT_03[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fA
 
 # Export PTA_CRRT_dos_03 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-write.csv(PTA_CRRT_03_overall, "PTA_CRRT_dos_03.csv",quote=F,row.names = FALSE)
+#write.csv(PTA_CRRT_03_overall, "PTA_CRRT_dos_03.csv",quote=F,row.names = FALSE)
+PTA_CRRT_dos_03<-read.csv("PTA_CRRT_dos_03.csv")
+
+```
+
+```{r for the 1000 LD & 800 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+library(dplyr)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_04.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_04 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_04$ID<-as.integer(BW_CRRT_dos_04$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_04 <- BW_CRRT_dos_04 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_04<- BW_CRRT_dos_04 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_04$fAUC<- BW_CRRT_dos_04$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_04 <- subset(BW_CRRT_dos_04, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_04$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_04$DV >= 7.5, PTA_CRRT_04$DAY, PTA_CRRT_04$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_04$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_04$DV >= 80, PTA_CRRT_04$DAY, PTA_CRRT_04$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_04$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_04$fAUC >= 200, PTA_CRRT_04$DAY, PTA_CRRT_04$BW, FUN = mean)
+
+# Create PTA_CRRT_04_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_04_overall <- unique(PTA_CRRT_04[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_CRRT_dos_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_04_overall, "PTA_CRRT_dos_04.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1400 LD & 800 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+library(dplyr)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_05.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_05 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_05$ID<-as.integer(BW_CRRT_dos_05$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_05 <- BW_CRRT_dos_05 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_05<- BW_CRRT_dos_05 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_05$fAUC<- BW_CRRT_dos_05$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_05 <- subset(BW_CRRT_dos_05, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_05$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_05$DV >= 7.5, PTA_CRRT_05$DAY, PTA_CRRT_05$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_05$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_05$DV >= 80, PTA_CRRT_05$DAY, PTA_CRRT_05$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_05$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_05$fAUC >= 200, PTA_CRRT_05$DAY, PTA_CRRT_05$BW, FUN = mean)
+
+# Create PTA_CRRT_05_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_05_overall <- unique(PTA_CRRT_05[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_CRRT_dos_05 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_05_overall, "PTA_CRRT_dos_05.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1600 LD & 800 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+library(dplyr)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_06.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_06 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_06$ID<-as.integer(BW_CRRT_dos_06$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_06 <- BW_CRRT_dos_06 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_06<- BW_CRRT_dos_06 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_06$fAUC<- BW_CRRT_dos_06$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_06 <- subset(BW_CRRT_dos_06, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_06$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_06$DV >= 7.5, PTA_CRRT_06$DAY, PTA_CRRT_06$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_06$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_06$DV >= 80, PTA_CRRT_06$DAY, PTA_CRRT_06$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_06$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_06$fAUC >= 200, PTA_CRRT_06$DAY, PTA_CRRT_06$BW, FUN = mean)
+
+# Create PTA_CRRT_06_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_06_overall <- unique(PTA_CRRT_06[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_CRRT_dos_06 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_06_overall, "PTA_CRRT_dos_06.csv",quote=F,row.names = FALSE)
+
+```
+
+```{r for the 1800 LD & 800 MD, warning=FALSE}
+
+# Use read_nonmem_table function to import data
+library(xpose)
+library(xpose4)
+library(vpc)
+library(PsNR)
+library(dplyr)
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
+simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_07.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+BW_CRRT_dos_07 <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+BW_CRRT_dos_07$ID<-as.integer(BW_CRRT_dos_07$ID)
+
+# Create a new variable AUC24 for each ID
+BW_CRRT_dos_07 <- BW_CRRT_dos_07 %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+BW_CRRT_dos_07<- BW_CRRT_dos_07 %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+BW_CRRT_dos_07$fAUC<- BW_CRRT_dos_07$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY, and BW columns
+PTA_CRRT_07 <- subset(BW_CRRT_dos_07, select = c("ID", "DV", "fAUC", "DAY", "BW"))
+
+# Calculate percentage of DV >= 7.5 per DAY per BW (PTA_Cmin_75)
+PTA_CRRT_07$PTA_Cmin_75 <- 100 * ave(PTA_CRRT_07$DV >= 7.5, PTA_CRRT_07$DAY, PTA_CRRT_07$BW, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY per BW (PTA_Cmin_80)
+PTA_CRRT_07$PTA_Cmin_80 <- 100 * ave(PTA_CRRT_07$DV >= 80, PTA_CRRT_07$DAY, PTA_CRRT_07$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
+PTA_CRRT_07$PTA_fAUC_200 <- 100 * ave(PTA_CRRT_07$fAUC >= 200, PTA_CRRT_07$DAY, PTA_CRRT_07$BW, FUN = mean)
+
+# Create PTA_CRRT_07_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_CRRT_07_overall <- unique(PTA_CRRT_07[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+
+# Export PTA_CRRT_dos_07 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(PTA_CRRT_07_overall, "PTA_CRRT_dos_07.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -3329,6 +3524,377 @@ ggsave("grid_CKDEPI.png", grid_CKDEPI, dpi = 300, width = 16, height = 8.27)
 
 ```
 
+##### BW - CRRT
+
+```{r PTA_CRRT_dos_01 to PTA_CRRT_dos_07 datasets, warning=FALSE}
+
+## Day 1
+library(ggplot2)
+library(dplyr)
+library(viridis)
+
+# Import PTA_CRRT_dos_01 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_01<-read.csv("PTA_CRRT_dos_01.csv")
+# Add regimen
+PTA_CRRT_dos_01$Regimen<-4
+
+# Import PTA_CRRT_dos_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_02<-read.csv("PTA_CRRT_dos_02.csv")
+# Add regimen
+PTA_CRRT_dos_02$Regimen<-1
+
+# Import PTA_CRRT_dos_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_03<-read.csv("PTA_CRRT_dos_03.csv")
+# Add regimen
+PTA_CRRT_dos_03$Regimen<-2
+
+# Import PTA_CRRT_dos_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_04<-read.csv("PTA_CRRT_dos_04.csv")
+# Add regimen
+PTA_CRRT_dos_04$Regimen<-3
+
+# Import PTA_CRRT_dos_05 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_05<-read.csv("PTA_CRRT_dos_05.csv")
+# Add regimen
+PTA_CRRT_dos_05$Regimen<-5
+
+# Import PTA_CRRT_dos_06 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_06<-read.csv("PTA_CRRT_dos_06.csv")
+# Add regimen
+PTA_CRRT_dos_06$Regimen<-6
+
+# Import PTA_CRRT_dos_07 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_CRRT_dos_07<-read.csv("PTA_CRRT_dos_07.csv")
+# Add regimen
+PTA_CRRT_dos_07$Regimen<-7
+
+# Combine 7 PTA datasets into 1 - PTA_BW_CRRT
+PTA_BW_CRRT<-rbind(PTA_CRRT_dos_01,PTA_CRRT_dos_02,PTA_CRRT_dos_03,PTA_CRRT_dos_04,PTA_CRRT_dos_05,PTA_CRRT_dos_06,PTA_CRRT_dos_07)
+
+# Define the labels and colors
+dosing_labels_day1 <- c("800 mg q24h LD",
+                   "1000 mg q24h LD",
+                   "1200 mg q24h LD",
+                   "1400 mg q24h LD",
+                   "1600 mg q24h LD",
+                   "1800 mg q24h LD")
+
+dosing_labels_day14 <- c("400 mg q24h MD",
+                   "600 mg q24h MD",
+                   "800 mg q24h MD")
+
+dosing_labels_day27 <- c("1000 mg q24h LD / 800 mg q24h MD",
+                   "1200 mg q24h LD / 800 mg q24h MD",
+                   "1400 mg q24h LD / 800 mg q24h MD",
+                   "1600 mg q24h LD / 800 mg q24h MD",
+                   "1800 mg q24h LD / 800 mg q24h MD")
+
+dosing_colors_day1 <- c("#fde725",
+                   "#35b779",
+                   "#21918c",
+                   "#31688e",
+                   "#443983",
+                   "#440154")
+
+dosing_colors_day14 <- c("#fde725",
+                         "#90d743",
+                   "#35b779")
+
+dosing_colors_day27 <- c("#35b779",
+                   "#21918c",
+                   "#31688e",
+                   "#443983",
+                   "#440154")
+
+# Plotting day 1 to day 14
+# Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
+PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_colour_viridis_d(name = "Dosing regimen",
+                     labels = dosing_labels_day1) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY1
+# Note: scale_colour_viridis_d works best with the default setting
+
+# A very similar way of generating viridis color palette like above using hex codes, which allows for flexibility
+PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day1, name = "Dosing regimen",
+                     labels = dosing_labels_day1) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY1
+# Will do similarly for the following days
+
+## Day 14
+PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day14, name = "Dosing regimen",
+                     labels = dosing_labels_day14) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY14
+
+## Day 2
+PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Regimen > 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 2") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+ scale_color_manual(values = dosing_colors_day27, name = "Dosing regimen",
+                     labels = dosing_labels_day27) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY2
+
+## Day 7
+PTA_BW_CRRT200_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Regimen > 2 ,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day27, name = "Dosing regimen",
+                     labels = dosing_labels_day27) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY7
+
+## Combining these 4 plots into 1
+library(cowplot)
+
+grid_BW_CRRT <- plot_grid(PTA_BW_CRRT200_DAY1, PTA_BW_CRRT200_DAY14, PTA_BW_CRRT200_DAY2, PTA_BW_CRRT200_DAY7, nrow = 2, align = "v")
+
+title <- ggdraw() + 
+  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+
+# Arrange the title and grid using plot_grid()
+grid_BW_CRRT <- plot_grid(title, grid_BW_CRRT, ncol = 1, rel_heights = c(0.02, 1))
+
+# Export the combined plots
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+ggsave("grid_BW_CRRT.png", grid_BW_CRRT, dpi = 300, width = 16, height = 8.27)
+
+```
+
+##### BW - no CRRT
+
+```{r PTA_noCRRT_dos_02 to PTA_noCRRT_dos_06 datasets, warning=FALSE}
+
+## Day 1
+library(ggplot2)
+library(dplyr)
+library(viridis)
+
+# Import PTA_noCRRT_dos_02 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_noCRRT_dos_02<-read.csv("PTA_noCRRT_dos_02.csv")
+# Add regimen
+PTA_noCRRT_dos_02$Regimen<-3
+
+# Import PTA_noCRRT_dos_03 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_noCRRT_dos_03<-read.csv("PTA_noCRRT_dos_03.csv")
+# Add regimen
+PTA_noCRRT_dos_03$Regimen<-2
+
+# Import PTA_noCRRT_dos_04 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_noCRRT_dos_04<-read.csv("PTA_noCRRT_dos_04.csv")
+# Add regimen
+PTA_noCRRT_dos_04$Regimen<-1
+
+# Import PTA_noCRRT_dos_05 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_noCRRT_dos_05<-read.csv("PTA_noCRRT_dos_05.csv")
+# Add regimen
+PTA_noCRRT_dos_05$Regimen<-4
+
+# Import PTA_noCRRT_dos_06 dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+PTA_noCRRT_dos_06<-read.csv("PTA_noCRRT_dos_06.csv")
+# Add regimen
+PTA_noCRRT_dos_06$Regimen<-5
+
+# Combine 5 PTA datasets into 1 - PTA_BW_noCRRT
+PTA_BW_noCRRT<-rbind(PTA_noCRRT_dos_02,PTA_noCRRT_dos_03,PTA_noCRRT_dos_04,PTA_noCRRT_dos_05,PTA_noCRRT_dos_06)
+
+# Define the labels and colors
+dosing_labels_day1 <- c("800 mg q24h LD",
+                   "1000 mg q24h LD",
+                   "1200 mg q24h LD",
+                   "1400 mg q24h LD",
+                   "1600 mg q24h LD")
+
+dosing_labels_day14 <- c("400 mg q24h MD")
+
+dosing_labels_day27 <- c("800 mg q24h LD / 400 mg q24h MD",
+                         "1000 mg q24h LD / 400 mg q24h MD",
+                   "1200 mg q24h LD / 400 mg q24h MD",
+                   "1400 mg q24h LD / 400 mg q24h MD",
+                   "1600 mg q24h LD / 400 mg q24h MD")
+
+dosing_colors_day127 <- c("#fde725",
+                        "#90d743",
+                   "#35b779",
+                   "#21918c",
+                   "#31688e")
+
+dosing_colors_day14 <- c("#fde725")
+
+# Plotting day 1 to day 14
+# Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
+PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day127, name = "Dosing regimen",
+                     labels = dosing_labels_day1) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT200_DAY1
+
+## Day 14
+PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<2, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day14, name = "Dosing regimen",
+                     labels = dosing_labels_day14) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT200_DAY14
+
+## Day 2
+PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 2") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+ scale_color_manual(values = dosing_colors_day127, name = "Dosing regimen",
+                     labels = dosing_labels_day27) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT200_DAY2
+
+## Day 7
+PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
+        axis.title = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day127, name = "Dosing regimen",
+                     labels = dosing_labels_day27) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT200_DAY7
+
+## Combining these 4 plots into 1
+library(cowplot)
+
+grid_BW_noCRRT <- plot_grid(PTA_BW_noCRRT200_DAY1, PTA_BW_noCRRT200_DAY14, PTA_BW_noCRRT200_DAY2, PTA_BW_noCRRT200_DAY7, nrow = 2, align = "v")
+
+title <- ggdraw() + 
+  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+
+# Arrange the title and grid using plot_grid()
+grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT, ncol = 1, rel_heights = c(0.02, 1))
+
+# Export the combined plots
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+ggsave("grid_BW_noCRRT.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.27)
+
+```
 
 ### Clindamycin side project 131023
 
@@ -3352,16 +3918,91 @@ Clindamycin_APosteriori<-read.csv("Clindamycin_APosteriori.csv",sep=";")
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
 write.csv(Clindamycin_APosteriori, "Clindamycin_APosteriori.csv",quote=F,row.names = FALSE)
 
+```
+
+#### Finetuning A.Priori & A.Posteriori datasets to calculate AUC
+
+```{r adding dummy rows to calculate AUCs,warning=FALSE}
+
+# Load Apriori file
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Clindamycin_APriori<-read.csv("Clindamycin_APriori.csv")
+
+# Create a new row by copying the first row
+new_row <- Clindamycin_APriori[1, ]
+
+# Add the new row as the second row
+Clindamycin_APriori <- rbind(Clindamycin_APriori[1, ], new_row, Clindamycin_APriori[-1, ])
+
+# Reset row names if needed
+row.names(Clindamycin_APriori) <- NULL
+
+
 # Read my Mod1_Run01 model
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
-Mod1_Run01<-read.csv("Mod1_Run01.csv",check.names = FALSE, sep="")
+Mod1_Run01<-read.csv("Mod1_Run01.csv",skip=1,check.names = FALSE, sep="")
+
+# Read my Mod1_Run02 model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod1_Run02<-read.csv("Mod1_Run02.csv",skip=1,check.names = FALSE, sep="")
 
 # Read my Mod2_Run01 model
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
-Mod2_Run01<-read.csv("Mod2_Run01.csv",check.names = FALSE, sep="")
+Mod2_Run01<-read.csv("Mod2_Run01.csv",skip=1,check.names = FALSE, sep="")
+
+# Read my Mod2_Run02 model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod2_Run02<-read.csv("Mod2_Run02.csv",skip=1,check.names = FALSE, sep="")
 
 ```
 
+#### Checking sensivity of the results when changing time of the first dose
+
+```{r checking the first dose at 4pm and 6pm,warning=FALSE}
+
+## First of all, at 4pm
+
+# Read my Mod1_Run01_4pm model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod1_Run01_4pm<-read.csv("Mod1_Run01_4pm.csv",skip=1,check.names = FALSE, sep="")
+
+# Read my Mod1_Run02_4pm model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod1_Run02_4pm<-read.csv("Mod1_Run02_4pm.csv",skip=1,check.names = FALSE, sep="")
+
+# Read my Mod2_Run01_4pm model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod2_Run01_4pm<-read.csv("Mod2_Run01_4pm.csv",skip=1,check.names = FALSE, sep="")
+
+# Read my Mod2_Run02_4pm model
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Mod2_Run02_4pm<-read.csv("Mod2_Run02_4pm.csv",skip=1,check.names = FALSE, sep="")
+
+## Calculating half-lives at 4pm and 8pm
+T_mod1_pri_4pm<-log(2)*103/23
+T_mod1_pri_8pm<-log(2)*103/23
+T_mod1_pos_4pm<-log(2)*45.25/5.78
+T_mod1_pos_8pm<-log(2)*47.96/6.06
+
+T_mod2_pri_4pm<-log(2)*75.23/20.10
+T_mod2_pos_4pm<-log(2)*75.23/6.88
+T_mod2_pos_8pm<-log(2)*75.23/7.41
+
+## Calculating AUC at 4pm and 8pm
+AUC_mod1_pos_4pm<-196.43-70.82
+AUC_mod1_pos_8pm<-228.37-70.75
+AUC_mod2_pos_4pm<-135.57-81.52
+AUC_mod2_pos_8pm<-163.07-81.47
+
+# Calculate CL/F & Vd/F of Mod 2
+CL.F_mod2_pri_4pm<-17.69/0.88
+Vd.F_mod2_pri_4pm<-66.2/0.88
+CL.F_mod2_pos_4pm<-6.05/0.88
+Vd.F_mod2_pos_4pm<-66.2/0.88
+CL.F_mod2_pos_8pm<-6.52/0.88
+Vd.F_mod2_pos_8pm<-66.2/0.88
+
+```
 
 ### CKDEPI & Fluc conc over Time plots
 
@@ -3716,4 +4357,6 @@ long_rows <- FlucTotIV_clean %>% #identify patients with >25.5 TAD trough concen
 #18 patient IDs, 9 from HOSPITAL 2, 1 from HOS 5, 1 from HOS 7 & 7 from HOS 8
 
 ```
+
+### CKDEPI & Fluc conc over Time plots
 
