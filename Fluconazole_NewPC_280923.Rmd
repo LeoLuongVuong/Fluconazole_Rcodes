@@ -14,7 +14,7 @@ output: pdf_document
 
 ```{r reading new FlucTotIV_clean dataset, warning=FALSE}
 
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
 FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
 
 ```
@@ -300,6 +300,7 @@ for (i in 1:10) {
 ```
 
 #### Then imputing crrt and non-crrt models using mice.impute.2l.pmm function, clustering inside ID
+#### Become redundant
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
 
@@ -455,8 +456,8 @@ View(negative_percentage_CREAT)
 str(negative_percentage_CREAT)
 
 # Replace negative values with respective min positive values of CREAT01 to CREAT10 columns - 02/10/23
-FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
-  mutate_at(vars(CREAT01:CREAT10), ~ ifelse(. < 0, min(.[. > 0]), .))
+#FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
+  #mutate_at(vars(CREAT01:CREAT10), ~ ifelse(. < 0, min(.[. > 0]), .))
 
 # I'll try with the minimum observed value instead - 02/10/23
 FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
@@ -727,7 +728,7 @@ Fluc_NONMEM_mul_impute$RATE <- ifelse(Fluc_NONMEM_mul_impute$RATE == 0, ".", Flu
 
 #### Exporting BW dataset
 
-```{r select appropriate datasets}
+```{r select appropriate variables}
 
 FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT","CREAT3","CRRT2","dosing_interval","Creat_imputed")]
 
@@ -4358,5 +4359,44 @@ long_rows <- FlucTotIV_clean %>% #identify patients with >25.5 TAD trough concen
 
 ```
 
-### CKDEPI & Fluc conc over Time plots
+### Testing the effect of FFM - 261023
+
+#### Exporting FFM dataset
+
+```{r select appropriate variables for calculating FFM}
+
+FlucTotIV_clean_imputed <- Fluc_NONMEM_mul_impute[, !names(Fluc_NONMEM_mul_impute) %in%c("CMT", "APACHE", "RACE", "CL24", "GGT", "AFT", "ALT", "AST", "BILI", "ALB", "SOFA", "IHD", "UF", "ECMO", "OCC3", "ARCCKD", "ARC24", "ARCAlg", "BMI", "BSA", "dup","FLUID",paste0("CREAT", sprintf("%02d", 1:10)),"CREAT_DOS_INT","unique_CREAT","CREAT3","CRRT2","dosing_interval","Creat_imputed","BW","BW2")]
+
+```
+
+```{r calculating FFM from BW and LENGTH}
+
+for (i in 1:10) {
+  FFM_var <- paste0("FFM", sprintf("%02d", i))
+  BW_var <- paste0("BW", sprintf("%02d", i))
+  LENGTH_var <- paste0("LENGTH", sprintf("%02d", i))
+  
+  FlucTotIV_clean_imputed[, FFM_var] <- ifelse(FlucTotIV_clean_imputed$SEX == 1,
+    0.407 * FlucTotIV_clean_imputed[, BW_var] + 0.267 * FlucTotIV_clean_imputed[, LENGTH_var] * 100 - 19.2,
+    0.252 * FlucTotIV_clean_imputed[, BW_var] + 0.473 * FlucTotIV_clean_imputed[, LENGTH_var] * 100 - 48.3
+  )
+}
+
+
+```
+
+```{r exporting FFM dataset, warning=FALSE}
+
+# Full dataset with BW, LENGTH & FFM
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+write.csv(FlucTotIV_clean_imputed, "Fluc_NONMEM_mul_impute_FFM01_full.csv",quote=F,row.names = FALSE)
+
+# Minimal dataset for modelling (without BW & LENGTH)
+FlucTotIV_clean_FFM <- FlucTotIV_clean_imputed[, !names(FlucTotIV_clean_imputed) %in%c(paste0("BW", sprintf("%02d", 1:10)),paste0("LENGTH", sprintf("%02d", 1:10)))]
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+write.csv(FlucTotIV_clean_FFM, "Fluc_NONMEM_mul_impute_FFM01.csv",quote=F,row.names = FALSE)
+
+```
+
+
 
