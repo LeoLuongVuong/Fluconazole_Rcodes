@@ -3756,7 +3756,8 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   labs(color = "Regimen") +
   scale_colour_viridis_d(name = "Dosing regimen",
                      labels = dosing_labels_day1) +
-   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
 PTA_BW_CRRT200_DAY1
 # Note: scale_colour_viridis_d works best with the default setting
 
@@ -3777,7 +3778,8 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   labs(color = "Regimen") +
   scale_color_manual(values = dosing_colors_day1, name = "Dosing regimen",
                      labels = dosing_labels_day1) +
-   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
 PTA_BW_CRRT200_DAY1
 # Will do similarly for the following days
 
@@ -3818,7 +3820,8 @@ PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Reg
   labs(color = "Regimen") +
  scale_color_manual(values = dosing_colors_day27, name = "Dosing regimen",
                      labels = dosing_labels_day27) +
-geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
 PTA_BW_CRRT200_DAY2
 
 ## Day 7
@@ -3871,43 +3874,43 @@ library(viridis)
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_02<-read.csv("PTA_noCRRT_dos_02.csv")
 # Add regimen
-PTA_noCRRT_dos_02$Regimen<-3
+PTA_noCRRT_dos_02$Regimen<-4
 
 # Import PTA_noCRRT_dos_03 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_03<-read.csv("PTA_noCRRT_dos_03.csv")
 # Add regimen
-PTA_noCRRT_dos_03$Regimen<-2
+PTA_noCRRT_dos_03$Regimen<-3
 
 # Import PTA_noCRRT_dos_04 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_04<-read.csv("PTA_noCRRT_dos_04.csv")
 # Add regimen
-PTA_noCRRT_dos_04$Regimen<-1
+PTA_noCRRT_dos_04$Regimen<-2
 
 # Import PTA_noCRRT_dos_05 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_05<-read.csv("PTA_noCRRT_dos_05.csv")
 # Add regimen
-PTA_noCRRT_dos_05$Regimen<-4
+PTA_noCRRT_dos_05$Regimen<-5
 
 # Import PTA_noCRRT_dos_06 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_06<-read.csv("PTA_noCRRT_dos_06.csv")
 # Add regimen
-PTA_noCRRT_dos_06$Regimen<-5
+PTA_noCRRT_dos_06$Regimen<-6
 
 # Import PTA_noCRRT_dos_07 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_07<-read.csv("PTA_noCRRT_dos_07.csv")
 # Add regimen
-PTA_noCRRT_dos_07$Regimen<-6 #1800 LD 400 MD
+PTA_noCRRT_dos_07$Regimen<-7 #1800 LD 400 MD
 
 # Import PTA_noCRRT_dos_08 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 PTA_noCRRT_dos_08<-read.csv("PTA_noCRRT_dos_08.csv")
 # Add regimen
-PTA_noCRRT_dos_08$Regimen<-7 # 800 LD 200 MD
+PTA_noCRRT_dos_08$Regimen<-1 # 800 LD 200 MD
 
 # Combine 7 PTA datasets into 1 - PTA_BW_noCRRT
 PTA_BW_noCRRT<-rbind(PTA_noCRRT_dos_02,PTA_noCRRT_dos_03,PTA_noCRRT_dos_04,PTA_noCRRT_dos_05,PTA_noCRRT_dos_06,PTA_noCRRT_dos_07,PTA_noCRRT_dos_08)
@@ -3933,13 +3936,14 @@ dosing_colors_day127 <- c("#fde725",
                         "#90d743",
                    "#35b779",
                    "#21918c",
-                   "#31688e")
+                   "#31688e",
+                   "#440154")
 
-dosing_colors_day14 <- c("#fde725")
+dosing_colors_day14 <- c("#443983","#fde725")
 
 # Plotting day 1 to day 14
 # Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
-PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
@@ -3955,11 +3959,12 @@ PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1,],aes(x = B
   labs(color = "Regimen") +
   scale_color_manual(values = dosing_colors_day127, name = "Dosing regimen",
                      labels = dosing_labels_day1) +
-   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
 PTA_BW_noCRRT200_DAY1
 
 ## Day 14
-PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<2, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
@@ -3979,7 +3984,7 @@ geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_BW_noCRRT200_DAY14
 
 ## Day 2
-PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
@@ -3995,11 +4000,12 @@ PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2,],aes(x = B
   labs(color = "Regimen") +
  scale_color_manual(values = dosing_colors_day127, name = "Dosing regimen",
                      labels = dosing_labels_day27) +
-geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
 PTA_BW_noCRRT200_DAY2
 
 ## Day 7
-PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
@@ -4110,16 +4116,16 @@ Clindamycin_APriori_Final<-read.csv("Clindamycin_APriori_Final.csv")
 
 # Set the initial TIME value for the 12th row
 row_to_replicate <- Clindamycin_APriori_Final[12, ]
-row_to_replicate$TIME <- 65.95
+row_to_replicate$TIME <- 65.65
 
 # Initialize an empty dataframe to store the results
 replicated_data <- data.frame()
 
 # Initialize the starting TIME value
-current_time <- 65.95
+current_time <- 65.65
 
 # Set the increment value
-time_increment <- 0.5
+time_increment <- 0.2
 
 # Continue replicating as long as the TIME value is less than 72.5
 while (current_time < 72.5) {
@@ -4155,6 +4161,13 @@ for (i in (row_to_update + 1):nrow(Clindamycin_APriori_Final)) {
   Clindamycin_APriori_Final$TAD[i] <- Clindamycin_APriori_Final$TIME[i] - 65.37
 }
 
+# Change row.names
+row.names(Clindamycin_APriori_Final) <- 1:50
+
+# round TIME and TAD
+Clindamycin_APriori_Final$TIME<-round(Clindamycin_APriori_Final$TIME,2)
+Clindamycin_APriori_Final$TAD<-round(Clindamycin_APriori_Final$TAD,2)
+
 # Export Clindamycin_APriori_Finetune dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
 write.csv(Clindamycin_APriori_Final, "Clindamycin_APriori_Finetune.csv",quote=F,row.names = FALSE)
@@ -4174,17 +4187,17 @@ Clindamycin_APosteriori_Final<-read.csv("Clindamycin_APosteriori_Final.csv")
 
 # Set the initial TIME value for the 12th row
 row_to_replicate <- Clindamycin_APosteriori_Final[12, ]
-row_to_replicate$TIME <- 65.95
+row_to_replicate$TIME <- 65.65
 row_to_replicate$DV <- 0
 
 # Initialize an empty dataframe to store the results
 replicated_data <- data.frame()
 
 # Initialize the starting TIME value
-current_time <- 65.95
+current_time <- 65.65
 
 # Set the increment value
-time_increment <- 0.5
+time_increment <- 0.2
 
 # Continue replicating as long as the TIME value is less than 72.5
 while (current_time < 72.5) {
@@ -4220,9 +4233,39 @@ for (i in (row_to_update + 1):nrow(Clindamycin_APosteriori_Final)) {
   Clindamycin_APosteriori_Final$TAD[i] <- Clindamycin_APosteriori_Final$TIME[i] - 65.37
 }
 
+# Change row.names
+row.names(Clindamycin_APosteriori_Final) <- 1:50
+
+# round TIME and TAD
+Clindamycin_APosteriori_Final$TIME<-round(Clindamycin_APosteriori_Final$TIME,2)
+Clindamycin_APosteriori_Final$TAD<-round(Clindamycin_APosteriori_Final$TAD,2)
+
+# Change MDV of non-DV events to 0
+Clindamycin_APosteriori_Final$MDV<-ifelse(Clindamycin_APosteriori_Final$EVID==0&Clindamycin_APosteriori_Final$DV==0,1,Clindamycin_APosteriori_Final$MDV)
+
 # Export Clindamycin_APosteriori_Finetune dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
 write.csv(Clindamycin_APosteriori_Final, "Clindamycin_APosteriori_Finetune.csv",quote=F,row.names = FALSE)
+
+```
+
+##### Adjusting Finetune dataset - DV = "."
+
+```{r changing DV from 0 to ".",warning=FALSE}
+
+# library
+library(dplyr)
+
+# Load Clindamycin_APosteriori_Finetune file
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+Clindamycin_APosteriori_Finetune<-read.csv("Clindamycin_APosteriori_Finetune.csv")
+
+# Change DV from 0 to '.'
+Clindamycin_APosteriori_Finetune$DV<-ifelse(Clindamycin_APosteriori_Finetune$DV==0,".",Clindamycin_APosteriori_Finetune$DV)
+
+# Export Clindamycin_APosteriori_Finetune
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
+write.csv(Clindamycin_APosteriori_Finetune, "Clindamycin_APosteriori_Finetune.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -4443,7 +4486,7 @@ mod_mimram<-ggplot() +
   geom_line(data = Mod1_Run01_Finetune[Mod1_Run01_Finetune$EVID == 0 & Mod1_Run01_Finetune$TIME > 48.5, ], 
             mapping = aes(x = TAD, y = IPRED, color = "A priori prediction"),
              size = 1) +
-  geom_line(data = Mod1_Run02_Finetune[Mod1_Run02_Finetune$MDV == 0 & Mod1_Run02_Finetune$TIME > 48.5, ],
+  geom_line(data = Mod1_Run02_Finetune[Mod1_Run02_Finetune$EVID == 0 & Mod1_Run02_Finetune$TIME > 48.5, ],
              mapping = aes(x = TAD, y = IPRED, color = "A posteriori prediction"),
              size = 1) +
   geom_point(data = Mod1_Run02_Finetune[Mod1_Run02_Finetune$MDV == 0 & Mod1_Run02_Finetune$DV != 0, ],
@@ -4453,7 +4496,7 @@ mod_mimram<-ggplot() +
   ggtitle("(A) Mimram et al. model") +
   xlab("Time since last dose (hours)") +
   ylab("Total clindamycin plasma concentration (mg/L)") +
-  theme_bw() +
+  theme_classic() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.y = element_blank(),
@@ -4477,7 +4520,7 @@ mod_bouazza<-ggplot() +
   geom_line(data = Mod2_Run01_Finetune[Mod2_Run01_Finetune$EVID == 0 & Mod2_Run01_Finetune$TIME > 48.5, ], 
             mapping = aes(x = TAD, y = IPRED, color = "A priori prediction"),
              size = 1) +
-  geom_line(data = Mod2_Run02_Finetune[Mod2_Run02_Finetune$MDV == 0 & Mod2_Run02_Finetune$TIME > 48.5, ],
+  geom_line(data = Mod2_Run02_Finetune[Mod2_Run02_Finetune$EVID == 0 & Mod2_Run02_Finetune$TIME > 48.5, ],
              mapping = aes(x = TAD, y = IPRED, color = "A posteriori prediction"),
              size = 1) +
   geom_point(data = Mod2_Run02_Finetune[Mod2_Run02_Finetune$MDV == 0 & Mod2_Run02_Finetune$DV != 0, ],
@@ -4487,7 +4530,7 @@ mod_bouazza<-ggplot() +
   ggtitle("(B) Bouazza et al. model") +
   xlab("Time since last dose (hours)") +
   ylab("Total clindamycin plasma concentration (mg/L)") +
-  theme_bw() +
+  theme_classic() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.y = element_blank(),
@@ -4523,7 +4566,7 @@ grid_clinda
 
 # Export the combined plot
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/Plots")
-ggsave("grid_clinda.png", grid_clinda, dpi = 300, width = 16, height = 8.27)
+ggsave("grid_clinda_classic.png", grid_clinda, dpi = 300, width = 16, height = 8.27)
 
 ```
 
@@ -5457,6 +5500,84 @@ dosing_CRRT$TIME<-24*(dosing_CRRT$OCC-1)+dosing_CRRT$TAD
 
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
 write.csv(dosing_CRRT,"pop_dosing_std.csv",quote=F,row.names=FALSE)
+
+```
+
+#### Make use of what I already had
+
+##### For standard dosing 
+
+```{r pop_dosing_std dataset, warning=FALSE}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+pop_dosing_std<-read.csv("pop_dosing_std.csv")
+
+```
+
+```{r keep only trough concen of pop_dosing_std }
+
+pop_dos_std<-pop_dosing_std%>%filter(pop_dosing_std$TAD%in%c(0,23.9))
+
+```
+
+```{r adding CKDEPI column}
+
+# Create the empirical cumulative distribution function (ECDF)
+ecdf_func <- ecdf(na.omit(FlucTotIV_clean$CKDEPI))
+
+# Generate random values from the ECDF
+random_values <- runif(1000)
+
+# Map the random values to the empirical distribution using the inverse transform sampling method
+sampled_CKDEPI <- round(quantile(na.omit(FlucTotIV_clean$CKDEPI), random_values), 1)
+
+# Assign the sampled CKDEPI values to pop_dos_std dataset
+pop_dos_std$CKDEPI <- sampled_CKDEPI[match(pop_dos_std$ID, 1:1000)]
+
+```
+
+```{r exporting population level - standard dosing, warning=FALSE}
+
+# pop_sim_std dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim")
+write.csv(pop_dos_std, "pop_sim_std.csv",quote=F,row.names = FALSE)
+
+```
+
+##### For optimise dosing
+
+```{r updating std into optimised dosing}
+
+# pop_dos_std taken from above
+
+pop_dos_opt <- pop_dos_std %>%
+  mutate(
+    AMT = ifelse(TIME == 0 & BW > 120 & CRRT == 1, 1800,
+           ifelse(TIME == 0 & BW <= 120 & BW > 100 & CRRT == 1, 1600,
+           ifelse(TIME == 0 & BW <= 100 & BW > 80 & CRRT == 1, 1400,
+           ifelse(TIME == 0 & BW <= 80 & BW > 60 & CRRT == 1, 1200, 
+                  ifelse(TIME == 0 & BW <= 60 & CRRT == 1, 1000,
+                         ifelse(TIME == 0 & BW > 140 & CRRT == 0, 1800,
+                                ifelse(TIME == 0 & BW <= 140 & BW > 120 & CRRT == 0, 1600,
+                                  ifelse(TIME == 0 & BW <= 120 & BW > 100 & CRRT == 0, 1400,
+                                       ifelse(TIME == 0 & BW <= 100 & BW > 80 & CRRT == 0, 1200,
+                                              ifelse(TIME == 0 & BW <= 80 & BW > 60 & CRRT == 0, 1000,
+                                                     ifelse(TIME == 0 & BW <= 60 & CRRT == 0, 800,
+                                                            ifelse(TIME > 0 & MDV==1 & CRRT == 1, 800,
+                                                                   ifelse(TIME > 0 & MDV==1 & CRRT == 0, 400,0
+                                                            
+                  ))))
+  )))
+))))))
+)
+
+```
+
+```{r exporting population level - optimal dosing, warning=FALSE}
+
+# pop_sim_opt dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim")
+write.csv(pop_dos_opt, "pop_sim_opt.csv",quote=F,row.names = FALSE)
 
 ```
 
