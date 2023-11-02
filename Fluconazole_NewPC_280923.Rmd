@@ -6,6 +6,7 @@ output: pdf_document
 ---
 
 ### Doing MI - Clustering with ID - 2l.pan method - fixing negative values to 0 280923
+
 ### After that, Doing MI - Clustering with ID - 2l.pmm method - 011023
 
 ### For the whole 70 imputations - 2l.pan method - fixing negative to lowest possible value from CREAT - 041023
@@ -300,6 +301,7 @@ for (i in 1:10) {
 ```
 
 #### Then imputing crrt and non-crrt models using mice.impute.2l.pmm function, clustering inside ID
+
 #### Become redundant
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
@@ -369,7 +371,7 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed[order(FlucTotIV_clean_imputed
 
 ```
 
-#### Now average BW and LENGTH per each ID 
+#### Now average BW and LENGTH per each ID
 
 ```{r Integrating mean values to the original dataset, warning = FALSE}
 # Creating subset of hospital 3 and 4 patients
@@ -2018,8 +2020,8 @@ write.csv(Fluc_NONMEM_mul_impute_BW01_refined, "Fluc_NONMEM_mul_impute_BW01_refi
 
 ```
 
-
 ### Doing simulation - 091023
+
 #### First of all, check the correlation between BW & CKDEPI - overall
 
 ```{r correlation BW & CKDEPI}
@@ -2188,6 +2190,7 @@ print(non_parametric_test) #p=0.8322 #crrt & non-crrt patients have the same BW 
 ```
 
 ##### Secondly, creating virtual patient datasets
+
 ##### Strategy: make seperate datasets for CRRT & non-CRRT patients. With non-CRRT patients: CKDEPI sampled from non-CRRT events distribution, BW sampled from total BW distribution. For CRRT patients, BW sampled from total BW distribution.
 
 ##### Firstly, the effect of CKDEPI in non-CRRT patients
@@ -3601,6 +3604,7 @@ write.csv(PTA_CRRT_07_overall, "PTA_CRRT_dos_07.csv",quote=F,row.names = FALSE)
 ```
 
 #### Plotting PTA datasets
+
 ##### CKDEPI - non CRRT
 
 ```{r PTA_02_overall to PTA_04_overall datasets}
@@ -3775,7 +3779,6 @@ ggsave("grid_CKDEPI_commonlegend.png", grid_CKDEPI_common, dpi = 300, width = 16
 
 ```
 
-
 ##### BW - CRRT
 
 ```{r PTA_CRRT_dos_01 to PTA_CRRT_dos_07 datasets, warning=FALSE}
@@ -3869,7 +3872,7 @@ dosing_colors_day27 <- c("#35b779",
 # Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
 PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 1") +
@@ -3892,7 +3895,7 @@ PTA_BW_CRRT200_DAY1
 # A very similar way of generating viridis color palette like above using hex codes, which allows for flexibility
 PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 1") +
@@ -3915,7 +3918,7 @@ PTA_BW_CRRT200_DAY1
 ## Day 14
 PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 14") +
@@ -3936,7 +3939,7 @@ PTA_BW_CRRT200_DAY14
 ## Day 2
 PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Regimen > 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 2") +
@@ -3958,7 +3961,7 @@ PTA_BW_CRRT200_DAY2
 ## Day 7
 PTA_BW_CRRT200_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Regimen > 2 ,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 7") +
@@ -4077,7 +4080,7 @@ dosing_colors_day14 <- c("#443983","#fde725")
 # Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
 PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 1") +
@@ -4099,7 +4102,7 @@ PTA_BW_noCRRT200_DAY1
 ## Day 14
 PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 14") +
@@ -4120,7 +4123,7 @@ PTA_BW_noCRRT200_DAY14
 ## Day 2
 PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 2") +
@@ -4142,7 +4145,7 @@ PTA_BW_noCRRT200_DAY2
 ## Day 7
 PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 7") +
@@ -4179,66 +4182,26 @@ ggsave("grid_BW_noCRRT.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.2
 
 ##### BW - CRRT & no CRRT on the same plot
 
-```{r for the first two days}
+```{r rearrange non CRRT plot grid, warning=FALSE}
 
 ## Day 1
 library(ggplot2)
 library(dplyr)
 library(viridis)
+library(cowplot)
 
-# Import PTA_noCRRT_dos_02 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_02<-read.csv("PTA_noCRRT_dos_02.csv")
-# Add regimen
-PTA_noCRRT_dos_02$Regimen<-4
-
-# Import PTA_noCRRT_dos_03 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_03<-read.csv("PTA_noCRRT_dos_03.csv")
-# Add regimen
-PTA_noCRRT_dos_03$Regimen<-3
-
-# Import PTA_noCRRT_dos_04 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_04<-read.csv("PTA_noCRRT_dos_04.csv")
-# Add regimen
-PTA_noCRRT_dos_04$Regimen<-2
-
-# Import PTA_noCRRT_dos_05 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_05<-read.csv("PTA_noCRRT_dos_05.csv")
-# Add regimen
-PTA_noCRRT_dos_05$Regimen<-5
-
-# Import PTA_noCRRT_dos_06 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_06<-read.csv("PTA_noCRRT_dos_06.csv")
-# Add regimen
-PTA_noCRRT_dos_06$Regimen<-6
-
-# Import PTA_noCRRT_dos_07 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_07<-read.csv("PTA_noCRRT_dos_07.csv")
-# Add regimen
-PTA_noCRRT_dos_07$Regimen<-7 #1800 LD 400 MD
-
-# Import PTA_noCRRT_dos_08 dataset
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
-PTA_noCRRT_dos_08<-read.csv("PTA_noCRRT_dos_08.csv")
-# Add regimen
-PTA_noCRRT_dos_08$Regimen<-1 # 800 LD 200 MD
-
-# Combine 7 PTA datasets into 1 - PTA_BW_noCRRT
-PTA_BW_noCRRT<-rbind(PTA_noCRRT_dos_02,PTA_noCRRT_dos_03,PTA_noCRRT_dos_04,PTA_noCRRT_dos_05,PTA_noCRRT_dos_06,PTA_noCRRT_dos_07,PTA_noCRRT_dos_08)
+# Create PTA_BW_noCRRT dataset from above
 
 # Define the labels and colors
 
-dosing_labels_day12 <- c("800 mg q24h (day 1) / 400 mg q24h",
-                         "1000 mg q24h (day 1) / 400 mg q24h",
-                   "1200 mg q24h (day 1) / 400 mg q24h",
-                   "1400 mg q24h (day 1) / 400 mg q24h",
-                   "1600 mg q24h (day 1) / 400 mg q24h",
-                   "1800 mg q24h (day 1) / 400 mg q24h")
+dosing_labels_day12 <- c("800 mg q24h LD / 400 mg q24h MD",
+                         "1000 mg q24h LD / 400 mg q24h MD",
+                   "1200 mg q24h LD / 400 mg q24h MD",
+                   "1400 mg q24h LD / 400 mg q24h MD",
+                   "1600 mg q24h LD / 400 mg q24h MD",
+                   "1800 mg q24h LD / 400 mg q24h MD")
+
+dosing_labels_day714 <- c("200 mg q24h MD","400 mg q24h MD")
 
 dosing_colors_day12 <- c("#fde725",
                         "#90d743",
@@ -4246,6 +4209,9 @@ dosing_colors_day12 <- c("#fde725",
                    "#21918c",
                    "#31688e",
                    "#440154")
+
+dosing_colors_day714 <- c("#443983","#fde725")
+
 
 ## Plotting day 1 and 2
 # Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
@@ -4264,10 +4230,17 @@ BW_PTA_DaY1<-BW_Reg %>%
     by = c("BW", "Regimen")
   )
 
+# Similarly for day 2
+BW_PTA_DaY2<-BW_Reg %>%
+  left_join(
+    PTA_BW_noCRRT %>% filter(DAY == 2),
+    by = c("BW", "Regimen")
+  )
+
 # Then making PTA_BW_noCRRT200_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
 PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 1") +
@@ -4284,7 +4257,7 @@ PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noC
                      labels = dosing_labels_day12) +
    geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
   geom_segment(
-    data = specific_values,
+    data = BW_PTA_DaY1,
     aes(
       x = BW,
       xend = BW,
@@ -4297,25 +4270,10 @@ PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noC
   )
 PTA_BW_noCRRT200_DAY1
 
-# Create a data frame with specific values
-specific_values <- data.frame(
-  BW = c(60, 80, 100, 120, 140),
-  Regimen = c(2, 3, 4, 5, 6)
-)
-
-# Calculate PTA_fAUC_200 for specific BW and Regimen
-specific_values <- specific_values %>%
-  left_join(
-    PTA_BW_noCRRT %>% filter(DAY == 1),
-    by = c("BW", "Regimen")
-  )
-
-
-
 ## Day 2
 PTA_BW_noCRRT200_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
   theme_minimal() +
         ggtitle("Day 2") +
@@ -4331,26 +4289,313 @@ PTA_BW_noCRRT200_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noC
  scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
                      labels = dosing_labels_day12) +
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
-  geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
+  geom_segment(
+    data = BW_PTA_DaY2,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_200  # Ending at the corresponding PTA_fAUC_200 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
 PTA_BW_noCRRT200_DAY2
 
-## Combining these 2 plots into 1
-library(cowplot)
+## Day 7
+PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_noCRRT$Regimen<3,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT200_DAY7
 
-grid_BW_noCRRT <- plot_grid(PTA_BW_noCRRT200_DAY1, PTA_BW_noCRRT200_DAY14, PTA_BW_noCRRT200_DAY2, PTA_BW_noCRRT200_DAY7, nrow = 2, align = "v")
+## Day 14
+PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT200_DAY14
+
+## Combining these DAY 1 & 2 into 1
+
+# Define common legend for both plots
+common_legend <- get_legend(PTA_BW_noCRRT200_DAY1)
+
+# Remove legends from individual plots
+PTA_BW_noCRRT200_DAY1 <- PTA_BW_noCRRT200_DAY1 + theme(legend.position = "none")
+PTA_BW_noCRRT200_DAY2 <- PTA_BW_noCRRT200_DAY2 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+grid_BW_noCRRT_DAY12 <- plot_grid(PTA_BW_noCRRT200_DAY1, PTA_BW_noCRRT200_DAY2,common_legend,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+grid_BW_noCRRT_DAY12
+
+# Then combining day 7 & 14
+
+# Define common legend for both plots
+common_legend <- get_legend(PTA_BW_noCRRT200_DAY7)
+
+# Remove legends from individual plots
+PTA_BW_noCRRT200_DAY7 <- PTA_BW_noCRRT200_DAY7 + theme(legend.position = "none")
+PTA_BW_noCRRT200_DAY14 <- PTA_BW_noCRRT200_DAY14 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+grid_BW_noCRRT_DAY714 <- plot_grid(PTA_BW_noCRRT200_DAY7, PTA_BW_noCRRT200_DAY14,common_legend,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+grid_BW_noCRRT_DAY714
+
+## Then combining these 4 plots
+grid_BW_noCRRT <- plot_grid(grid_BW_noCRRT_DAY12, grid_BW_noCRRT_DAY714, nrow = 2, align = "v")
 
 title <- ggdraw() + 
   draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT, ncol = 1, rel_heights = c(0.02, 1))
+grid_BW_noCRRT
 
-# Export the combined plots
+# Export grid_BW_noCRRT_rearranged plot
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
-ggsave("grid_BW_noCRRT.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.27)
+ggsave("grid_BW_noCRRT_rearranged.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.27)
 
 ```
 
+```{r similarly - rearrange CRRT plot grid, warning=FALSE}
+
+## Day 1
+library(ggplot2)
+library(dplyr)
+library(viridis)
+library(cowplot)
+
+# Create PTA_BW_CRRT dataset from above
+
+# Define the labels and colors
+
+dosing_labels_day12 <- c("800 mg q24h LD / 400 mg q24h MD",
+                    "1000 mg q24h LD / 800 mg q24h MD",
+                   "1200 mg q24h LD / 800 mg q24h MD",
+                   "1400 mg q24h LD / 800 mg q24h MD",
+                   "1600 mg q24h LD / 800 mg q24h MD",
+                   "1800 mg q24h LD / 800 mg q24h MD")
+
+dosing_labels_day714 <- c("400 mg q24h MD",
+                   "600 mg q24h MD",
+                   "800 mg q24h MD")
+
+dosing_colors_day12 <- c("#fde725",
+                   "#90d743",
+                   "#35b779",
+                   "#21918c",
+                   "#31688e",
+                   "#443983")
+
+dosing_colors_day714 <- c("#fde725",
+                         "#440154",
+                   "#90d743")
+
+## Plotting day 1 and 2
+# Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
+# I also enforce limits on vertical lines here
+
+# Firstly, create dataset with BW, Regimen and PTA on day 1 
+BW_Reg <- data.frame( #BW and Regimen dataset
+  BW = c(60, 80, 100, 120, 140),
+  Regimen = c(3, 4, 5, 6,7)
+)
+
+# Then, make a dataset of PTA on Day 1 per BW per Regimen
+BW_PTA_DaY1<-BW_Reg %>%
+  left_join(
+    PTA_BW_CRRT %>% filter(DAY == 1),
+    by = c("BW", "Regimen")
+  )
+
+# Similarly for day 2
+BW_PTA_DaY2<-BW_Reg %>%
+  left_join(
+    PTA_BW_CRRT %>% filter(DAY == 2),
+    by = c("BW", "Regimen")
+  )
+
+# Then making PTA_BW_noCRRT200_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
+PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
+                     labels = dosing_labels_day12) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_segment(
+    data = BW_PTA_DaY1,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_200  # Ending at the corresponding PTA_fAUC_200 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
+PTA_BW_CRRT200_DAY1
+
+## Day 2
+PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 2") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
+                     labels = dosing_labels_day12) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_segment(
+    data = BW_PTA_DaY2,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_200  # Ending at the corresponding PTA_fAUC_200 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
+PTA_BW_CRRT200_DAY2
+
+## Day 7
+PTA_BW_CRRT200_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY7
+
+## Day 14
+PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT200_DAY14
+
+## Combining these DAY 1 & 2 into 1
+
+# Define common legend for both plots
+common_legend <- get_legend(PTA_BW_CRRT200_DAY1)
+
+# Remove legends from individual plots
+PTA_BW_CRRT200_DAY1 <- PTA_BW_CRRT200_DAY1 + theme(legend.position = "none")
+PTA_BW_CRRT200_DAY2 <- PTA_BW_CRRT200_DAY2 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+PTA_BW_CRRT200_DAY12 <- plot_grid(PTA_BW_CRRT200_DAY1, PTA_BW_CRRT200_DAY2,common_legend,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+
+# Then combining day 7 & 14
+
+# Define common legend for both plots
+common_legend <- get_legend(PTA_BW_CRRT200_DAY7)
+
+# Remove legends from individual plots
+PTA_BW_CRRT200_DAY7 <- PTA_BW_CRRT200_DAY7 + theme(legend.position = "none")
+PTA_BW_CRRT200_DAY14 <- PTA_BW_CRRT200_DAY14 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+PTA_BW_CRRT200_DAY714 <- plot_grid(PTA_BW_CRRT200_DAY7, PTA_BW_CRRT200_DAY14,common_legend,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+
+## Then combining these 4 plots
+grid_BW_CRRT <- plot_grid(PTA_BW_CRRT200_DAY12, PTA_BW_CRRT200_DAY714, nrow = 2, align = "v")
+
+title <- ggdraw() + 
+  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+
+# Arrange the title and grid using plot_grid()
+grid_BW_CRRT <- plot_grid(title, grid_BW_CRRT, ncol = 1, rel_heights = c(0.02, 1))
+grid_BW_CRRT
+
+# Export grid_BW_noCRRT_rearranged plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+ggsave("grid_BW_CRRT_rearranged.png", grid_BW_CRRT, dpi = 300, width = 16, height = 8.27)
+
+```
 
 ### Clindamycin side project 131023
 
@@ -4459,8 +4704,6 @@ Clindamycin_APriori_Final <- Clindamycin_APriori_Final %>%
 
 ## Updating the TAD column
 
-library(dplyr)
-
 # Find the row where TIME is 65.37
 row_to_update <- which(Clindamycin_APriori_Final$TIME == 65.37)
 
@@ -4531,8 +4774,6 @@ Clindamycin_APosteriori_Final <- Clindamycin_APosteriori_Final %>%
 
 ## Updating the TAD column
 
-library(dplyr)
-
 # Find the row where TIME is 65.37
 row_to_update <- which(Clindamycin_APosteriori_Final$TIME == 65.37)
 
@@ -4579,7 +4820,6 @@ setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side 
 write.csv(Clindamycin_APosteriori_Finetune, "Clindamycin_APosteriori_Finetune.csv",quote=F,row.names = FALSE)
 
 ```
-
 
 #### Checking sensivity of the results when changing time of the first dose
 
@@ -4672,6 +4912,9 @@ Vd.F_mod2_pos<-66.2/0.88
 
 ```{r making plots of apriori observed posterior, warning=FALSE}
 
+# Library
+library(cowplot)
+
 # Mimram et al model
 
 mod_mimram<-ggplot() +
@@ -4735,8 +4978,6 @@ mod_bouazza<-ggplot() +
     "A posteriori prediction" = "#fde725",
      "Observed" = "#21918c"),
     breaks=c('A priori prediction', 'A posteriori prediction', 'Observed'))
-
-library(cowplot)
 
 # Define common legend for both plots
 common_legend <- get_legend(mod_bouazza)
@@ -4903,12 +5144,15 @@ Vd.F_mod2_pos<-66.2/0.88
 
 ```
 
-
 ### CKDEPI & Fluc conc over Time plots
 
 #### CKDEPI over Time plots
 
 ```{r investigating CKDEPI over TIME in CRRT patients, warning=FALSE}
+
+# libraries
+library(dplyr)
+library(ggplot2)
 
 # Import the dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
@@ -4936,11 +5180,9 @@ FlucTotIV_clean[["CKDEPI_DOS_INT"]] <- calculate_CKDEPI(FlucTotIV_clean,"CREAT_D
                                                             "SEX", "AGE", 142)
 
 # Get unique IDs with CRRT == 1 only
-library(dplyr)
+
 FlucTotIV_clean <- FlucTotIV_clean %>%filter(!HOSPITAL%in%c(3,4))
 crrt_1_ids <- unique(FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 1 & !FlucTotIV_clean$ID %in% FlucTotIV_clean$ID[FlucTotIV_clean$CRRT == 0]]) #ids of those who have CRRT all the time 
-
-library(ggplot2)
 
 # Select 5 random patients from crrt_IDs
 set.seed(123) # set seed for reproducibility
@@ -4985,7 +5227,7 @@ ggsave("CKDEPI_DOS_INT_time_crrt_02.png", plot = CKDEPI_DOS_INT_time_crrt_02, dp
 #### I make the same plot for those who are on CRRT on & off on the whole treatment period
 
 # First selecting the ID of those who have CRRT non-missing and CRRT on and off
-library(dplyr)
+
 miscel_IDs <- FlucTotIV_clean %>%
         group_by(ID) %>% 
         summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
@@ -4993,7 +5235,6 @@ miscel_IDs <- FlucTotIV_clean %>%
         pull(ID) #equal 16
 miscel_IDs<-as.character(miscel_IDs)
 
-#library(ggplot2)
 # Select 6 random patients from miscel_IDs
 set.seed(123) # set seed for reproducibility
 miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
@@ -5074,6 +5315,9 @@ ggsave("CKDEPI_DOS_INT_time_miscel_03.png", plot = CKDEPI_DOS_INT_time_miscel_03
 
 ```{r investigating Fluc Conc over TIME in CRRT patients, warning=FALSE}
 
+# library
+library(dplyr)
+
 # Import the dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
 FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
@@ -5102,7 +5346,7 @@ FlucTotIV_clean[["CKDEPI_DOS_INT"]] <- calculate_CKDEPI(FlucTotIV_clean,"CREAT_D
 #### I make the same plot for those who are on CRRT on & off on the whole treatment period
 
 # First selecting the ID of those who have CRRT non-missing and CRRT on and off
-library(dplyr)
+
 miscel_IDs <- FlucTotIV_clean %>%
         group_by(ID) %>% 
         summarize(has_both_crrt = n_distinct(CRRT) == 2) %>% 
@@ -5110,7 +5354,6 @@ miscel_IDs <- FlucTotIV_clean %>%
         pull(ID) #equal 16
 miscel_IDs<-as.character(miscel_IDs)
 
-#library(ggplot2)
 # Select 6 random patients from miscel_IDs
 set.seed(123) # set seed for reproducibility
 miscel_IDs_1 <- sample(miscel_IDs, size = 6, replace = FALSE)
@@ -5228,7 +5471,7 @@ write.csv(FlucTotIV_clean_FFM, "Fluc_NONMEM_mul_impute_FFM01.csv",quote=F,row.na
 
 ### Population level simulation - 301023
 
-##### For optimised dosing
+#### Creating optmised dosing virtual dataset
 
 ```{r read in datafile, warning=FALSE}
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
@@ -5363,7 +5606,7 @@ dosing_CRRT$BW <- sampled_BW[match(dosing_CRRT$ID, 1:1000)]
 
 ```
 
-###### Creating my dosing_CRRT dataset with 9% full-time CRRT, and 9% part time CRRT (in which 51.5% DAYS on CRRT)
+##### Creating my dosing_CRRT dataset with 9% full-time CRRT, and 9% part time CRRT (in which 51.5% DAYS on CRRT)
 
 ```{r mimic the aforementioned characterictics for my dosing_CRRT}
 
@@ -5402,7 +5645,7 @@ colnames(dosing_CRRT)[colnames(dosing_CRRT) == "CRRT.y"] <- "CRRT"
 
 ```
 
-###### Updating dosing information
+##### Updating dosing information
 
 ```{r updating loading and maintenance dose for dosing_CRRT}
 dosing_CRRT <- dosing_CRRT %>%
@@ -5426,7 +5669,7 @@ dosing_CRRT <- dosing_CRRT %>%
 
 ```
 
-###### Updating TIME and TAD
+##### Updating TIME and TAD
 
 ```{r extract AMT 1600 data}
 library(dplyr)
@@ -5665,7 +5908,7 @@ write.csv(dosing_CRRT,"pop_dosing.csv",quote=F,row.names=FALSE)
 
 ```
 
-##### For standard dosing
+#### Creating standard dosing virtual dataset
 
 ```{r change into standard dosing}
 pop_dosing<-dosing_CRRT
@@ -5765,9 +6008,9 @@ write.csv(dosing_CRRT,"pop_dosing_std.csv",quote=F,row.names=FALSE)
 
 ```
 
-#### Make use of what I already had
+#### Minimize the pop_sim datasets
 
-##### For standard dosing 
+##### For standard dosing
 
 ```{r pop_dosing_std dataset, warning=FALSE}
 
@@ -5843,3 +6086,478 @@ write.csv(pop_dos_opt, "pop_sim_opt.csv",quote=F,row.names = FALSE)
 
 ```
 
+#### PTA pop_sim_std dataset
+
+```{r pop_sim_std dataset, warning=FALSE}
+
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim'
+simulations_tablefile <- paste0(working.directory, '/pop_sim_std.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+pop_std_dos <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+# Ergo, pop_std_dos is my trough-concentration dataset
+
+# Convert ID into numeric
+pop_std_dos$ID<-as.integer(pop_std_dos$ID)
+
+# Create a new variable AUC24 for each ID
+pop_std_dos <- pop_std_dos %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+pop_std_dos<- pop_std_dos %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+pop_std_dos$fAUC<- pop_std_dos$AUC24*0.89
+
+# Extract ID, DV, fAUC, DAY columns
+PTA_pop_std <- subset(pop_std_dos, select = c("ID", "DV", "fAUC", "DAY"))
+
+# Calculate percentage of DV >= 7.5 per DAY (PTA_Cmin_75)
+PTA_pop_std$PTA_Cmin_75 <- 100 * ave(PTA_pop_std$DV >= 7.5, PTA_pop_std$DAY, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY (PTA_Cmin_80)
+PTA_pop_std$PTA_Cmin_80 <- 100 * ave(PTA_pop_std$DV >= 80, PTA_pop_std$DAY, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY (PTA_fAUC_200)
+PTA_pop_std$PTA_fAUC_200 <- 100 * ave(PTA_pop_std$fAUC >= 200, PTA_pop_std$DAY, FUN = mean)
+
+# Create PTA_pop_std_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY
+PTA_pop_std_overall <- unique(PTA_pop_std[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY")])
+
+# Export PTA_pop_std_overall dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim")
+write.csv(PTA_pop_std_overall, "PTA_pop_std_overall.csv",quote=F,row.names = FALSE)
+
+```
+
+#### PTA pop_sim_opt dataset
+
+```{r pop_sim_opt dataset, warning=FALSE}
+
+working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim'
+simulations_tablefile <- paste0(working.directory, '/pop_sim_opt.1.npctab.dta') 
+dataframe_simulations <- read_nonmem_table(simulations_tablefile)
+
+# Extract only the trough events
+pop_opt_dos <- dataframe_simulations[dataframe_simulations$TROUGH == 1,]
+
+# Convert ID into numeric
+pop_opt_dos$ID<-as.integer(pop_opt_dos$ID)
+
+# Create a new variable AUC24 for each ID
+pop_opt_dos <- pop_opt_dos %>% group_by(ID) %>% mutate(AUC24 = AUC2 - lag(AUC2, default = AUC2[1]))%>%ungroup()
+
+pop_opt_dos<- pop_opt_dos %>% mutate(AUC24 = ifelse(DAY == "1", AUC2,AUC24))
+
+# Create a new variable fAUC, which equals AUC24*89 (we assume protein binding is 11%)
+pop_opt_dos$fAUC<- pop_opt_dos$AUC24*0.89
+
+# Extract ID, DV, fAUC, and DAY columns
+PTA_pop_opt <- subset(pop_opt_dos, select = c("ID", "DV", "fAUC", "DAY"))
+
+# Calculate percentage of DV >= 7.5 per DAY (PTA_Cmin_75)
+PTA_pop_opt$PTA_Cmin_75 <- 100 * ave(PTA_pop_opt$DV >= 7.5, PTA_pop_opt$DAY, FUN = mean)
+
+# Calculate percentage of DV >= 80 per DAY (PTA_Cmin_80)
+PTA_pop_opt$PTA_Cmin_80 <- 100 * ave(PTA_pop_opt$DV >= 80, PTA_pop_opt$DAY, FUN = mean)
+
+# Calculate percentage of fAUC >= 200 per DAY (PTA_fAUC_200)
+PTA_pop_opt$PTA_fAUC_200 <- 100 * ave(PTA_pop_opt$fAUC >= 200, PTA_pop_opt$DAY, FUN = mean)
+
+# Create PTA_pop_opt_overall dataset with unique values of PTA_Cmin, PTA_fAUC, and DAY
+PTA_pop_opt_overall <- unique(PTA_pop_opt[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY")])
+
+# Export PTA_pop_opt_overall dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim")
+write.csv(PTA_pop_opt_overall, "PTA_pop_opt_overall.csv",quote=F,row.names = FALSE)
+
+```
+
+#### ROC curves pop_sim_std & opt datasets
+
+```{r combining 2 roc curves of DAY1}
+
+# library
+library(ggplot2)
+library(dplyr)
+library(pROC)
+
+TA_std_day1 <- pop_std_dos %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_std_DAY1 <- pROC::roc(TA_std_day1$TA,
+                        TA_std_day1$BW,
+                        auc.polygon = FALSE, 
+                        max.auc.polygon = FALSE, 
+                        grid = FALSE,
+                        ci = TRUE, 
+                        boot.n = 1000, 
+                        ci.alpha = 0.95, 
+                        stratified = TRUE,
+                        plot = FALSE, 
+                        print.auc = TRUE, 
+                        print.auc.x = 0.2, 
+                        print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+# Calculate 95% CI
+AUC_std <- pROC::auc(ROC_AUC_std_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+
+AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
+
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_std_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+
+AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
+
+AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
+
+AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
+
+AUC_label_std_DAY1 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_std, "-", AUC_thirdpart_std, ")", sep = "") 
+
+# For recommended dosing
+TA_opt_day1 <- pop_opt_dos %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY1 <- pROC::roc(TA_opt_day1$TA,
+                        TA_opt_day1$BW,
+                        auc.polygon = FALSE,
+                        max.auc.polygon = FALSE,
+                        grid = FALSE,
+                        ci = TRUE,
+                        boot.n = 1000,
+                        ci.alpha = 0.95,
+                        stratified = TRUE,
+                        plot = FALSE,
+                        print.auc = TRUE,
+                        print.auc.x = 0.2,
+                        print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+# Calculate 95% CI for the roc curves
+AUC_opt <- pROC::auc(ROC_AUC_BW_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+
+AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
+
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+
+AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
+
+AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
+
+AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
+
+AUC_label_opt_DAY1 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
+
+# Convert roc objects to data frames
+roc_std_DAY1 <- pROC::coords(ROC_AUC_std_DAY1)
+roc_opt_DAY1 <- pROC::coords(ROC_AUC_opt_DAY1)
+
+library(gridExtra)
+
+# Create the plot with DAY 1 title
+roc_curve_day1 <- ggplot() +
+  geom_line(data = roc_std_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_opt_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1 - Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_std_DAY1, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_opt_DAY1, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+  ggtitle("DAY 1") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 1 title
+
+# Create the annotation grob
+annotation <- textGrob("(a)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY1 <- grid.arrange(annotation, roc_curve_day1, ncol = 1, heights = c(0.02, 0.98)) 
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY1)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_opt_DAY1.png", combined_plot_DAY1, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+```
+
+```{r combining two ROC curves of DAY2}
+
+library(ggplot2)
+
+# For standard dosing - DAY 2
+analysis1_DAY2 <- sdtab_pop_std_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY2 <- pROC::roc(analysis1_DAY2$TA,
+                        analysis1_DAY2$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_std <- pROC::auc(ROC_AUC_BW1_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_BW1_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
+AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
+AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
+AUC_label_AUC_BW1_DAY2 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_std, "-", AUC_thirdpart_std, ")", sep = "")
+
+# For recommended dosing - DAY 2
+analysis_DAY2 <- pop_opt_dos %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY2 <- pROC::roc(analysis_DAY2$TA,
+                        analysis_DAY2$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_opt <- pROC::auc(ROC_AUC_BW_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
+AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
+AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
+AUC_label_AUC_BW_DAY2 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
+
+# Convert roc objects to data frames
+roc1_DAY2 <- pROC::coords(ROC_AUC_BW1_DAY2)
+roc_DAY2 <- pROC::coords(ROC_AUC_BW_DAY2)
+
+# Plot ROC curves - DAY 2
+Plot_ROC_AUC_BW_DAY2 <- ggplot() +
+  geom_line(data = roc1_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY2, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY2, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+ggtitle("DAY 2") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 2 title
+
+# Create the annotation grob
+annotation <- textGrob("(b)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY2 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY2, ncol = 1, heights = c(0.02, 0.98))
+
+```
+
+```{r combining two ROC curves of DAY7}
+
+library(ggplot2)
+
+# For standard dosing - DAY 7
+analysis1_DAY7 <- sdtab_pop_std_2706_trough %>% filter(DAY == 7) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY7 <- pROC::roc(analysis1_DAY7$TA,
+                        analysis1_DAY7$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_std <- pROC::auc(ROC_AUC_BW1_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_BW1_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
+AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
+AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
+AUC_label_AUC_BW1_DAY7 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_std, "-", AUC_thirdpart_std, ")", sep = "")
+
+# For recommended dosing - DAY 7
+analysis_DAY7 <- pop_opt_dos %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY7 <- pROC::roc(analysis_DAY7$TA,
+                        analysis_DAY7$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_opt <- pROC::auc(ROC_AUC_BW_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
+AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
+AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
+AUC_label_AUC_BW_DAY7 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
+
+# Convert roc objects to data frames
+roc1_DAY7 <- pROC::coords(ROC_AUC_BW1_DAY7)
+roc_DAY7 <- pROC::coords(ROC_AUC_BW_DAY7)
+
+# Plot ROC curves - DAY 7
+Plot_ROC_AUC_BW_DAY7 <- ggplot() +
+  geom_line(data = roc1_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_AUC_BW1_DAY7, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_AUC_BW_DAY7, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+        ggtitle("DAY 7") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 7 title
+
+# Create the annotation grob
+annotation <- textGrob("(c)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY7 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY7, ncol = 1, heights = c(0.02, 0.98))
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY7)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_day7.png", combined_plot_DAY7, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+
+```
+
+```{r combining two ROC curves of DAY14}
+
+library(ggplot2)
+
+# For standard dosing - DAY 14
+analysis1_DAY14 <- sdtab_pop_std_2706_trough %>% filter(DAY == 14) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW1_DAY14 <- pROC::roc(analysis1_DAY14$TA,
+                        analysis1_DAY14$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_std <- pROC::auc(ROC_AUC_BW1_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_BW1_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
+AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
+AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
+AUC_label_std_DAY14 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_std, "-", AUC_thirdpart_std, ")", sep = "")
+
+# For recommended dosing - DAY 14
+analysis_DAY14 <- pop_opt_dos %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
+
+ROC_AUC_BW_DAY14 <- pROC::roc(analysis_DAY14$TA,
+                        analysis_DAY14$BW,
+                        auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
+                        ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
+                        plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
+                        show.thres = TRUE)
+
+AUC_opt <- pROC::auc(ROC_AUC_BW_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
+AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
+AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
+AUC_label_opt_DAY14 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
+
+# Convert roc objects to data frames
+roc_std_DAY14 <- pROC::coords(ROC_AUC_BW1_DAY14)
+roc_opt_DAY14 <- pROC::coords(ROC_AUC_BW_DAY14)
+
+# Plot ROC curves - DAY 14
+Plot_ROC_AUC_BW_DAY14 <- ggplot() +
+  geom_line(data = roc_std_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
+  geom_line(data = roc_opt_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
+  scale_color_manual(values = c("steelblue", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme_minimal() +
+  labs(y = "Sensitivity", x = "1- Specificity") +
+  theme(
+    plot.title = element_text(hjust = 0.01, size = 12),
+    text = element_text(size = 12),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.position = "right",
+    legend.title = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.text = element_text(size = 12)
+  ) +
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "black", linetype = "solid") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.30, size = 4, label = AUC_label_std_DAY14, color = "orange") +
+  annotate(geom = "text", x = 0.60, parse = TRUE, y = 0.10, size = 4, label = AUC_label_opt_DAY14, color = "steelblue") +
+  guides(color = guide_legend(override.aes = list(linetype = c("solid", "dashed"))), linetype = "none") +
+        ggtitle("DAY 14") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 14))  # Centered DAY 14 title
+
+# Create the annotation grob
+annotation <- textGrob("(d)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
+
+# Combine the annotation and plot using grid.arrange
+combined_plot_DAY14 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY14, ncol = 1, heights = c(0.02, 0.98))
+
+# Draw the combined plot
+#grid.draw(combined_plot_DAY14)
+
+# Save the combined plots
+#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+#ggsave("roc_opt_DAY14.png", combined_plot_DAY14, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+
+```
+
+```{r combining ROC curves day 1 2 7 14}
+combined_plot_roc <- grid.arrange(combined_plot_DAY1,combined_plot_DAY2,combined_plot_DAY7,combined_plot_DAY14, ncol = 1)
+# Draw the combined plot
+#grid.draw(combined_plot_roc)
+
+setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Manuscript_plots")
+ggsave("combined_roc_plot_2706.png", combined_plot_roc, dpi = 300, width = 8.27, height = 10.3, units = "in", limitsize = FALSE)
+
+```
