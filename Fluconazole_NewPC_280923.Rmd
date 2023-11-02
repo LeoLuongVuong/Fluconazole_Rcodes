@@ -3640,9 +3640,10 @@ PTA_NOCRRT200_DAY1<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 1,],aes(x = CKDEPI, y 
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3661,9 +3662,10 @@ PTA_NOCRRT200_DAY2<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 2,],aes(x = CKDEPI, y 
   theme_minimal(base_size = 12) +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3682,9 +3684,10 @@ PTA_NOCRRT200_DAY7<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 7,],aes(x = CKDEPI, y 
   theme_minimal(base_size = 12) +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3703,9 +3706,10 @@ PTA_NOCRRT200_DAY14<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 14,],aes(x = CKDEPI, 
   theme_minimal(base_size = 12) +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3870,9 +3874,10 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3892,9 +3897,10 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3914,9 +3920,10 @@ PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$R
   theme_minimal(base_size = 12) +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3934,9 +3941,10 @@ PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Reg
   theme_minimal(base_size = 12) +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -3955,9 +3963,10 @@ PTA_BW_CRRT200_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Reg
   theme_minimal(base_size = 12) +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -4073,9 +4082,10 @@ PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_no
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -4094,9 +4104,10 @@ PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_
   theme_minimal(base_size = 12) +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -4114,9 +4125,10 @@ PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_no
   theme_minimal(base_size = 12) +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -4135,9 +4147,10 @@ PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_no
   theme_minimal(base_size = 12) +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -4234,15 +4247,24 @@ dosing_colors_day12 <- c("#fde725",
                    "#31688e",
                    "#440154")
 
-# Plotting day 1 and 2
+## Plotting day 1 and 2
 # Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
 # I also enforce limits on vertical lines here
 
 # Firstly, create dataset with BW, Regimen and PTA on day 1 
-BW_Reg <- PTA_BW_noCRRT %>% #BW & Regimen dataset
-  filter(DAY == 1, Regimen %in% c(2, 3, 4, 5, 6), BW %in% c(60, 80, 100, 120, 140)) %>%
-  select(Regimen, BW, PTA_fAUC_200)
+BW_Reg <- data.frame( #BW and Regimen dataset
+  BW = c(60, 80, 100, 120, 140),
+  Regimen = c(2, 3, 4, 5, 6)
+)
 
+# Then, make a dataset of PTA on Day 1 per BW per Regimen
+BW_PTA_DaY1<-BW_Reg %>%
+  left_join(
+    PTA_BW_noCRRT %>% filter(DAY == 1),
+    by = c("BW", "Regimen")
+  )
+
+# Then making PTA_BW_noCRRT200_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
 PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
@@ -4250,9 +4272,10 @@ PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noC
   theme_minimal(base_size = 12) +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
@@ -4297,9 +4320,10 @@ PTA_BW_noCRRT200_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noC
   theme_minimal(base_size = 12) +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
-  theme(plot.title = element_text(hjust = 0.5, size = 10,face="bold"),
-        axis.title = element_text(size = 9),
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
         axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
         legend.text = element_text(size = 8),
         panel.grid.major = element_line(colour = "gray85"),
         panel.grid.minor = element_blank()) +
