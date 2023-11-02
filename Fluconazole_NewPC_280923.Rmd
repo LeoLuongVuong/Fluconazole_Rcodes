@@ -3637,7 +3637,7 @@ PTA_NOCRRT200_DAY1<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 1,],aes(x = CKDEPI, y 
   geom_line(size=1) +
   scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3659,7 +3659,7 @@ PTA_NOCRRT200_DAY2<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 2,],aes(x = CKDEPI, y 
   geom_line(size=1) +
   scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3681,7 +3681,7 @@ PTA_NOCRRT200_DAY7<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 7,],aes(x = CKDEPI, y 
   geom_line(size=1) +
   scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3703,7 +3703,7 @@ PTA_NOCRRT200_DAY14<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 14,],aes(x = CKDEPI, 
   geom_line(size=1) +
   scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3871,7 +3871,7 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3894,7 +3894,7 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3917,7 +3917,7 @@ PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$R
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3938,7 +3938,7 @@ PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Reg
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -3960,7 +3960,7 @@ PTA_BW_CRRT200_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Reg
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -4079,7 +4079,7 @@ PTA_BW_noCRRT200_DAY1<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_no
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -4101,7 +4101,7 @@ PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -4122,7 +4122,7 @@ PTA_BW_noCRRT200_DAY2<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_no
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -4144,7 +4144,7 @@ PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_no
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -4269,7 +4269,7 @@ PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noC
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
@@ -4317,7 +4317,7 @@ PTA_BW_noCRRT200_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noC
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "BW (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
