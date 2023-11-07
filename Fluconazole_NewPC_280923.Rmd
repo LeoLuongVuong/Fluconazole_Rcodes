@@ -5,6 +5,18 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
+### Calling libraries
+
+```{r all necessary libraries}
+
+library(dplyr)
+library(mice) #for 2l.pan imputation
+library(pan) #for 2l.pan imputation
+
+
+```
+
+
 ### Doing MI - Clustering with ID - 2l.pan method - fixing negative values to 0 280923
 
 ### After that, Doing MI - Clustering with ID - 2l.pmm method - 011023
@@ -52,7 +64,8 @@ FlucTotIV_clean$DV[FlucTotIV_clean$TIME == 0] <- 0
 
 ```{r crrt & non-crrt dataset, warning=FALSE}
 
-library(dplyr)
+# Creating crrt & non-crrt datasets
+
 crrt_patients <- unique(FlucTotIV_clean[FlucTotIV_clean$CRRT == 1, "ID"])
 FlucTotIV_clean_crrt<-FlucTotIV_clean%>%filter(ID%in%crrt_patients)
 FlucTotIV_clean_nocrrt<-FlucTotIV_clean%>%filter(!ID%in%(crrt_patients))
@@ -90,8 +103,6 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AM
 
 # First 10 imputation
 
-library(mice)
-library(pan)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -107,8 +118,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(124)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -124,8 +133,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(125)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -141,8 +148,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(126)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -158,8 +163,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(127)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -181,8 +184,6 @@ for (i in 1:10) {
 
 # First 10 imputation
 
-library(mice)
-library(pan)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -3730,13 +3731,15 @@ PTA_NOCRRT200_DAY14
 grid_CKDEPI <- plot_grid(PTA_NOCRRT200_DAY1, PTA_NOCRRT200_DAY2, PTA_NOCRRT200_DAY7, PTA_NOCRRT200_DAY14, nrow = 2, align = "v")
 
 title <- ggdraw() + 
-  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+  #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+  draw_label("Probability of target attainment across the range of CKDEPI in non CRRT patients", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1))
 
 # Export the combined plots
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_CKDEPI.png", grid_CKDEPI, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -3765,7 +3768,8 @@ grid_CKDEPI <- plot_grid(PTA_NOCRRT200_DAY1, PTA_NOCRRT200_DAY2, PTA_NOCRRT200_D
 # Creating title
 
 title <- ggdraw() + 
-  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+  #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+  draw_label("Probability of target attainment across the range of CKDEPI in non CRRT patients", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1),align = "v")
@@ -3774,7 +3778,8 @@ grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1),
 grid_CKDEPI_common <- plot_grid(grid_CKDEPI,common_legend, nrow = 1, rel_widths = c(1, 0.2))
 
 # Export the common legend - combined plots
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_CKDEPI_commonlegend.png", grid_CKDEPI_common, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -4377,14 +4382,16 @@ grid_BW_noCRRT_DAY714
 grid_BW_noCRRT <- plot_grid(grid_BW_noCRRT_DAY12, grid_BW_noCRRT_DAY714, nrow = 2, align = "v")
 
 title <- ggdraw() + 
-  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+  #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+draw_label("Probability of target attainment across the range of body weight in non CRRT patients", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT, ncol = 1, rel_heights = c(0.02, 1))
 grid_BW_noCRRT
 
 # Export grid_BW_noCRRT_rearranged plot
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_BW_noCRRT_rearranged.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -4585,14 +4592,16 @@ PTA_BW_CRRT200_DAY714 <- plot_grid(PTA_BW_CRRT200_DAY7, PTA_BW_CRRT200_DAY14,com
 grid_BW_CRRT <- plot_grid(PTA_BW_CRRT200_DAY12, PTA_BW_CRRT200_DAY714, nrow = 2, align = "v")
 
 title <- ggdraw() + 
-  draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+  #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
+draw_label("Probability of target attainment across the range of body weight in CRRT patients", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_CRRT <- plot_grid(title, grid_BW_CRRT, ncol = 1, rel_heights = c(0.02, 1))
 grid_BW_CRRT
 
 # Export grid_BW_noCRRT_rearranged plot
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_BW_CRRT_rearranged.png", grid_BW_CRRT, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -6175,6 +6184,8 @@ write.csv(PTA_pop_opt_overall, "PTA_pop_opt_overall.csv",quote=F,row.names = FAL
 
 #### ROC curves pop_sim_std & opt datasets
 
+##### BW's impact
+
 ```{r combining 2 roc curves of DAY1}
 
 # library
@@ -6217,7 +6228,7 @@ AUC_label_std_DAY1 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_std,
 # For recommended dosing
 TA_opt_day1 <- pop_opt_dos %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW_DAY1 <- pROC::roc(TA_opt_day1$TA,
+ROC_AUC_opt_DAY1 <- pROC::roc(TA_opt_day1$TA,
                         TA_opt_day1$BW,
                         auc.polygon = FALSE,
                         max.auc.polygon = FALSE,
@@ -6233,11 +6244,11 @@ ROC_AUC_BW_DAY1 <- pROC::roc(TA_opt_day1$TA,
                         show.thres = TRUE)
 
 # Calculate 95% CI for the roc curves
-AUC_opt <- pROC::auc(ROC_AUC_BW_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_opt <- pROC::auc(ROC_AUC_opt_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 
 AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
 
-CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_opt_DAY1, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 
 AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
 
@@ -6303,16 +6314,16 @@ library(ggplot2)
 # For standard dosing - DAY 2
 analysis1_DAY2 <- sdtab_pop_std_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW1_DAY2 <- pROC::roc(analysis1_DAY2$TA,
+ROC_AUC_std_DAY2 <- pROC::roc(analysis1_DAY2$TA,
                         analysis1_DAY2$BW,
                         auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
                         ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
                         plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
                         show.thres = TRUE)
 
-AUC_std <- pROC::auc(ROC_AUC_BW1_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_std <- pROC::auc(ROC_AUC_std_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
-CI_AUC_std <- pROC::ci.auc(ROC_AUC_BW1_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_std_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
 AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
 AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
@@ -6321,27 +6332,27 @@ AUC_label_AUC_BW1_DAY2 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_
 # For recommended dosing - DAY 2
 analysis_DAY2 <- pop_opt_dos %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW_DAY2 <- pROC::roc(analysis_DAY2$TA,
+ROC_AUC_opt_DAY2 <- pROC::roc(analysis_DAY2$TA,
                         analysis_DAY2$BW,
                         auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
                         ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
                         plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
                         show.thres = TRUE)
 
-AUC_opt <- pROC::auc(ROC_AUC_BW_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_opt <- pROC::auc(ROC_AUC_opt_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
-CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_opt_DAY2, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
 AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
 AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
 AUC_label_AUC_BW_DAY2 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
 
 # Convert roc objects to data frames
-roc1_DAY2 <- pROC::coords(ROC_AUC_BW1_DAY2)
-roc_DAY2 <- pROC::coords(ROC_AUC_BW_DAY2)
+roc1_DAY2 <- pROC::coords(ROC_AUC_std_DAY2)
+roc_DAY2 <- pROC::coords(ROC_AUC_opt_DAY2)
 
 # Plot ROC curves - DAY 2
-Plot_ROC_AUC_BW_DAY2 <- ggplot() +
+Plot_ROC_AUC_opt_DAY2 <- ggplot() +
   geom_line(data = roc1_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
   geom_line(data = roc_DAY2, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
   scale_color_manual(values = c("steelblue", "orange")) +
@@ -6372,7 +6383,7 @@ ggtitle("DAY 2") +
 annotation <- textGrob("(b)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
 
 # Combine the annotation and plot using grid.arrange
-combined_plot_DAY2 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY2, ncol = 1, heights = c(0.02, 0.98))
+combined_plot_DAY2 <- grid.arrange(annotation, Plot_ROC_AUC_opt_DAY2, ncol = 1, heights = c(0.02, 0.98))
 
 ```
 
@@ -6383,16 +6394,16 @@ library(ggplot2)
 # For standard dosing - DAY 7
 analysis1_DAY7 <- sdtab_pop_std_2706_trough %>% filter(DAY == 7) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW1_DAY7 <- pROC::roc(analysis1_DAY7$TA,
+ROC_AUC_std_DAY7 <- pROC::roc(analysis1_DAY7$TA,
                         analysis1_DAY7$BW,
                         auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
                         ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
                         plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
                         show.thres = TRUE)
 
-AUC_std <- pROC::auc(ROC_AUC_BW1_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_std <- pROC::auc(ROC_AUC_std_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
-CI_AUC_std <- pROC::ci.auc(ROC_AUC_BW1_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_std_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
 AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
 AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
@@ -6401,27 +6412,27 @@ AUC_label_AUC_BW1_DAY7 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_
 # For recommended dosing - DAY 7
 analysis_DAY7 <- pop_opt_dos %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW_DAY7 <- pROC::roc(analysis_DAY7$TA,
+ROC_AUC_opt_DAY7 <- pROC::roc(analysis_DAY7$TA,
                         analysis_DAY7$BW,
                         auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
                         ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
                         plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
                         show.thres = TRUE)
 
-AUC_opt <- pROC::auc(ROC_AUC_BW_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_opt <- pROC::auc(ROC_AUC_opt_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
-CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_opt_DAY7, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
 AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
 AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
 AUC_label_AUC_BW_DAY7 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
 
 # Convert roc objects to data frames
-roc1_DAY7 <- pROC::coords(ROC_AUC_BW1_DAY7)
-roc_DAY7 <- pROC::coords(ROC_AUC_BW_DAY7)
+roc1_DAY7 <- pROC::coords(ROC_AUC_std_DAY7)
+roc_DAY7 <- pROC::coords(ROC_AUC_opt_DAY7)
 
 # Plot ROC curves - DAY 7
-Plot_ROC_AUC_BW_DAY7 <- ggplot() +
+Plot_ROC_AUC_opt_DAY7 <- ggplot() +
   geom_line(data = roc1_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
   geom_line(data = roc_DAY7, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
   scale_color_manual(values = c("steelblue", "orange")) +
@@ -6452,7 +6463,7 @@ Plot_ROC_AUC_BW_DAY7 <- ggplot() +
 annotation <- textGrob("(c)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
 
 # Combine the annotation and plot using grid.arrange
-combined_plot_DAY7 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY7, ncol = 1, heights = c(0.02, 0.98))
+combined_plot_DAY7 <- grid.arrange(annotation, Plot_ROC_AUC_opt_DAY7, ncol = 1, heights = c(0.02, 0.98))
 
 # Draw the combined plot
 #grid.draw(combined_plot_DAY7)
@@ -6471,16 +6482,16 @@ library(ggplot2)
 # For standard dosing - DAY 14
 analysis1_DAY14 <- sdtab_pop_std_2706_trough %>% filter(DAY == 14) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW1_DAY14 <- pROC::roc(analysis1_DAY14$TA,
+ROC_AUC_std_DAY14 <- pROC::roc(analysis1_DAY14$TA,
                         analysis1_DAY14$BW,
                         auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
                         ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
                         plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
                         show.thres = TRUE)
 
-AUC_std <- pROC::auc(ROC_AUC_BW1_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_std <- pROC::auc(ROC_AUC_std_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_firstpart_std <- round(as.numeric(sub(".*(: *)", "\\1", AUC_std)), 3)
-CI_AUC_std <- pROC::ci.auc(ROC_AUC_BW1_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_std <- pROC::ci.auc(ROC_AUC_std_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_anotherpart_std <- sub(".*(: *)", "\\1", CI_AUC_std)
 AUC_secondpart_std <- as.numeric(substr(AUC_anotherpart_std[1], 1, 5))
 AUC_thirdpart_std <- as.numeric(substr(AUC_anotherpart_std[3], 1, 5))
@@ -6489,27 +6500,27 @@ AUC_label_std_DAY14 <- paste0("AUC:", AUC_firstpart_std, "(", AUC_secondpart_std
 # For recommended dosing - DAY 14
 analysis_DAY14 <- pop_opt_dos %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
-ROC_AUC_BW_DAY14 <- pROC::roc(analysis_DAY14$TA,
+ROC_AUC_opt_DAY14 <- pROC::roc(analysis_DAY14$TA,
                         analysis_DAY14$BW,
                         auc.polygon = FALSE, max.auc.polygon = FALSE, grid = FALSE,
                         ci = TRUE, boot.n = 1000, ci.alpha = 0.95, stratified = TRUE,
                         plot = FALSE, print.auc = TRUE, print.auc.x = 0.2, print.auc.y = 0.3,
                         show.thres = TRUE)
 
-AUC_opt <- pROC::auc(ROC_AUC_BW_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+AUC_opt <- pROC::auc(ROC_AUC_opt_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_firstpart_opt <- round(as.numeric(sub(".*(: *)", "\\1", AUC_opt)), 3)
-CI_AUC_opt <- pROC::ci.auc(ROC_AUC_BW_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
+CI_AUC_opt <- pROC::ci.auc(ROC_AUC_opt_DAY14, conf.level = 0.95, ci.alpha = 0.95, method = "bootstrap", boot.n = 1000, stratified = TRUE)
 AUC_anotherpart_opt <- sub(".*(: *)", "\\1", CI_AUC_opt)
 AUC_secondpart_opt <- as.numeric(substr(AUC_anotherpart_opt[1], 1, 5))
 AUC_thirdpart_opt <- as.numeric(substr(AUC_anotherpart_opt[3], 1, 5))
 AUC_label_opt_DAY14 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt, "-", AUC_thirdpart_opt, ")", sep = "")
 
 # Convert roc objects to data frames
-roc_std_DAY14 <- pROC::coords(ROC_AUC_BW1_DAY14)
-roc_opt_DAY14 <- pROC::coords(ROC_AUC_BW_DAY14)
+roc_std_DAY14 <- pROC::coords(ROC_AUC_std_DAY14)
+roc_opt_DAY14 <- pROC::coords(ROC_AUC_opt_DAY14)
 
 # Plot ROC curves - DAY 14
-Plot_ROC_AUC_BW_DAY14 <- ggplot() +
+Plot_ROC_AUC_opt_DAY14 <- ggplot() +
   geom_line(data = roc_std_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
   geom_line(data = roc_opt_DAY14, aes(x = 1 - specificity, y = sensitivity, color = "Optimised dosing regimen", linetype = "Optimised dosing regimen"), size = 1) +
   scale_color_manual(values = c("steelblue", "orange")) +
@@ -6540,7 +6551,7 @@ Plot_ROC_AUC_BW_DAY14 <- ggplot() +
 annotation <- textGrob("(d)", x = 0, y = 0.2, just = c("left", "top"), gp = gpar(fontsize = 14))
 
 # Combine the annotation and plot using grid.arrange
-combined_plot_DAY14 <- grid.arrange(annotation, Plot_ROC_AUC_BW_DAY14, ncol = 1, heights = c(0.02, 0.98))
+combined_plot_DAY14 <- grid.arrange(annotation, Plot_ROC_AUC_opt_DAY14, ncol = 1, heights = c(0.02, 0.98))
 
 # Draw the combined plot
 #grid.draw(combined_plot_DAY14)

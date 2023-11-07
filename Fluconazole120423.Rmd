@@ -5894,11 +5894,14 @@ sig_OFV_CKDEPI #equals 8.3
 ##### Table 2, Reporting 10 bootstraps for models with BW - 170523
 
 ```{r read pooled 10 bootstraps dataset, warning=FALSE}
+
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Pooled_datasets")
 Pooled_Bootstrap_BW<-read.csv("Pooled_Bootstrap_BW.csv")
+
 ```
 
 ```{r reporting the median of the median (95% CI) of 10 bootstraps}
+
 library(dplyr)
 
 Pooled_Bootstrap_BW %>%
@@ -5911,15 +5914,19 @@ Pooled_Bootstrap_BW %>%
         group_by(Model) %>%
 select(Median_Mean,Lower_bound,Upper_bound,Model,Parameters) %>%
   print()
+
 ```
 
 ```{r create 3 new columns for %CV of IIV/PropErr}
+
 Pooled_Bootstrap_BW$CV_mean<-sqrt(exp(Pooled_Bootstrap_BW$Median_Mean)-1)*100
 Pooled_Bootstrap_BW$CV_lower<-sqrt(exp(Pooled_Bootstrap_BW$Lower_bound)-1)*100
 Pooled_Bootstrap_BW$CV_upper<-sqrt(exp(Pooled_Bootstrap_BW$Upper_bound)-1)*100
+
 ```
 
 ```{r calculate the median of these %CV of the 10 model and the final model}
+
 library(dplyr)
 
 Pooled_Bootstrap_BW %>% filter (Parameters%in%c("IIV_CLcrrt","IIV_CLr","IIV_V1","PropErr","Cov_CLr_V1")) %>%
@@ -5935,12 +5942,15 @@ Pooled_Bootstrap_BW %>% filter (Parameters%in%c("IIV_CLcrrt","IIV_CLr","IIV_V1",
         group_by(Model) %>%
 select(CV_mean,CV_lower,CV_upper,Model,Parameters) %>%
   print()
+
 ```
 
 ```{r number of successful run}
+
 successful_run<-c(190,191,195,195,193,193,195,191,189,190)
 percentage<- successful_run/200
 summary(percentage)
+
 ```
 
 #### Model diagnostic - GOF plots - appendix
