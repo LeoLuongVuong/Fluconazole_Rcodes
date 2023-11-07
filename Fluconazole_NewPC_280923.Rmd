@@ -10,9 +10,22 @@ output: pdf_document
 ```{r all necessary libraries}
 
 library(dplyr)
+library(tidyr)
 library(mice) #for 2l.pan imputation
 library(pan) #for 2l.pan imputation
-
+library(miceadds) #for 2l.pmm imputation
+library(ggplot2)
+library(viridis) #for using viridis color palette
+library(gridExtra) #to make plot grids
+library(cowplot) #to make plot grids
+library(pROC) #for making roc curves
+library(readr) #part of tidyr #data wrangling
+library(purrr) #to sample from a ecdf
+library(ecdf) #to sample from a ecdf
+library(xpose) #for making vpcs
+library(xpose4) #for making vpcs
+library(vpc) #for making vpcs
+library(PsNR) #for making vpcs
 
 ```
 
@@ -199,8 +212,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(124)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -216,8 +227,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(125)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -233,8 +242,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(126)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -250,8 +257,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(127)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -267,8 +272,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(128)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -284,8 +287,6 @@ for (i in 1:10) {
 
 # Next 10 imputation
 
-library(mice)
-library(pan)
 set.seed(129)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -307,7 +308,6 @@ for (i in 1:10) {
 
 ```{r for impute_CREAT_DOS_INT_crrt dataset 2l.pmm method,warning=FALSE}
 
-library(miceadds)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -325,7 +325,6 @@ for (i in 1:10) {
 
 ```{r for imputed_CREAT_DOS_INT_nocrrt dataset 2l.pmm method, warning=FALSE}
 
-library(miceadds)
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_nocrrt, maxit=0)
 predmat <- imp0$predictorMatrix
@@ -425,7 +424,6 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>% select(-one_of(bw_mean_co
 #### Averaging CREAT per ID and OCC, where CREAT_DOS_INT is missing
 
 ```{r average accross ID and OCC where CREAT_DOS_INT is missing, warning=FALSE}
-library(dplyr)
 
 # Create a subset of rows with missing CREAT_DOS_INT
 subset <- FlucTotIV_clean_imputed %>% filter(is.na(CREAT_DOS_INT))
@@ -446,8 +444,6 @@ FlucTotIV_clean_imputed[is.na(FlucTotIV_clean_imputed$CREAT_DOS_INT), mean_cols]
 #### Fixing all the negative imputed values to 0 or minimum possible values
 
 ```{r fixing negative values to 0}
-
-library(dplyr)
 
 # Probably before this, I need to calculate the % of negative values first
 negative_percentage_CREAT <- sapply(FlucTotIV_clean_imputed[, c("CREAT01", "CREAT02", "CREAT03", "CREAT04", "CREAT05", "CREAT06", "CREAT07", "CREAT08", "CREAT09", "CREAT10")], function(col) {
@@ -472,8 +468,6 @@ FlucTotIV_clean_imputed <- FlucTotIV_clean_imputed %>%
 
 ```{r make violin plots of observed and imputed CREAT values, warning=FALSE}
 
-library(tidyr)
-
 # Assuming your dataset is named FlucTotIV_clean_imputed
 
 # Select the 11 columns by specifying their names explicitly
@@ -489,8 +483,6 @@ CREAT_long_data <- CREAT_columns %>%
 # Rename the levels of the "Imputation" column
 CREAT_long_data$Imputation <- factor(CREAT_long_data$Imputation, 
                                 levels = c("CREAT_DOS_INT", "CREAT01", "CREAT02", "CREAT03", "CREAT04", "CREAT05", "CREAT06", "CREAT07", "CREAT08", "CREAT09", "CREAT10"))
-
-library(ggplot2)
 
 # Define a custom color palette
 custom_palette <- c("skyblue", "lightgreen", "pink", "orange", "purple",
@@ -524,8 +516,6 @@ ggsave("obs_vs_imp_violin.png", plot = violin_plot, dpi = 300, width = 13, heigh
 #### Calculating the CKDEPI of the imputed values
 
 ```{r calculating CKDEPI01 to CKDEPI10 using a short code}
-
-library(dplyr)
 
 # Assuming FlucTotIV_clean_imputed is your dataset
 Fluc_NONMEM_mul_impute <- FlucTotIV_clean_imputed
@@ -567,8 +557,6 @@ Fluc_NONMEM_mul_impute$Creat_imputed<-ifelse(Fluc_NONMEM_mul_impute$unique_CREAT
 
 # subset data that has both imputed and non-imputed CREAT
 
-library(dplyr)
-
 Imputed_ID <- Fluc_NONMEM_mul_impute %>%
   group_by(ID) %>%
   filter(all(c(0, 1) %in% Creat_imputed)) %>%
@@ -580,7 +568,6 @@ Imputed_ID %>%
   n_distinct()
 
 # Eliminate all the duplicates ID, OCC, unique_CREAT and Creat_imputed from Imputed_data dataset
-library(dplyr)
 
 unique_Imputed_ID <- Imputed_ID %>%
   distinct(ID, OCC, unique_CREAT, Creat_imputed, .keep_all = TRUE)
@@ -592,12 +579,11 @@ unique_Imputed_ID[["CKDEPI"]] <- calculate_CKDEPI(unique_Imputed_ID,
                                                                "SEX", "AGE", 142)
 
 # Relocate CKDEPI column right next to CKDEPI01
-library(dplyr)
+
 unique_Imputed_ID <- unique_Imputed_ID %>%
   relocate(CKDEPI, .before = CKDEPI01)
 
 # Select patients with at least two OCC of unique_CREAT of at least 1
-library(dplyr)
 
 OCC_two_CREAT_ID <- unique_Imputed_ID %>%
   group_by(ID) %>%
@@ -610,17 +596,12 @@ OCC_two_CREAT <- unique_Imputed_ID %>%
 
 # Converting from short to longer format
 
-library(tidyr)
-
 Imputed_Creat_Long <- OCC_two_CREAT %>%
   pivot_longer(cols = c(CKDEPI01, CKDEPI02, CKDEPI03, CKDEPI04, CKDEPI05, CKDEPI06, CKDEPI07, CKDEPI08, CKDEPI09, CKDEPI10),                names_to = "Imputed_CKDEPI", 
                values_to = "Value") %>%
   select(ID,OCC,TIME, Imputed_CKDEPI, Creat_imputed, Value)
 
 # And making scatter plots
-
-library(ggplot2)
-library(gridExtra)
 
 Imputed_Creat_Long <- Imputed_Creat_Long %>%
   mutate(Creat_imputed = factor(Creat_imputed, levels = c(0, 1), labels = c("No", "Yes")),  # Convert Creat_imputed to factor with labels
@@ -1208,8 +1189,6 @@ upper_bound_BW
 
 # First of all, replacing the Var with the values in RSE column
 
-library(dplyr)
-
 Pooling_Parameters_2l.pan <- Pooling_Parameters_2l.pan %>%
   mutate(Var = ifelse(Parameters == "Cov_CLr_V1", RSE^2, Var))
 
@@ -1594,8 +1573,6 @@ imputation_number <- data.frame(m, Theta, Total_Var)
 
 ```{r plot Theta over m, warning=FALSE}
 
-library(ggplot2)
-
 x_label_options <- list(
   label = "Number of imputations",
   size = 12,
@@ -1642,8 +1619,6 @@ ggsave("theta_over_m_091023.png", plot = Theta_over_m, dpi = 300, width = 12, he
 ```
 
 ```{r plot variance over m, warning=FALSE}
-
-library(ggplot2)
 
 x_label_options <- list(
   label = "Number of imputations",
@@ -1719,8 +1694,6 @@ Fluc_NONMEM_mul_impute_BW01$Creat_Imputed<-ifelse(is.na(Fluc_NONMEM_mul_impute_B
 
 ## Making 10 plots with trend lines
 
-library(ggplot2)
-
 # Create a list to store the plots
 plot_list <- list()
 
@@ -1765,7 +1738,6 @@ for (i in 1:10) {
 ```
 
 ```{r density plot observed vs imputed, warning=FALSE}
-library(ggplot2)
 
 # Your dataset and initial plot code
 # Assuming your dataset is called Fluc_NONMEM_mul_impute_BW01
@@ -1855,9 +1827,6 @@ ggsave("Density_2l.pmm_051023.png", plot = density_plot, dpi = 300, width = 12, 
 # Set wd
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
 
-library(dplyr)
-library(readr)
-
 # Create a list to store all datasets
 datasets <- list()
 # Repeat Steps 1 and 2 for the other datasets
@@ -1915,12 +1884,6 @@ write.csv(datasets[[1]], "Fluc_NONMEM_mul_impute_BW01.csv",quote=F,row.names = F
 
 ##### Check the summary of the dosing intervals
 
-```{r calling libraries}
-
-library(dplyr)
-
-```
-
 ```{r FlucTotIV_clean_int dataset}
 
 FlucTotIV_clean$AMT <- as.numeric(FlucTotIV_clean$AMT)
@@ -1960,12 +1923,6 @@ percentage_above_24
 ```
 
 ##### Identify patients with high concentration
-
-```{r calling libraries}
-
-library(dplyr)
-
-```
 
 ```{r identifying high concentration patients}
 
@@ -2056,9 +2013,7 @@ FlucTotIV_clean_nocrrt %>% filter (!is.na(CKDEPI)) %>% summarize(correlation = c
 ```{r checking normal distribution of CKDEPI - overall dataset}
 
 # Test if CKDEPI has a normal distribution
-library(dplyr)
 test <- FlucTotIV_clean %>% select(ID, CKDEPI,CRRT) %>% unique() %>% mutate(CKDEPI2 = log10(CKDEPI))
-library(ggplot2)
 
 test<-na.omit(test)
 
@@ -2081,9 +2036,7 @@ shapiro.test(test$CKDEPI2) #p-value = 1.281e-15
 ```{r checking normal distribution of CKDEPI - non-CRRT dataset}
 
 # Test if CKDEPI has a normal distribution
-library(dplyr)
 test <- FlucTotIV_clean_nocrrt %>% select(ID, CKDEPI) %>% unique() %>% mutate(CKDEPI2 = log10(CKDEPI))
-library(ggplot2)
 
 test<-na.omit(test)
 
@@ -2106,9 +2059,7 @@ shapiro.test(test$CKDEPI2) #p-value = 2.2e-16
 ```{r checking normal distribution of BW - non-CRRT dataset}
 
 # Test if BW2 has a normal distribution
-library(dplyr)
 test <- FlucTotIV_clean_nocrrt %>% select(ID, BW2) %>% unique() %>% mutate(BW = log10(BW2))
-library(ggplot2)
 
 test<-na.omit(test)
 
@@ -2142,7 +2093,6 @@ print(non_parametric_test) #p=1.434e-12 #crrt & non-crrt patients have different
 #CRRT and non-CRRT patients does not have a similar CKDEPI distribution
 
 # Summary statistics of CRRT vs non-CRRT patients
-library(dplyr)
 
 # Calculate summary statistics for CKDEPI for patients in crrt_ids
 summary_in_crrt <- test %>%
@@ -2172,9 +2122,7 @@ summary_not_in_crrt
 
 ```{r comparing BW of CRRT vs non-CRRT}
 
-library(dplyr)
 test <- FlucTotIV_clean %>% select(ID, BW2,CRRT) %>% unique() %>% mutate(BW = log10(BW2))
-library(ggplot2)
 
 # comparing if CRRT vs non-CRRT patients have a different distribution
 
@@ -2208,7 +2156,6 @@ sim_dosing_01<-read.csv("dosing_08.csv")
 ```{r finetune dosing_08 dataset, warning=FALSE}
 
 # Eliminate all rows with PEAK == 1
-library(dplyr)
 sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
 
 # Eliminate PEAK column
@@ -2224,12 +2171,10 @@ summary(FlucTotIV_clean$CKDEPI[FlucTotIV_clean$CRRT == 0])
 # Note: Normal kidney function is from 90 to 120 mL/min/1.73 m2
 
 # Creat a new column "CKDEPI" for sim_dosing_01 dataset
-library(dplyr)
 sim_dosing_01 <- sim_dosing_01 %>%
   mutate(CKDEPI = ifelse(ID == 1, 5, 5 + (ID - 1) * 10))
 
 # Delete all the rows with CKDEPI > 215
-library(dplyr)
 
 sim_dosing_01 <- sim_dosing_01 %>%
   filter(CKDEPI <= 215)
@@ -2252,9 +2197,6 @@ sim_dosing_01 <- sim_dosing_01 %>%
   ungroup()
 
 ##  Assign a unique BW per each ID
-library(dplyr)
-library(purrr)
-library(ecdf)
 
 # Step 1: Get unique, non-missing values of BW2 from FlucTotIV_clean
 unique_BW2 <- FlucTotIV_clean %>%
@@ -2383,7 +2325,6 @@ sim_dosing_01<-read.csv("dosing_08.csv")
 ```{r finetune dosing_08 dataset, warning=FALSE}
 
 # Eliminate all rows with PEAK == 1
-library(dplyr)
 sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
 
 # Eliminate PEAK column
@@ -2410,8 +2351,6 @@ sim_dosing_01 <- sim_dosing_01 %>%
   ungroup()
 
 ##  Assign a unique CKDEPI per each ID
-library(dplyr)
-library(purrr)
 
 # Step 1: Get unique, non-missing values of CKDEPI from FlucTotIV_clean with CRRT = 0
 unique_CKDEPI <- FlucTotIV_clean %>% filter (CRRT==0) %>%
@@ -2597,7 +2536,6 @@ sim_dosing_01<-read.csv("dosing_08.csv")
 ```{r finetune dosing_08 dataset, warning=FALSE}
 
 # Eliminate all rows with PEAK == 1
-library(dplyr)
 sim_dosing_01<- sim_dosing_01 %>% filter(PEAK==0)
 
 # Eliminate PEAK column
@@ -2718,10 +2656,6 @@ write.csv(sim_BW_CRRT_01, "sim_BW_CRRT_07.csv",quote=F,row.names = FALSE)
 ```{r for the 1200 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_01_min.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -2764,10 +2698,6 @@ write.csv(PTA_01_overall, "PTA_dos_01.csv",quote=F,row.names = FALSE)
 ```{r for the 800 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_02.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -2810,10 +2740,6 @@ write.csv(PTA_02_overall, "PTA_dos_02.csv",quote=F,row.names = FALSE)
 ```{r for the 1000 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_03.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -2856,10 +2782,6 @@ write.csv(PTA_03_overall, "PTA_dos_03.csv",quote=F,row.names = FALSE)
 ```{r for the 1200 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_CKDEPI_04.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -2904,11 +2826,6 @@ write.csv(PTA_04_overall, "PTA_dos_04.csv",quote=F,row.names = FALSE)
 ```{r for the 1200 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_01.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -2951,10 +2868,6 @@ write.csv(PTA_noCRRT_01_overall, "PTA_noCRRT_dos_01.csv",quote=F,row.names = FAL
 ```{r for the 1200 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_02.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -2997,10 +2910,6 @@ write.csv(PTA_noCRRT_02_overall, "PTA_noCRRT_dos_02.csv",quote=F,row.names = FAL
 ```{r for the 1000 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_03.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3043,10 +2952,6 @@ write.csv(PTA_noCRRT_03_overall, "PTA_noCRRT_dos_03.csv",quote=F,row.names = FAL
 ```{r for the 800 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_04.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3089,10 +2994,6 @@ write.csv(PTA_noCRRT_04_overall, "PTA_noCRRT_dos_04.csv",quote=F,row.names = FAL
 ```{r for the 1400 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_05.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3135,10 +3036,6 @@ write.csv(PTA_noCRRT_05_overall, "PTA_noCRRT_dos_05.csv",quote=F,row.names = FAL
 ```{r for the 1600 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_06.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3181,10 +3078,6 @@ write.csv(PTA_noCRRT_06_overall, "PTA_noCRRT_dos_06.csv",quote=F,row.names = FAL
 ```{r for the 1800 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_07.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3227,10 +3120,6 @@ write.csv(PTA_noCRRT_07_overall, "PTA_noCRRT_dos_07.csv",quote=F,row.names = FAL
 ```{r for the 800 LD & 200 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_noCRRT_08.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3275,11 +3164,6 @@ write.csv(PTA_noCRRT_08_overall, "PTA_noCRRT_dos_08.csv",quote=F,row.names = FAL
 ```{r for the 1200 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_01.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3323,11 +3207,6 @@ PTA_CRRT_dos_01<-read.csv("PTA_CRRT_dos_01.csv")
 ```{r for the 800 LD & 400 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_02.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3371,11 +3250,6 @@ PTA_CRRT_dos_02<-read.csv("PTA_CRRT_dos_02.csv")
 ```{r for the 1000 LD & 600 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_03.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3419,11 +3293,6 @@ PTA_CRRT_dos_03<-read.csv("PTA_CRRT_dos_03.csv")
 ```{r for the 1000 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_04.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3466,11 +3335,6 @@ write.csv(PTA_CRRT_04_overall, "PTA_CRRT_dos_04.csv",quote=F,row.names = FALSE)
 ```{r for the 1400 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_05.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3513,11 +3377,6 @@ write.csv(PTA_CRRT_05_overall, "PTA_CRRT_dos_05.csv",quote=F,row.names = FALSE)
 ```{r for the 1600 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_06.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3560,11 +3419,6 @@ write.csv(PTA_CRRT_06_overall, "PTA_CRRT_dos_06.csv",quote=F,row.names = FALSE)
 ```{r for the 1800 LD & 800 MD, warning=FALSE}
 
 # Use read_nonmem_table function to import data
-library(xpose)
-library(xpose4)
-library(vpc)
-library(PsNR)
-library(dplyr)
 working.directory<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim'
 simulations_tablefile <- paste0(working.directory, '/sim_BW_CRRT_07.1.npctab.dta') 
 dataframe_simulations <- read_nonmem_table(simulations_tablefile)
@@ -3613,9 +3467,7 @@ write.csv(PTA_CRRT_07_overall, "PTA_CRRT_dos_07.csv",quote=F,row.names = FALSE)
 # PTA_02_overall to PTA_04_overall datasets corresspond to 800 to 1200 LD & 400 MD
 
 ## Day 1
-library(ggplot2)
-library(cowplot)
-
+ 
 # Import PTA_dos_02 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim")
 PTA_dos_02<-read.csv("PTA_dos_02.csv")
@@ -3748,10 +3600,6 @@ ggsave("grid_CKDEPI.png", grid_CKDEPI, dpi = 300, width = 16, height = 8.27)
 
 # Inspired by the plot in Clindamycin project
 
-# Libraries
-library(ggplot2)
-library(cowplot)
-
 # Define common legend for both plots
 common_legend <- get_legend(PTA_NOCRRT200_DAY1)
 
@@ -3789,9 +3637,6 @@ ggsave("grid_CKDEPI_commonlegend.png", grid_CKDEPI_common, dpi = 300, width = 16
 ```{r PTA_CRRT_dos_01 to PTA_CRRT_dos_07 datasets, warning=FALSE}
 
 ## Day 1
-library(ggplot2)
-library(dplyr)
-library(viridis)
 
 # Import PTA_CRRT_dos_01 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
@@ -3985,7 +3830,6 @@ geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_BW_CRRT200_DAY7
 
 ## Combining these 4 plots into 1
-library(cowplot)
 
 grid_BW_CRRT <- plot_grid(PTA_BW_CRRT200_DAY1, PTA_BW_CRRT200_DAY14, PTA_BW_CRRT200_DAY2, PTA_BW_CRRT200_DAY7, nrow = 2, align = "v")
 
@@ -4006,9 +3850,6 @@ ggsave("grid_BW_CRRT.png", grid_BW_CRRT, dpi = 300, width = 16, height = 8.27)
 ```{r PTA_noCRRT_dos_02 to PTA_noCRRT_dos_06 datasets, warning=FALSE}
 
 ## Day 1
-library(ggplot2)
-library(dplyr)
-library(viridis)
 
 # Import PTA_noCRRT_dos_02 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
@@ -4169,7 +4010,6 @@ geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_BW_noCRRT200_DAY7
 
 ## Combining these 4 plots into 1
-library(cowplot)
 
 grid_BW_noCRRT <- plot_grid(PTA_BW_noCRRT200_DAY1, PTA_BW_noCRRT200_DAY14, PTA_BW_noCRRT200_DAY2, PTA_BW_noCRRT200_DAY7, nrow = 2, align = "v")
 
@@ -4190,10 +4030,6 @@ ggsave("grid_BW_noCRRT.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.2
 ```{r rearrange non CRRT plot grid, warning=FALSE}
 
 ## Day 1
-library(ggplot2)
-library(dplyr)
-library(viridis)
-library(cowplot)
 
 # Create PTA_BW_noCRRT dataset from above
 
@@ -4399,10 +4235,6 @@ ggsave("grid_BW_noCRRT_rearranged.png", grid_BW_noCRRT, dpi = 300, width = 16, h
 ```{r similarly - rearrange CRRT plot grid, warning=FALSE}
 
 ## Day 1
-library(ggplot2)
-library(dplyr)
-library(viridis)
-library(cowplot)
 
 # Create PTA_BW_CRRT dataset from above
 
@@ -4670,9 +4502,6 @@ Mod2_Run02<-read.csv("Mod2_Run02.csv",skip=1,check.names = FALSE, sep="")
 
 ```{r firstly Apriori_Final, warning=FALSE}
 
-# library
-library(dplyr)
-
 # Load Apriori_Final file
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
 Clindamycin_APriori_Final<-read.csv("Clindamycin_APriori_Final.csv")
@@ -4738,9 +4567,6 @@ write.csv(Clindamycin_APriori_Final, "Clindamycin_APriori_Finetune.csv",quote=F,
 ```
 
 ```{r similary for APosteriori_Final, warning=FALSE}
-
-# library
-library(dplyr)
 
 # Load Apriori_Final file
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
@@ -4813,9 +4639,6 @@ write.csv(Clindamycin_APosteriori_Final, "Clindamycin_APosteriori_Finetune.csv",
 ##### Adjusting Finetune dataset - DV = "."
 
 ```{r changing DV from 0 to ".",warning=FALSE}
-
-# library
-library(dplyr)
 
 # Load Clindamycin_APosteriori_Finetune file
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
@@ -4921,9 +4744,6 @@ Vd.F_mod2_pos<-66.2/0.88
 
 ```{r making plots of apriori observed posterior, warning=FALSE}
 
-# Library
-library(cowplot)
-
 # Mimram et al model
 
 mod_mimram<-ggplot() +
@@ -5020,10 +4840,6 @@ ggsave("grid_clinda.png", grid_clinda, dpi = 300, width = 16, height = 8.27)
 #### Analyse final run after Erwin's comments
 
 ```{r finetuning final plots,warning=FALSE}
-
-library(ggplot2)
-library(dplyr)
-library(cowplot)
 
 # Read my Mod1_Run01_Finetune dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Clindamycin side project/My Code")
@@ -5158,10 +4974,6 @@ Vd.F_mod2_pos<-66.2/0.88
 #### CKDEPI over Time plots
 
 ```{r investigating CKDEPI over TIME in CRRT patients, warning=FALSE}
-
-# libraries
-library(dplyr)
-library(ggplot2)
 
 # Import the dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
@@ -5324,9 +5136,6 @@ ggsave("CKDEPI_DOS_INT_time_miscel_03.png", plot = CKDEPI_DOS_INT_time_miscel_03
 
 ```{r investigating Fluc Conc over TIME in CRRT patients, warning=FALSE}
 
-# library
-library(dplyr)
-
 # Import the dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
 FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
@@ -5486,12 +5295,9 @@ write.csv(FlucTotIV_clean_FFM, "Fluc_NONMEM_mul_impute_FFM01.csv",quote=F,row.na
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
 dosing_CRRT<-read.csv("dosing_03.csv")
 
-library(dplyr)
-
 ```
 
 ```{r extract AMT 1200 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5532,7 +5338,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ```
 
 ```{r extract AMT 1000 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5681,7 +5486,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ##### Updating TIME and TAD
 
 ```{r extract AMT 1600 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5716,7 +5520,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ```
 
 ```{r extract AMT 1400 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5751,7 +5554,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ```
 
 ```{r extract AMT 1200 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5786,7 +5588,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ```
 
 ```{r extract AMT 1000 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5821,7 +5622,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ```
 
 ```{r extract AMT 800 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5856,7 +5656,6 @@ dosing_CRRT <- dosing_CRRT %>%
 ```
 
 ```{r extract AMT 400 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5904,7 +5703,6 @@ dosing_CRRT <- dosing_CRRT %>%
   arrange(ID, DAY, TIME)
 
 # Move DAY after OCC
-library(dplyr)
 dosing_CRRT <- dosing_CRRT %>%
   relocate(DAY, .after = OCC)
 
@@ -5936,7 +5734,6 @@ View(dosing_CRRT)
 ```
 
 ```{r extract AMT 800 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -5971,7 +5768,6 @@ View(dosing_CRRT)
 ```
 
 ```{r extract AMT 400 data}
-library(dplyr)
 
 # Group the dataset by ID and DAY
 grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
@@ -6188,11 +5984,6 @@ write.csv(PTA_pop_opt_overall, "PTA_pop_opt_overall.csv",quote=F,row.names = FAL
 
 ```{r combining 2 roc curves of DAY1}
 
-# library
-library(ggplot2)
-library(dplyr)
-library(pROC)
-
 TA_std_day1 <- pop_std_dos %>% filter(DAY == 1) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
 
 ROC_AUC_std_DAY1 <- pROC::roc(TA_std_day1$TA,
@@ -6262,8 +6053,6 @@ AUC_label_opt_DAY1 <- paste0("AUC:", AUC_firstpart_opt, "(", AUC_secondpart_opt,
 roc_std_DAY1 <- pROC::coords(ROC_AUC_std_DAY1)
 roc_opt_DAY1 <- pROC::coords(ROC_AUC_opt_DAY1)
 
-library(gridExtra)
-
 # Create the plot with DAY 1 title
 roc_curve_day1 <- ggplot() +
   geom_line(data = roc_std_DAY1, aes(x = 1 - specificity, y = sensitivity, color = "Standard dosing regimen", linetype = "Standard dosing regimen"), size = 1) +
@@ -6308,8 +6097,6 @@ combined_plot_DAY1 <- grid.arrange(annotation, roc_curve_day1, ncol = 1, heights
 ```
 
 ```{r combining two ROC curves of DAY2}
-
-library(ggplot2)
 
 # For standard dosing - DAY 2
 analysis1_DAY2 <- sdtab_pop_std_2706_trough %>% filter(DAY == 2) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
@@ -6388,8 +6175,6 @@ combined_plot_DAY2 <- grid.arrange(annotation, Plot_ROC_AUC_opt_DAY2, ncol = 1, 
 ```
 
 ```{r combining two ROC curves of DAY7}
-
-library(ggplot2)
 
 # For standard dosing - DAY 7
 analysis1_DAY7 <- sdtab_pop_std_2706_trough %>% filter(DAY == 7) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
@@ -6476,8 +6261,6 @@ combined_plot_DAY7 <- grid.arrange(annotation, Plot_ROC_AUC_opt_DAY7, ncol = 1, 
 ```
 
 ```{r combining two ROC curves of DAY14}
-
-library(ggplot2)
 
 # For standard dosing - DAY 14
 analysis1_DAY14 <- sdtab_pop_std_2706_trough %>% filter(DAY == 14) %>% mutate(TA = ifelse(fAUC >= 200, 1, 0))
