@@ -7,7 +7,7 @@ output: pdf_document
 
 ### Calling libraries
 
-```{r all necessary libraries}
+```{r all necessary libraries,warning=FALSE}
 
 library(dplyr)
 library(tidyr)
@@ -1942,7 +1942,7 @@ long_rows <- FlucTotIV_clean %>% #identify patients with >25.5 TAD trough concen
 
 ```
 
-#### Refine the dataset to make another vpc
+#### Refine the dataset to make another vpc overall
 
 ```{r read another vpc, warning=FALSE}
 
@@ -1975,6 +1975,37 @@ Fluc_NONMEM_mul_impute_BW01_refined$DV[is.na(Fluc_NONMEM_mul_impute_BW01_refined
 # Exclude into refined dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan/vpc")
 write.csv(Fluc_NONMEM_mul_impute_BW01_refined, "Fluc_NONMEM_mul_impute_BW01_refined.csv",quote=F,row.names = FALSE)
+
+```
+
+#### Refine Fluc_NONMEM_mul_impute_BW02 dataset to make 10 vpcs 
+
+```{r refine Fluc_NONMEM_mul_impute_BW02 making 10 vpcs, warning=FALSE}
+
+# Refine Fluc_NONMEM_mul_impute_BW02 dataset, exclude all having either DV>70 or TAD>25.5
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan")
+
+Fluc_NONMEM_mul_impute_BW02 <- read.csv("Fluc_NONMEM_mul_impute_BW02.csv")
+
+Fluc_NONMEM_mul_impute_BW02$DV<-as.numeric(Fluc_NONMEM_mul_impute_BW02$DV)
+
+Fluc_NONMEM_mul_impute_BW02$TAD<-as.numeric(Fluc_NONMEM_mul_impute_BW02$TAD)
+
+# The refined dataset
+Fluc_NONMEM_mul_impute_BW02_refined <- Fluc_NONMEM_mul_impute_BW02 %>%
+  filter((TAD <= 25.5|is.na(DV)))
+Fluc_NONMEM_mul_impute_BW02_refined <- Fluc_NONMEM_mul_impute_BW02_refined %>%
+  filter((DV <= 70|is.na(DV)))
+# eliminate 25 concentration - time points
+
+# Replace NAs in DV & TAD with "."
+
+Fluc_NONMEM_mul_impute_BW02_refined$TAD[is.na(Fluc_NONMEM_mul_impute_BW02_refined$TAD)] <- "."
+Fluc_NONMEM_mul_impute_BW02_refined$DV[is.na(Fluc_NONMEM_mul_impute_BW02_refined$DV)] <- "."
+
+# Exclude into refined dataset
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Imputed_dos_int_datasets/2l method/2l.pan/vpc")
+write.csv(Fluc_NONMEM_mul_impute_BW02_refined, "Fluc_NONMEM_mul_impute_BW02_refined.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -4673,6 +4704,42 @@ grid_BW_hybrid_DAY114
 # Export grid_BW_hybrid_DAY114 plot
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_BW_hybrid_DAY114.png", grid_BW_hybrid_DAY114, dpi = 300, width = 16, height = 8.27)
+
+```
+
+#### Plotting % of Toxicity
+
+##### BW - CRRT
+
+```{r toxicity % day 1 to day 14}
+
+# PTA_BW_CRRT dataset is created above when plotting PTA
+# Similarly, dosing labels and colors are also created from above
+
+# Then we can plot PTA Cmin 80mg/L for Day 1
+
+PTA_BW_CRRT80_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_Cmin_80,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 0.1), breaks = seq(0, 0.1, by = 0.01), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day1, name = "Dosing regimen",
+                     labels = dosing_labels_day1) #+
+   #geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) #+
+  #geom_vline(xintercept = c(60, 80, 100, 120, 140), linetype = "dashed", color = "gray50", size = 1)
+PTA_BW_CRRT80_DAY1
+
+
 
 ```
 

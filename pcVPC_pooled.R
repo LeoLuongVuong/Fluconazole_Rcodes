@@ -11,9 +11,10 @@ library(magrittr)
 library(methods)
 library(xpose4)
 library(vpc)
+library(cowplot)
 #########################################
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run01")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run01") #update wd according to new computer 131123
 
 Number_of_simulations_performed <- 1000 ## Used as 'samples' argument in PsN vpc function. Needs to be a round number.
 
@@ -32,7 +33,8 @@ perc_CI <- c(0+(1-CI/100)/2, 1-(1-CI/100)/2)
 # Specify the bin times manually
 
 
-bin_times <- c(0.304387974683544,3.73,9.74,14.865,21.225,39.035,72.24216)
+#bin_times <- c(0.304387974683544,3.73,9.74,14.865,21.225,39.035,72.24216)
+bin_times <- c(0.01549,1.33,1.77,3.665,5.81,7.275,9.6,10.77,12.3835,13.135,14.425,15.485,16.905,18.035,19.54,21.225,22.225,23.1585,24.63,25.52549)
 
 
 Number_of_bins <- length(bin_times)-1
@@ -48,10 +50,10 @@ Number_of_bins <- length(bin_times)-1
 files <- list.files(pattern = "1.npctab.dta", recursive = TRUE, include.dirs = TRUE)
 
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run01")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run01")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod01 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod01 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod01 <- dataframe_simulations_mod01[dataframe_simulations_mod01$MDV == 0,]
 
 
@@ -147,7 +149,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod01<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run01'
+working.directory_mod01<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run01'
 observations_tablefile_mod01 <- paste0(working.directory_mod01, '/vpc_original.npctab.dta')
 Obs_mod01 <- read_nonmem_table(observations_tablefile_mod01)
 Obs_mod01<- Obs_mod01[Obs_mod01$MDV == 0,]
@@ -156,11 +158,11 @@ Obs_mod01<- Obs_mod01[Obs_mod01$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod01 <-  dataframe_simulations_mod01[ 
-        dataframe_simulations_mod01$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod01 <-  dataframe_simulations_mod01[ #leave this out for a second 131123
+        #dataframe_simulations_mod01$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod01 <- merge(Obs_mod01,Rep1_mod01,by=c("ID","TAD","PRED"))
+#Obs_mod01 <- merge(Obs_mod01,Rep1_mod01,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -210,25 +212,36 @@ CI_VPC_lin_mod01 <- ggplot() +
         
         
         ## Set bins
-        geom_rect(data=sim_CI_mod01, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod01, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod01, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
+        geom_rect(data=sim_CI_mod01, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+        geom_rect(data=sim_CI_mod01, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+        geom_rect(data=sim_CI_mod01, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
         
         
         # Lines of the observations
-        geom_line(data = obs_vpc_mod01, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod01, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod01, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
+        geom_line(data = obs_vpc_mod01, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+        geom_line(data = obs_vpc_mod01, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+        geom_line(data = obs_vpc_mod01, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
         
         
         ###### Add observations
-        geom_point(data = Obs_mod01,aes(x=TAD,y=PCDV),color='black')+
+        geom_point(data = Obs_mod01,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+      
+    ###### Set x & y axis limit, and their labels
+        scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+        scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+    ## Add title and subtitle
+        ggtitle("Model 01") +
         
         
-        ####### Set ggplot2 theme and settings
+    ####### Set ggplot2 theme and settings
         theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
+        theme(axis.title=element_text(size=12),
+              axis.text = element_text(size = 12),
+              plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
         theme(strip.background = element_blank(),
               strip.text.x = element_blank(),legend.position="none") +
         
@@ -238,24 +251,23 @@ CI_VPC_lin_mod01 <- ggplot() +
         
         
         # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
+        geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154') #+
         
         
         # Set axis
         #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))#+
+        #scale_x_continuous(expand=c(0.01,0))#+
         
         
-        ## Add title and subtitle
-        #ggtitle("VPC 01")
+        
 
 #########################################
 # Mod 02
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run02")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run02")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod02 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod02 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod02 <- dataframe_simulations_mod02[dataframe_simulations_mod02$MDV == 0,]
 
 
@@ -351,7 +363,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod02<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run02'
+working.directory_mod02<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run02'
 observations_tablefile_mod02 <- paste0(working.directory_mod02, '/vpc_original.npctab.dta')
 Obs_mod02 <- read_nonmem_table(observations_tablefile_mod02)
 Obs_mod02<- Obs_mod02[Obs_mod02$MDV == 0,]
@@ -360,11 +372,11 @@ Obs_mod02<- Obs_mod02[Obs_mod02$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod02 <-  dataframe_simulations_mod02[ 
-        dataframe_simulations_mod02$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod02 <-  dataframe_simulations_mod02[ #commented this out for a second - 131123
+        #dataframe_simulations_mod02$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod02 <- merge(Obs_mod02,Rep1_mod02,by=c("ID","TAD","PRED"))
+#Obs_mod02 <- merge(Obs_mod02,Rep1_mod02,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -411,53 +423,65 @@ obs_vpc_mod02$TAD <- bin_middle_mod02
 
 ### VPC on a linear scale
 CI_VPC_lin_mod02 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod02, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod02, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod02, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod02, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod02, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod02, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod02,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod02, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod02, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod02, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod02, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod02, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod02, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod02,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 02") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
         
         
         # Set axis
         #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))#+
+        #scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod02
         
 
 #########################################
 # Mod 03
 # Set working directory of model file
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run03")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run03")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod03 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod03 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod03 <- dataframe_simulations_mod03[dataframe_simulations_mod03$MDV == 0,]
 
 
@@ -553,7 +577,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod03<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run03'
+working.directory_mod03<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run03'
 observations_tablefile_mod03 <- paste0(working.directory_mod03, '/vpc_original.npctab.dta')
 Obs_mod03 <- read_nonmem_table(observations_tablefile_mod03)
 Obs_mod03<- Obs_mod03[Obs_mod03$MDV == 0,]
@@ -562,11 +586,11 @@ Obs_mod03<- Obs_mod03[Obs_mod03$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod03 <-  dataframe_simulations_mod03[ 
-        dataframe_simulations_mod03$replicate ==1,c("ID","TAD","PRED")] 
+# Rep1_mod03 <-  dataframe_simulations_mod03[ 
+        # dataframe_simulations_mod03$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod03 <- merge(Obs_mod03,Rep1_mod03,by=c("ID","TAD","PRED"))
+# Obs_mod03 <- merge(Obs_mod03,Rep1_mod03,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -613,51 +637,63 @@ obs_vpc_mod03$TAD <- bin_middle_mod03
 
 ### VPC on a linear scale
 CI_VPC_lin_mod03 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod03, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod03, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod03, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod03, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod03, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod03, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod03,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))#+     
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod03, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod03, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod03, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod03, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod03, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod03, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod03,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 03") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod03    
 
 #########################################
 # Mod 04
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run04")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run04")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod04 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod04 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod04 <- dataframe_simulations_mod04[dataframe_simulations_mod04$MDV == 0,]
 
 
@@ -753,7 +789,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod04<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run04'
+working.directory_mod04<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run04'
 observations_tablefile_mod04 <- paste0(working.directory_mod04, '/vpc_original.npctab.dta')
 Obs_mod04 <- read_nonmem_table(observations_tablefile_mod04)
 Obs_mod04<- Obs_mod04[Obs_mod04$MDV == 0,]
@@ -762,11 +798,11 @@ Obs_mod04<- Obs_mod04[Obs_mod04$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod04 <-  dataframe_simulations_mod04[ 
-        dataframe_simulations_mod04$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod04 <-  dataframe_simulations_mod04[    #temporarily commented out 131123
+        #dataframe_simulations_mod04$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod04 <- merge(Obs_mod04,Rep1_mod04,by=c("ID","TAD","PRED"))
+#Obs_mod04 <- merge(Obs_mod04,Rep1_mod04,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -813,51 +849,63 @@ obs_vpc_mod04$TAD <- bin_middle_mod04
 
 ### VPC on a linear scale
 CI_VPC_lin_mod04 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod04, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod04, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod04, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod04, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod04, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod04, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod04,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))     
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod04, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod04, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod04, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod04, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod04, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod04, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod04,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 04") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod04    
 
 #########################################
 # Mod 05
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run05")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run05")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod05 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod05 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod05 <- dataframe_simulations_mod05[dataframe_simulations_mod05$MDV == 0,]
 
 
@@ -953,7 +1001,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod05<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run05'
+working.directory_mod05<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run05'
 observations_tablefile_mod05 <- paste0(working.directory_mod05, '/vpc_original.npctab.dta')
 Obs_mod05 <- read_nonmem_table(observations_tablefile_mod05)
 Obs_mod05<- Obs_mod05[Obs_mod05$MDV == 0,]
@@ -962,11 +1010,11 @@ Obs_mod05<- Obs_mod05[Obs_mod05$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod05 <-  dataframe_simulations_mod05[ 
-        dataframe_simulations_mod05$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod05 <-  dataframe_simulations_mod05[ 
+        #dataframe_simulations_mod05$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod05 <- merge(Obs_mod05,Rep1_mod05,by=c("ID","TAD","PRED"))
+#Obs_mod05 <- merge(Obs_mod05,Rep1_mod05,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -1013,51 +1061,63 @@ obs_vpc_mod05$TAD <- bin_middle_mod05
 
 ### VPC on a linear scale
 CI_VPC_lin_mod05 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod05, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod05, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod05, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod05, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod05, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod05, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod05,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0)) 
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod05, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod05, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod05, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod05, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod05, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod05, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod05,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 05") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod05 
                         
 #########################################
 # Mod 06
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run06")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run06")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod06 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod06 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod06 <- dataframe_simulations_mod06[dataframe_simulations_mod06$MDV == 0,]
 
 
@@ -1153,7 +1213,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod06<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run06'
+working.directory_mod06<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run06'
 observations_tablefile_mod06 <- paste0(working.directory_mod06, '/vpc_original.npctab.dta')
 Obs_mod06 <- read_nonmem_table(observations_tablefile_mod06)
 Obs_mod06<- Obs_mod06[Obs_mod06$MDV == 0,]
@@ -1162,11 +1222,11 @@ Obs_mod06<- Obs_mod06[Obs_mod06$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod06 <-  dataframe_simulations_mod06[ 
-        dataframe_simulations_mod06$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod06 <-  dataframe_simulations_mod06[ 
+        #dataframe_simulations_mod06$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod06 <- merge(Obs_mod06,Rep1_mod06,by=c("ID","TAD","PRED"))
+#Obs_mod06 <- merge(Obs_mod06,Rep1_mod06,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -1213,51 +1273,63 @@ obs_vpc_mod06$TAD <- bin_middle_mod06
 
 ### VPC on a linear scale
 CI_VPC_lin_mod06 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod06, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod06, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod06, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod06, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod06, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod06, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod06,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod06, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod06, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod06, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod06, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod06, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod06, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod06,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 06") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod06 
         
 #########################################
 # Mod 07
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run07")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run07")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod07 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod07 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod07 <- dataframe_simulations_mod07[dataframe_simulations_mod07$MDV == 0,]
 
 
@@ -1353,7 +1425,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod07<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run07'
+working.directory_mod07<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run07'
 observations_tablefile_mod07 <- paste0(working.directory_mod07, '/vpc_original.npctab.dta')
 Obs_mod07 <- read_nonmem_table(observations_tablefile_mod07)
 Obs_mod07<- Obs_mod07[Obs_mod07$MDV == 0,]
@@ -1362,11 +1434,11 @@ Obs_mod07<- Obs_mod07[Obs_mod07$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod07 <-  dataframe_simulations_mod07[ 
-        dataframe_simulations_mod07$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod07 <-  dataframe_simulations_mod07[ 
+        #dataframe_simulations_mod07$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod07 <- merge(Obs_mod07,Rep1_mod07,by=c("ID","TAD","PRED"))
+#Obs_mod07 <- merge(Obs_mod07,Rep1_mod07,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -1413,51 +1485,63 @@ obs_vpc_mod07$TAD <- bin_middle_mod07
 
 ### VPC on a linear scale
 CI_VPC_lin_mod07 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod07, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod07, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod07, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod07, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod07, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod07, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod07,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod07, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod07, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod07, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod07, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod07, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod07, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod07,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 07") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod07
 
 #########################################
 # Mod 08
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run08")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run08")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod08 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod08 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod08 <- dataframe_simulations_mod08[dataframe_simulations_mod08$MDV == 0,]
 
 
@@ -1553,7 +1637,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod08<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run08'
+working.directory_mod08<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run08'
 observations_tablefile_mod08 <- paste0(working.directory_mod08, '/vpc_original.npctab.dta')
 Obs_mod08 <- read_nonmem_table(observations_tablefile_mod08)
 Obs_mod08<- Obs_mod08[Obs_mod08$MDV == 0,]
@@ -1562,11 +1646,11 @@ Obs_mod08<- Obs_mod08[Obs_mod08$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod08 <-  dataframe_simulations_mod08[ 
-        dataframe_simulations_mod08$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod08 <-  dataframe_simulations_mod08[ 
+        #dataframe_simulations_mod08$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod08 <- merge(Obs_mod08,Rep1_mod08,by=c("ID","TAD","PRED"))
+#Obs_mod08 <- merge(Obs_mod08,Rep1_mod08,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -1613,51 +1697,63 @@ obs_vpc_mod08$TAD <- bin_middle_mod08
 
 ### VPC on a linear scale
 CI_VPC_lin_mod08 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod08, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod08, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod08, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod08, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod08, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod08, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod08,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))               
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod08, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod08, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod08, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod08, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod08, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod08, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod08,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 08") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod08              
 
 #########################################
 # Mod 09
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run09")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run09")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod09 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod09 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod09 <- dataframe_simulations_mod09[dataframe_simulations_mod09$MDV == 0,]
 
 
@@ -1753,7 +1849,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod09<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run09'
+working.directory_mod09<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run09'
 observations_tablefile_mod09 <- paste0(working.directory_mod09, '/vpc_original.npctab.dta')
 Obs_mod09 <- read_nonmem_table(observations_tablefile_mod09)
 Obs_mod09<- Obs_mod09[Obs_mod09$MDV == 0,]
@@ -1762,11 +1858,11 @@ Obs_mod09<- Obs_mod09[Obs_mod09$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod09 <-  dataframe_simulations_mod09[ 
-        dataframe_simulations_mod09$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod09 <-  dataframe_simulations_mod09[ 
+        #dataframe_simulations_mod09$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod09 <- merge(Obs_mod09,Rep1_mod09,by=c("ID","TAD","PRED"))
+#Obs_mod09 <- merge(Obs_mod09,Rep1_mod09,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -1813,51 +1909,63 @@ obs_vpc_mod09$TAD <- bin_middle_mod09
 
 ### VPC on a linear scale
 CI_VPC_lin_mod09 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod09, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod09, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod09, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod09, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod09, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod09, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod09,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))     
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod09, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod09, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod09, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod09, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod09, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod09, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod09,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 09") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod09    
 
 #########################################
 # Mod 10
 # Set working directory of model file
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run10")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run10")
 
 # This reads the VPC npctab.dta file and save it in dataframe_simulations
-dataframe_simulations_mod10 <- read_nm_tables(paste('.\\',files,sep=""))
+dataframe_simulations_mod10 <- read_nm_tables(paste('.//',files,sep=""))
 dataframe_simulations_mod10 <- dataframe_simulations_mod10[dataframe_simulations_mod10$MDV == 0,]
 
 
@@ -1953,7 +2061,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod10<-'D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_run10'
+working.directory_mod10<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_2l.pan/vpc_run10'
 observations_tablefile_mod10 <- paste0(working.directory_mod10, '/vpc_original.npctab.dta')
 Obs_mod10 <- read_nonmem_table(observations_tablefile_mod10)
 Obs_mod10<- Obs_mod10[Obs_mod10$MDV == 0,]
@@ -1962,11 +2070,11 @@ Obs_mod10<- Obs_mod10[Obs_mod10$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod10 <-  dataframe_simulations_mod10[ 
-        dataframe_simulations_mod10$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod10 <-  dataframe_simulations_mod10[ 
+        #dataframe_simulations_mod10$replicate ==1,c("ID","TAD","PRED")] 
 
 
-Obs_mod10 <- merge(Obs_mod10,Rep1_mod10,by=c("ID","TAD","PRED"))
+#Obs_mod10 <- merge(Obs_mod10,Rep1_mod10,by=c("ID","TAD","PRED"))
 
 #### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
 
@@ -2013,76 +2121,79 @@ obs_vpc_mod10$TAD <- bin_middle_mod10
 
 ### VPC on a linear scale
 CI_VPC_lin_mod10 <- ggplot() +
-        
-        
-        ## Set bins
-        geom_rect(data=sim_CI_mod10, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='red', alpha=0.25) +
-        geom_rect(data=sim_CI_mod10, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='blue', alpha=0.25) +
-        geom_rect(data=sim_CI_mod10, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='blue', alpha=0.25) +
-        
-        
-        # Lines of the observations
-        geom_line(data = obs_vpc_mod10, aes(TAD, C_median), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod10, aes(TAD, C_lower), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod10, aes(TAD, C_upper), col = 'black', linetype = 'dashed', linewidth = 1.25) +
-        
-        
-        ###### Add observations
-        geom_point(data = Obs_mod10,aes(x=TAD,y=PCDV),color='black')+
-        
-        
-        ####### Set ggplot2 theme and settings
-        theme_bw()+
-        theme(axis.title=element_text(size=12.0),
-              axis.text = element_text(size = 12))+
-        theme(strip.background = element_blank(),
-              strip.text.x = element_blank(),legend.position="none") +
-        
-        
-        # Set axis labels
-        labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
-        
-        
-        # Add vertical lines to indicate dosing
-        geom_vline(xintercept = 0, linetype="dashed", size=1) +
-        
-        
-        # Set axis
-        #scale_y_log10(expand=c(0.01,0))+
-        scale_x_continuous(expand=c(0.01,0))         
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod10, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod10, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod10, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod10, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod10, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod10, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod10,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3)+
+  
+  
+  ###### Set x & y axis limit, and their labels
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)",
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  ggtitle("Model 10") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 14,face="bold"))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Set axis labels
+  labs(x="Time since last dose (hours)",y="Prediction-corrected fluconazole concentration (mg/L)")+
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154')
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+CI_VPC_lin_mod10        
                         
+###############################################################################################
+########################## Combining 10 VPCs-VPC_Pooled #######################################
 
-library(cowplot)
-
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/vpc_plots/vpc_pooled")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Plots/vpc.2lpan/vpc_pooled")
 
 # Combine the plots using plot_grid()
 grid <- plot_grid(CI_VPC_lin_mod01, CI_VPC_lin_mod02, CI_VPC_lin_mod03, 
                   CI_VPC_lin_mod04, CI_VPC_lin_mod05, CI_VPC_lin_mod06, CI_VPC_lin_mod07, 
-                  CI_VPC_lin_mod08, CI_VPC_lin_mod09, CI_VPC_lin_mod10, nrow = 2, align = "h",
-                  labels = c("01", "02", "03", "04","05", "06", "07", "08","09","10"))
+                  CI_VPC_lin_mod08, CI_VPC_lin_mod09, CI_VPC_lin_mod10, nrow = 2, align = "h")
 
 # Add a title to the grid
 title <- ggdraw() + 
-        draw_label("pcVPC of 10 final models", fontface = "bold", size = 18)
+        draw_label("pcVPC of 10 multiple imputed models", fontface = "bold", size = 16)
 
 # Arrange the title and grid using plot_grid()
 combined_plot <- plot_grid(title, grid, ncol = 1, rel_heights = c(0.1, 1))
 
 # Save the plot as a high-resolution png file
-ggsave("combined_vpc_10mod_BW.png", combined_plot, dpi = 300, width = 30, height = 16)
+ggsave("vpc_pooled.png", combined_plot, dpi = 300, width = 30, height = 16)
 
 ###############################################################################################
 ########################## My overall vpc #####################################################
 
-library(ggplot2)
-library(xpose)
-library(dplyr)
-library(PsNR)
-library(magrittr)
-library(methods)
-library(xpose4)
-library(vpc)
 #####################################
 # Set working directory of model file
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall")
