@@ -16,6 +16,7 @@ library(pan) #for 2l.pan imputation
 library(miceadds) #for 2l.pmm imputation
 library(ggplot2)
 library(viridis) #for using viridis color palette
+library(grid) #to put annotation
 library(gridExtra) #to make plot grids
 library(cowplot) #to make plot grids
 library(pROC) #for making roc curves
@@ -26,6 +27,9 @@ library(xpose) #for making vpcs
 #library(xpose4) #for making vpcs #having issues with lattice package
 library(vpc) #for making vpcs
 library(PsNR) #for making vpcs
+library(ggtext) #create latex axis labels - does not work
+library(latex2exp) #to create latex label
+library(table1) #create descriptive statistic table1
 
 ```
 
@@ -1921,6 +1925,313 @@ percentage_above_24
 # 1.670298% dosing interval are above 24 hours
 
 ```
+
+##### Explore FlucTotIV_clean to make stratified VPC
+
+```{r explore loading dose} 
+
+#Count the number of different loading doses
+
+# Filter for loading doses
+loading_doses <- FlucTotIV_clean[FlucTotIV_clean$AMT > 0 & FlucTotIV_clean$TIME == 0, ]
+
+loading_doses$AMT<-as.factor(loading_doses$AMT)
+
+# Summary of frequencies
+loading_dose_summary <- table1(~AMT,data=loading_doses)
+
+# Display the summary
+print(loading_dose_summary)
+
+
+```
+
+```{r explore maintenance dose} 
+
+#Count the number of different loading doses
+
+# Filter for maintenance doses
+maintenance_doses <- FlucTotIV_clean[FlucTotIV_clean$AMT > 0 & FlucTotIV_clean$TIME > 0, ]
+
+maintenance_doses$AMT<-as.factor(maintenance_doses$AMT)
+
+# Summary of frequencies
+maintenance_doses_summary <- table1(~AMT,data=maintenance_doses)
+
+# Display the summary
+print(maintenance_doses_summary)
+
+# Summary of AMT & dosing_interval
+maintenance_doses$dosing_interval<-as.factor(maintenance_doses$dosing_interval)
+maintenance_dosint_summary <- table1(~AMT|dosing_interval,data=maintenance_doses)
+print(maintenance_dosint_summary)
+
+```
+
+```{r explore dosing intervals} 
+
+#Count the number of different loading doses
+
+# Filter for dosing_intervals
+dosing_intervals <- FlucTotIV_clean[FlucTotIV_clean$dosing_interval > 0, ]
+
+dosing_intervals$dosing_interval<-as.factor(dosing_intervals$dosing_interval)
+
+# Summary of frequencies
+dosing_intervals_summary <- table1(~dosing_interval,data=maintenance_doses)
+
+# Display the summary
+print(maintenance_doses_summary)
+
+```
+
+```{r 3 times a day regimen}
+
+# Check for rows with OCC = 3 and 22 < TIME < 26
+rows_to_check <- FlucTotIV_clean[FlucTotIV_clean$OCC == 6 & FlucTotIV_clean$TIME > 46 & FlucTotIV_clean$TIME < 48, ]
+
+# Display the rows (if any)
+print(rows_to_check)
+
+unique(rows_to_check$ID)
+
+# It means no 3 times a day patient
+
+```
+
+```{r another way of checking dosing_interval}
+
+# 17/11/2023
+# Extract all dosing_events first
+Fluc_dosing_events<-FlucTotIV_clean%>%filter(AMT!=0)
+
+# Re-creating dosing_interval column, for OCC == 1 (loading dose), 
+# dosing_interval = TIME (OCC==2) - TIME (OCC==1). Do similarly for the
+# following OCC until it reaches the maximum OCC. dosing_interval of the maximum 
+# OCC should also be equal to TIME (OCC==MAX) - TIME (OCC==MAX-1)
+
+Fluc_dosing_events <- Fluc_dosing_events %>%
+                      group_by(ID) %>%
+                      arrange(OCC) %>%
+                      mutate(
+dosing_interval = ifelse(OCC != max(OCC), lead(dosing_interval), dosing_interval)
+) %>% ungroup()
+# I have 9 patients who received only 1 dose of fluconazole
+
+# Rearrange the dataset
+Fluc_dosing_events<-arrange(Fluc_dosing_events, ID, TIME)
+
+## Checking frequency distribution
+
+hist(Fluc_dosing_events$dosing_interval) #overall histogram
+
+hist((Fluc_dosing_events%>%filter(TIME==0))$dosing_interval)
+
+# Loading dosing_interval
+Fluc_loading_events<-Fluc_dosing_events%>%filter(TIME==0)
+hist(Fluc_loading_events$dosing_interval)
+plot(Fluc_loading_events$dosing_interval)
+#FLag: 18-30 :1 - 8-15 :2 - The rest:3
+
+# Loading doses 
+hist(Fluc_loading_events$AMT)
+plot(Fluc_loading_events$AMT)
+#FLag: 800 :1 - 400 :2 - 200&other:3 
+
+# Maintenance dosing_interval
+Fluc_maintenance_events<-Fluc_dosing_events%>%filter(TIME>0)
+hist(Fluc_maintenance_events$dosing_interval)
+plot(Fluc_maintenance_events$dosing_interval)
+#FLag: 18-30 :1 - 8-15 :2 - The rest:3
+
+# Maintenance doses 
+hist(Fluc_maintenance_events$AMT)
+plot(Fluc_maintenance_events$AMT)
+#FLag: 400 :1 - 800 :2 - 200&other:3
+
+```
+
+```{r assigning flags to different events}
+
+## continuing from above
+## adding flag for loading dose interval
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    loading_dose_interval = case_when(
+      row_number() == 1 & dosing_interval >= 18 & dosing_interval <= 30 ~ 1,
+      row_number() == 1 & dosing_interval >= 8 & dosing_interval <= 15 ~ 2,
+      TRUE ~ 3
+    )
+  ) %>%
+  ungroup()
+
+# Rearrange the dataset
+Fluc_dosing_events<-arrange(Fluc_dosing_events, ID, TIME)
+
+# Carry the value of the first row to the rest
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    loading_dose_interval = ifelse(OCC > 1, first(loading_dose_interval), loading_dose_interval)
+  ) %>%
+  ungroup()
+
+## adding flag for maintenance dose interval
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    maintenance_dose_interval = case_when(
+      row_number() != 1 & dosing_interval >= 18 & dosing_interval <= 30 ~ 1,
+      row_number() != 1 & dosing_interval >= 8 & dosing_interval <= 15 ~ 2,
+      TRUE ~ 3
+    )
+  ) %>%
+  ungroup()
+
+# Rearrange the dataset
+Fluc_dosing_events<-arrange(Fluc_dosing_events, ID, TIME)
+
+# Carry the value of the first row to the rest
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    maintenance_dose_interval = ifelse(OCC == 1, nth(maintenance_dose_interval,2), maintenance_dose_interval)
+  ) %>%
+  ungroup()
+
+# Check if every OCC of a single patient ID has the same maintenance_dose_interval
+Fluc_dosing_events$maintenance_dose_interval<-as.factor(Fluc_dosing_events$maintenance_dose_interval)
+table1(~maintenance_dose_interval|ID,data=Fluc_dosing_events)
+# not every OCC of a single ID has the same interval
+
+# Find out who have more than 1 interval
+distinctID_maintenance_intervals<- Fluc_dosing_events %>%
+    group_by(ID) %>%
+    summarize(num_distinct_intervals = length(unique(maintenance_dose_interval))) %>%
+    filter(num_distinct_intervals >= 2) %>%
+    pull(ID)
+View(distinctID_maintenance_intervals) 
+# 33 patients having more than 1 intervals - not a good news.
+
+## Then I need to adress this
+# First option, assign 3 as maintenance_dose_interval of all these patients
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  mutate(
+    maintenance_dose_interval = ifelse(ID %in% distinctID_maintenance_intervals, 3, maintenance_dose_interval)
+  )
+# Also need to assign 3 to all missing maintenance_dose_interval
+Fluc_dosing_events$maintenance_dose_interval[is.na(Fluc_dosing_events$maintenance_dose_interval)]<-3
+
+# Then assign real_flag based on dosing_interval of both loading and maintenance doses
+# In order to do so, check how many unique combinations between loading and maintenance dose
+unique(Fluc_dosing_events[c("loading_dose_interval","maintenance_dose_interval")])
+
+## Report the number of IDs falls in each combination
+
+# Convert ID, loading_dose, maintenance_dose, loading_dose_interval & 
+# maintenance_dose_interval into factor
+col_names <- c("ID","loading_dose","maintenance_dose","loading_dose_interval","maintenance_dose_interval")
+Fluc_dosing_events[,col_names] <- lapply(Fluc_dosing_events[,col_names] , factor)
+
+# Use table 1 to see how many ID per each combination
+table1(~ID|loading_dose_interval+maintenance_dose_interval,data = Fluc_dosing_events%>%group_by(ID)%>%slice(1)%>%ungroup()) #slice function helps select the first row
+
+# loading dose of 24 hours and maitenance dose of 24 hours are still the most popular - 93/177
+
+# Will create a flag dosing_interval_flag which equals 1 if loading_dose_interval == 1 & maintenance_dose_interval == 1, and equals 2 otherwise.
+Fluc_dosing_events$dosing_interval_flag<-ifelse(Fluc_dosing_events$loading_dose_interval==1 & Fluc_dosing_events$maintenance_dose_interval==1,1,0)
+
+# distinct ID for dosing_interval_flag
+distinctID_dosing_interval<-Fluc_dosing_events %>% filter(dosing_interval_flag==1) %>% 
+  distinct(ID)
+# This is used to add dosing_interval_flag to the VPC Rscript
+
+### Events based on the AMT values
+
+## For loading dose
+
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    loading_dose = case_when(
+      row_number() == 1 & AMT == 800 ~ 1,
+      row_number() == 1 & AMT == 400 ~ 2,
+      TRUE ~ 3
+    )
+  ) %>%
+  ungroup()
+
+# Rearrange the dataset
+Fluc_dosing_events<-arrange(Fluc_dosing_events, ID, TIME)
+
+# Carry the value of the first row to the rest
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    loading_dose = ifelse(OCC > 1, first(loading_dose), loading_dose)
+  ) %>%
+  ungroup()
+
+## For maintenance doses
+
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    maintenance_dose = case_when(
+      row_number() != 1 & AMT == 400 ~ 1,
+      row_number() != 1 & AMT == 800 ~ 2,
+      TRUE ~ 3
+    )
+  ) %>%
+  ungroup()
+
+# Rearrange the dataset
+Fluc_dosing_events<-arrange(Fluc_dosing_events, ID, TIME)
+
+# Carry the value of the first row to the rest
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  group_by(ID) %>%
+  mutate(
+    maintenance_dose = ifelse(OCC == 1, nth(maintenance_dose,2), maintenance_dose)
+  ) %>%
+  ungroup()
+
+# Find out who have more than 1 maintenance dose
+distinctID_maintenance_dose<- Fluc_dosing_events %>%
+    group_by(ID) %>%
+    summarize(num_distinct_dose = length(unique(maintenance_dose))) %>%
+    filter(num_distinct_dose >= 2) %>%
+    pull(ID)
+View(distinctID_maintenance_dose) 
+# 19 patients having more than 2 doses - not a good news.
+
+# First option, assign 3 as maintenance_dose of all these patients
+Fluc_dosing_events <- Fluc_dosing_events %>%
+  mutate(
+    maintenance_dose = ifelse(ID %in% distinctID_maintenance_dose, 3, maintenance_dose)
+  )
+# Also need to assign 3 to all missing maintenance_dose_interval
+Fluc_dosing_events$maintenance_dose[is.na(Fluc_dosing_events$maintenance_dose)]<-3
+
+# Then assign real_flag based on dosing_interval of both loading and maintenance doses
+# In order to do so, check how many unique combinations between loading and maintenance dose
+unique(Fluc_dosing_events[c("loading_dose","maintenance_dose")])
+
+```
+
+```{r some more exploratory analysis}
+
+## 201" "202" "203" "205" "208" "210" "212" "215" "218" "219" "221" does not have TIME == 0
+
+# Proof
+totalID<-as.data.frame(unique(Fluc_dosing_events$ID))
+LDID<-FlucTotIV_clean%>%filter(TIME==0)
+setdiff(totalID$ID,LDID$ID)
+
+
+```
+
 
 ##### Identify patients with high concentration
 
@@ -4521,7 +4832,8 @@ BW_PTA_DaY1<-BW_Reg %>%
 PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -4544,7 +4856,7 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
       y = 0,  # Starting from the x-axis
       yend = PTA_fAUC_200  # Ending at the corresponding PTA_fAUC_200 value
     ),
-    linetype = "dashed",
+    linetype = "4C88C488",
     color = "gray50",
     size = 1
   )
@@ -4554,7 +4866,8 @@ PTA_BW_CRRT200_DAY1
 PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -4579,7 +4892,7 @@ PTA_BW_CRRT200_DAY114 <- plot_grid(PTA_BW_CRRT200_DAY1, PTA_BW_CRRT200_DAY14,nro
 
 # Create common title
 title <- ggdraw() + 
-draw_label("Probability of target attainment across the range of body weight in CRRT patients", fontface = "bold", size = 12)
+draw_label("CRRT", fontface = "bold", size = 12) #
 
 # Arrange the title and grid using plot_grid()
 
@@ -4631,7 +4944,8 @@ BW_PTA_DaY1<-BW_Reg %>%
 PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -4654,7 +4968,7 @@ PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noC
       y = 0,  # Starting from the x-axis
       yend = PTA_fAUC_200  # Ending at the corresponding PTA_fAUC_200 value
     ),
-    linetype = "dashed",
+    linetype = "4C88C488",#change this for a second
     color = "gray50",
     size = 1
   )
@@ -4664,7 +4978,8 @@ PTA_BW_noCRRT200_DAY1
 PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -4690,7 +5005,7 @@ grid_BW_noCRRT_DAY114
 
 # Create common title
 title <- ggdraw() + 
-draw_label("Probability of target attainment across the range of body weight in non-CRRT patients", fontface = "bold", size = 12)
+draw_label("Non-CRRT", fontface = "bold", size = 12) #change title according to Erwin's comments
 
 # Arrange the title and grid using plot_grid()
 grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT_DAY114, ncol = 1, rel_heights = c(0.04, 1))
@@ -4698,11 +5013,19 @@ grid_BW_noCRRT
 
 ## Finally, combine grid_BW_noCRRT & grid_BW_CRRT vertically
 
-grid_BW_hybrid_DAY114 <- plot_grid(grid_BW_noCRRT, grid_BW_CRRT,nrow = 2, align = "v")
-grid_BW_hybrid_DAY114
+#grid_BW_hybrid_DAY114 <- plot_grid(grid_BW_noCRRT, grid_BW_CRRT,nrow = 2, align = "v")
+#grid_BW_hybrid_DAY114 #comment out 161123 since it's not relevant anymore
 
-# Add plot of Cmin<80 to the above two plots - 151123
-grid_BW_PTA_Toxic <- plot_grid(grid_BW_noCRRT, grid_BW_CRRT, PTA_Cmin80, nrow = 3, align = "v")
+# Add panel titles
+
+PTA_Cmin80_c<-grid.arrange(textGrob("(c)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), PTA_Cmin80, ncol = 1, heights = c(0, 1))
+
+grid_BW_noCRRT_a<-grid.arrange(textGrob("(a)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), grid_BW_noCRRT, ncol = 1, heights = c(0, 1))
+
+grid_BW_CRRT_b<-grid.arrange(textGrob("(b)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), grid_BW_CRRT, ncol = 1, heights = c(0, 1))
+
+# Add plot of Cmin<80 to the above two plots - 151123 #adding plot title 161123
+grid_BW_PTA_Toxic <- plot_grid(grid_BW_noCRRT_a, grid_BW_CRRT_b, PTA_Cmin80_c, nrow = 3, align = "v")
 
 # Export grid_BW_hybrid_DAY114 plot
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
@@ -4758,16 +5081,16 @@ PTA_BW <- PTA_BW %>%
 
 # Then I can make box plots
 PTA_Cmin80 <- ggplot(PTA_BW, aes(x = factor(CRRT), y = PTA_Cmin_80)) +
-  geom_boxplot(fill = "#fde725", color = "#fde725", outlier.shape = NA, alpha = 0.6) +
+  geom_boxplot(fill = "#fde725", color = "#fde725",lwd=1.2,fatten=1.1, outlier.shape = NA, alpha = 0.6) +
   geom_jitter(fill = "#440154", color = "#440154",alpha=0.3,width = 0.3) +
   scale_x_discrete(labels = c("No","Yes")) +
   xlab("Continuous renal replacement therapy") +
-  scale_y_continuous(limits = c(-0.01, 2.4), breaks = seq(0, 2.4, by = 0.1), name = "Probability (%)",expand = c(0,0)) +
-  #scale_y_continuous(name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(-0.01, 2.4), breaks = seq(0, 2.4, by = 0.1),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \C_{min}\ >80\ \mg / \L\ (\%)$)")) +
   theme_minimal() +
-        ggtitle("Probability of having Cmin > 80 mg/L") +
+        #ggtitle("Probability of having Cmin > 80 mg/L") + #comment out title according to Erwin's comment
   theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
-        axis.title = element_text(size = 10),
+        axis.title = element_text(size = 10), #change text into markdown for a second
         axis.text = element_text(size = 9),
         legend.position = "none",
         panel.grid.major = element_blank(),

@@ -2196,7 +2196,7 @@ ggsave("vpc_pooled.png", combined_plot, dpi = 300, width = 30, height = 16)
 
 #####################################
 # Set working directory of model file
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets/Imputed_dos_int_datasets/2l method/2l.pan/vpc/2l.pan/vpc_overall")
 
 Number_of_simulations_performed <- 1000 ## Used as 'samples' argument in PsN vpc function. Needs to be a round number.
 
@@ -2231,7 +2231,7 @@ Number_of_bins <- length(bin_times)-1
 files <- list.files(pattern = "1.npctab.dta", recursive = TRUE, include.dirs = TRUE)
 
 # Set working directory of model file
-working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall/2l.pan'
+working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets/Imputed_dos_int_datasets/2l method/2l.pan/vpc/2l.pan/vpc_overall'
 
 # Test my alternative strategy
 #working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall/2l.pan/test'
@@ -2245,7 +2245,6 @@ dataframe_simulations_mod_pooled <- dataframe_simulations_mod_pooled[dataframe_s
 
 ## Set the replicate number to the simulated dataset
 dataframe_simulations_mod_pooled$replicate <- rep(1:Number_of_simulations_performed,each=nrow(dataframe_simulations_mod_pooled)/Number_of_simulations_performed)
-
 
 # Set vector with unique replicates
 Replicate_vector_mod_pooled <- unique(dataframe_simulations_mod_pooled$replicate)
@@ -2265,27 +2264,39 @@ for(i in Number_of_bins:1){
 #### This will be done using a piping function in which we select only the data from the first replicate to save some time. 
 #### Hence, the population prediction will be equal for each replicate since we did not incorporate any parameter uncertainty in the simulation.
 
-## Calculate median PRED per bin
-PRED_BIN_mod_pooled <- dataframe_simulations_mod_pooled[dataframe_simulations_mod_pooled$replicate ==1,] %>%
+## ADD dosing_interval_flag to Obs_mod_pooled
+dataframe_simulations_mod_pooled <- dataframe_simulations_mod_pooled %>%
+  mutate(
+    dosing_interval_flag = ifelse(ID %in% distinctID_dosing_interval$ID, 1, 0)
+  )
+
+
+########## From here onward analysing flag == 1 ###########
+
+sim_mod_pooled_flag1<-dataframe_simulations_mod_pooled%>%filter(dosing_interval_flag==1)
+
+## Calculate median PRED per bin 
+PRED_BIN_mod_pooled_flag1 <- sim_mod_pooled_flag1[sim_mod_pooled_flag1$replicate ==1,] %>%
         group_by(BIN) %>% # Calculate the PRED per bin
         summarize(PREDBIN = median(PRED))
 
-#### We can then merge this with our simulated dataset and calculate the prediction corrected simulated observations (PCDV).
+## We can then merge this with our simulated dataset and calculate the prediction corrected simulated observations (PCDV).
 
-dataframe_simulations_mod_pooled <- merge(dataframe_simulations_mod_pooled,PRED_BIN_mod_pooled,by='BIN')
+sim_mod_pooled_flag1 <- merge(sim_mod_pooled_flag1,PRED_BIN_mod_pooled_flag1,by='BIN')
+
+## Calculate prediction corrected simulated observations (PCDV)
+
+sim_mod_pooled_flag1$PCDV <- sim_mod_pooled_flag1$DV *(sim_mod_pooled_flag1$PREDBIN/sim_mod_pooled_flag1$PRED)
+
+## Rearrange the dataset
+
+sim_mod_pooled_flag1 <- sim_mod_pooled_flag1[order(sim_mod_pooled_flag1$replicate,sim_mod_pooled_flag1$ID,sim_mod_pooled_flag1$TAD),]
 
 
-# Calculate prediction corrected simulated observations (PCDV)
-dataframe_simulations_mod_pooled$PCDV <- dataframe_simulations_mod_pooled$DV *(dataframe_simulations_mod_pooled$PREDBIN/dataframe_simulations_mod_pooled$PRED)
+## We use this PCDV to calculate the prediction intervals and the confidence intervals 
+## as we have previously done which are the final calculations after which we have our simulated dataset ready.
 
-
-dataframe_simulations_mod_pooled <- dataframe_simulations_mod_pooled[order(dataframe_simulations_mod_pooled$replicate,dataframe_simulations_mod_pooled$ID,dataframe_simulations_mod_pooled$TAD),]
-
-
-#### We use this PCDV to calculate the prediction intervals and the confidence intervals 
-#### as we have previously done which are the final calculations after which we have our simulated dataset ready.
-
-sim_PI_mod_pooled <- NULL
+sim_PI_mod_pooled_flag1 <- NULL
 
 
 ## Calculate predictions intervals per bin
@@ -2293,22 +2304,20 @@ for(i in Replicate_vector_mod_pooled){
         
         
         # Run this for each replicate
-        sim_vpc_ci_mod_pooled <- dataframe_simulations_mod_pooled %>%
+        sim_vpc_ci_mod_pooled_flag1 <- sim_mod_pooled_flag1 %>%
                 filter(replicate %in% i) %>% # Select an individual replicate
                 group_by(BIN) %>% # Calculate everything per bin
                 summarize(C_median = median(PCDV), C_lower = quantile(PCDV, perc_PI[1]), C_upper = quantile(PCDV, perc_PI[2])) %>% # Calculate prediction intervals
                 mutate(replicate = i) # Include replicate number
         
         
-        sim_PI_mod_pooled <- rbind(sim_PI_mod_pooled, sim_vpc_ci_mod_pooled)
+        sim_PI_mod_pooled_flag1 <- rbind(sim_PI_mod_pooled_flag1, sim_vpc_ci_mod_pooled_flag1)
 }
 
-
-###########################
-# Calculate confidence intervals around these prediction intervals calculated with each replicate
+## Calculate confidence intervals around these prediction intervals calculated with each replicate
 
 
-sim_CI_mod_pooled <- sim_PI_mod_pooled %>%
+sim_CI_mod_pooled_flag1 <- sim_PI_mod_pooled_flag1 %>%
         group_by(BIN) %>%
         summarize(C_median_CI_lwr = quantile(C_median, perc_CI[1]), C_median_CI_upr = quantile(C_median, perc_CI[2]), # Median
                   C_low_lwr = quantile(C_lower, perc_CI[1]), C_low_upr = quantile(C_lower, perc_CI[2]), # Lower percentages
@@ -2316,14 +2325,79 @@ sim_CI_mod_pooled <- sim_PI_mod_pooled %>%
         )
 
 
-### Set bin boundaries in dataset
-sim_CI_mod_pooled$x1 <- NA
-sim_CI_mod_pooled$x2 <- NA
+## Set bin boundaries in dataset
+sim_CI_mod_pooled_flag1$x1 <- NA
+sim_CI_mod_pooled_flag1$x2 <- NA
 
 
 for(i in 1:Number_of_bins){
-        sim_CI_mod_pooled$x1[sim_CI_mod_pooled$BIN == i] <-bin_times[i]
-        sim_CI_mod_pooled$x2[sim_CI_mod_pooled$BIN == i] <-bin_times[i+1]
+  sim_CI_mod_pooled_flag1$x1[sim_CI_mod_pooled_flag1$BIN == i] <-bin_times[i]
+  sim_CI_mod_pooled_flag1$x2[sim_CI_mod_pooled_flag1$BIN == i] <-bin_times[i+1]
+}
+
+
+########## From here onward analysing flag == 0 ###########
+
+sim_mod_pooled_flag0<-dataframe_simulations_mod_pooled%>%filter(dosing_interval_flag==0)
+
+## Calculate median PRED per bin 
+PRED_BIN_mod_pooled_flag0 <- sim_mod_pooled_flag0[sim_mod_pooled_flag0$replicate ==1,] %>%
+  group_by(BIN) %>% # Calculate the PRED per bin
+  summarize(PREDBIN = median(PRED))
+
+## We can then merge this with our simulated dataset and calculate the prediction corrected simulated observations (PCDV).
+
+sim_mod_pooled_flag0 <- merge(sim_mod_pooled_flag0,PRED_BIN_mod_pooled_flag0,by='BIN')
+
+## Calculate prediction corrected simulated observations (PCDV)
+
+sim_mod_pooled_flag0$PCDV <- sim_mod_pooled_flag0$DV *(sim_mod_pooled_flag0$PREDBIN/sim_mod_pooled_flag0$PRED)
+
+## Rearrange the dataset
+
+sim_mod_pooled_flag0 <- sim_mod_pooled_flag0[order(sim_mod_pooled_flag0$replicate,sim_mod_pooled_flag0$ID,sim_mod_pooled_flag0$TAD),]
+
+
+## We use this PCDV to calculate the prediction intervals and the confidence intervals 
+## as we have previously done which are the final calculations after which we have our simulated dataset ready.
+
+sim_PI_mod_pooled_flag0 <- NULL
+
+
+## Calculate predictions intervals per bin
+for(i in Replicate_vector_mod_pooled){
+  
+  
+  # Run this for each replicate
+  sim_vpc_ci_mod_pooled_flag0 <- sim_mod_pooled_flag0 %>%
+    filter(replicate %in% i) %>% # Select an individual replicate
+    group_by(BIN) %>% # Calculate everything per bin
+    summarize(C_median = median(PCDV), C_lower = quantile(PCDV, perc_PI[1]), C_upper = quantile(PCDV, perc_PI[2])) %>% # Calculate prediction intervals
+    mutate(replicate = i) # Include replicate number
+  
+  
+  sim_PI_mod_pooled_flag0 <- rbind(sim_PI_mod_pooled_flag0, sim_vpc_ci_mod_pooled_flag0)
+}
+
+## Calculate confidence intervals around these prediction intervals calculated with each replicate
+
+
+sim_CI_mod_pooled_flag0 <- sim_PI_mod_pooled_flag0 %>%
+  group_by(BIN) %>%
+  summarize(C_median_CI_lwr = quantile(C_median, perc_CI[1]), C_median_CI_upr = quantile(C_median, perc_CI[2]), # Median
+            C_low_lwr = quantile(C_lower, perc_CI[1]), C_low_upr = quantile(C_lower, perc_CI[2]), # Lower percentages
+            C_up_lwr = quantile(C_upper, perc_CI[1]), C_up_upr = quantile(C_upper, perc_CI[2]) # High percentages
+  )
+
+
+## Set bin boundaries in dataset
+sim_CI_mod_pooled_flag0$x1 <- NA
+sim_CI_mod_pooled_flag0$x2 <- NA
+
+
+for(i in 1:Number_of_bins){
+  sim_CI_mod_pooled_flag0$x1[sim_CI_mod_pooled_flag0$BIN == i] <-bin_times[i]
+  sim_CI_mod_pooled_flag0$x2[sim_CI_mod_pooled_flag0$BIN == i] <-bin_times[i+1]
 }
 
 
@@ -2335,7 +2409,7 @@ for(i in 1:Number_of_bins){
 
 ############################################################
 ######### Read dataset with original observations
-working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_overall/2l.pan'
+working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets/Imputed_dos_int_datasets/2l method/2l.pan/vpc/2l.pan/vpc_overall'
 observations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/vpc_original_overall_refined.npctab.dta') #refined dataset
 Obs_mod_pooled <- read_nonmem_table(observations_tablefile_mod_pooled)
 Obs_mod_pooled<- Obs_mod_pooled[Obs_mod_pooled$MDV == 0,]
@@ -2344,8 +2418,8 @@ Obs_mod_pooled<- Obs_mod_pooled[Obs_mod_pooled$MDV == 0,]
 ### Add the population prediction to each observation (only use the data from 1 replicate)
 
 
-Rep1_mod_pooled <-  dataframe_simulations_mod_pooled[ 
-        dataframe_simulations_mod_pooled$replicate ==1,c("ID","TAD","PRED")] 
+#Rep1_mod_pooled <-  dataframe_simulations_mod_pooled[ 
+        #dataframe_simulations_mod_pooled$replicate ==1,c("ID","TAD","PRED")] 
 
 
 #Obs_mod_pooled <- merge(Obs_mod_pooled,Rep1_mod_pooled,by=c("ID","TAD","PRED")) #Don't understand this step, why do we need to merge here??? 200623
@@ -2360,33 +2434,66 @@ for(i in Number_of_bins:1){
         Obs_mod_pooled$BIN[Obs_mod_pooled$TAD <= bin_times[i+1]] <-i
 }
 
+### ADD dosing_interval_flag to Obs_mod_pooled
+Obs_mod_pooled <- Obs_mod_pooled %>%
+  mutate(
+    dosing_interval_flag = ifelse(ID %in% distinctID_dosing_interval$ID, 1, 0)
+  )
+
+########## From here onward analysing flag == 1 ###########
+
+Obs_mod_pooled_flag1 <- Obs_mod_pooled %>% filter(dosing_interval_flag==1)
 
 ## ADD PRED BIN TO OBSERVATIONS
-Obs_mod_pooled <- merge(Obs_mod_pooled,PRED_BIN_mod_pooled,by='BIN')
+Obs_mod_pooled_flag1 <- merge(Obs_mod_pooled_flag1,PRED_BIN_mod_pooled_flag1,by='BIN')
 
+## Calculate PCDV
+Obs_mod_pooled_flag1$PCDV <- Obs_mod_pooled_flag1$DV *(Obs_mod_pooled_flag1$PREDBIN/Obs_mod_pooled_flag1$PRED)
 
-Obs_mod_pooled$PCDV <- Obs_mod_pooled$DV *(Obs_mod_pooled$PREDBIN/Obs_mod_pooled$PRED)
+## We can use the PCDV for the calculation of the percentiles which are going to compare with the simulated distributions.
 
-#### We can use the PCDV for the calculation of the percentiles which are going to compare with the simulated distributions.
-
-############################################
 ## Calculate confidence intervals of the observations
-obs_vpc_mod_pooled <- Obs_mod_pooled %>%
+obs_vpc_mod_pooled_flag1 <- Obs_mod_pooled_flag1 %>%
         group_by(BIN) %>% ## Set the stratification identifiers (e.g. TIME, DOSE, CMT, BIN)
         summarize(C_median = median(PCDV, na.rm = T), C_lower = quantile(PCDV, perc_PI[1], na.rm = T), C_upper = quantile(PCDV, perc_PI[2], na.rm = T))
 
-
 ## Get median TAD of each bin of observations for plotting purposes
-bin_middle_mod_pooled <- Obs_mod_pooled %>%
+bin_middle_mod_pooled_flag1 <- Obs_mod_pooled_flag1 %>%
         group_by(BIN) %>%
         summarize(bin_middle = median(TAD, na.rm = T))
 
+## As a vector
+bin_middle_mod_pooled_flag1 <- bin_middle_mod_pooled_flag1$bin_middle
 
-# As a vector
-bin_middle_mod_pooled <- bin_middle_mod_pooled$bin_middle
+obs_vpc_mod_pooled_flag1$TAD <- bin_middle_mod_pooled_flag1
 
+########## From here onward analysing flag == 0 ###########
 
-obs_vpc_mod_pooled$TAD <- bin_middle_mod_pooled
+Obs_mod_pooled_flag0 <- Obs_mod_pooled %>% filter(dosing_interval_flag==0)
+
+## ADD PRED BIN TO OBSERVATIONS
+Obs_mod_pooled_flag0 <- merge(Obs_mod_pooled_flag0,PRED_BIN_mod_pooled_flag0,by='BIN')
+
+## Calculate PCDV
+Obs_mod_pooled_flag0$PCDV <- Obs_mod_pooled_flag0$DV *(Obs_mod_pooled_flag0$PREDBIN/Obs_mod_pooled_flag0$PRED)
+
+## We can use the PCDV for the calculation of the percentiles which are going to compare with the simulated distributions.
+
+## Calculate confidence intervals of the observations
+obs_vpc_mod_pooled_flag0 <- Obs_mod_pooled_flag0 %>%
+  group_by(BIN) %>% ## Set the stratification identifiers (e.g. TIME, DOSE, CMT, BIN)
+  summarize(C_median = median(PCDV, na.rm = T), C_lower = quantile(PCDV, perc_PI[1], na.rm = T), C_upper = quantile(PCDV, perc_PI[2], na.rm = T))
+
+## Get median TAD of each bin of observations for plotting purposes
+bin_middle_mod_pooled_flag0 <- Obs_mod_pooled_flag0 %>%
+  group_by(BIN) %>%
+  summarize(bin_middle = median(TAD, na.rm = T))
+
+## As a vector
+bin_middle_mod_pooled_flag0 <- bin_middle_mod_pooled_flag0$bin_middle
+
+obs_vpc_mod_pooled_flag0$TAD <- bin_middle_mod_pooled_flag0
+
 
 #### We now have all the data we need to generate our pcVPC :).
 
@@ -2394,23 +2501,28 @@ obs_vpc_mod_pooled$TAD <- bin_middle_mod_pooled
 #### We have rectangles (shaded areas) for the distribution of the simulations, lines for the distribution of the data, and dots for the observed prediction corrected concentrations.
 
 ### VPC on a linear scale
-CI_VPC_lin_mod_pooled <- ggplot() +
+
+### We create seperately for flag 1 and flag 0
+
+## First of all, CI_VPC_lin_mod_pooled_flag1
+
+CI_VPC_lin_mod_pooled_flag1 <- ggplot() +
         
         
         ## Set bins
-        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
-        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
-        geom_rect(data=sim_CI_mod_pooled, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+        geom_rect(data=sim_CI_mod_pooled_flag1, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+        geom_rect(data=sim_CI_mod_pooled_flag1, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+        geom_rect(data=sim_CI_mod_pooled_flag1, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
         
         
         # Lines of the observations
-        geom_line(data = obs_vpc_mod_pooled, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod_pooled, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
-        geom_line(data = obs_vpc_mod_pooled, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+        geom_line(data = obs_vpc_mod_pooled_flag1, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+        geom_line(data = obs_vpc_mod_pooled_flag1, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+        geom_line(data = obs_vpc_mod_pooled_flag1, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
         
         
         ###### Add observations
-        geom_point(data = Obs_mod_pooled,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3) +
+        geom_point(data = Obs_mod_pooled_flag1,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3) +
         
         
         ###### Set x & y axis limit, and their labels
@@ -2422,11 +2534,15 @@ CI_VPC_lin_mod_pooled <- ggplot() +
                            expand = c(0.01,0)) +
         scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
                            expand = c(0.01,0)) +
+  
+        ## Add title and subtitle
+        ggtitle("Dosing interval 01") +
         
         
         ####### Set ggplot2 theme and settings
         theme_bw()+
         theme(axis.title=element_text(size=12),
+              plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
               axis.text = element_text(size = 10))+
         theme(strip.background = element_blank(),
               strip.text.x = element_blank(),legend.position="none") +
@@ -2439,6 +2555,55 @@ CI_VPC_lin_mod_pooled <- ggplot() +
         # Set axis
         #scale_y_log10(expand=c(0.01,0))+
         #scale_x_continuous(expand=c(0.01,0))#+
+
+
+## Second of all, CI_VPC_lin_mod_pooled_flag0
+
+CI_VPC_lin_mod_pooled_flag0 <- ggplot() +
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod_pooled_flag0, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod_pooled_flag0, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod_pooled_flag0, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod_pooled_flag0, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod_pooled_flag0, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod_pooled_flag0, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod_pooled_flag0,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3) +
+  
+  
+  ###### Set x & y axis limit, and their labels
+  #scale_x_continuous(limits = c(0, 72.24216), breaks = seq(0, 72.24216, by = 10), name = "Time since last dose (hours)", 
+  #expand = c(0.01,0)) +
+  #scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+  #expand = c(0.01,0)) +
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)", #changes I made in 200623
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        axis.text = element_text(size = 10))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154') #+
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
 
 
 ## Add title and subtitle
