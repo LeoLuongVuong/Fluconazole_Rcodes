@@ -2180,11 +2180,14 @@ Fluc_dosing_events <- Fluc_dosing_events %>%
   mutate(
     maintenance_dose = case_when(
       row_number() != 1 & AMT == 400 ~ 1,
-      row_number() != 1 & AMT == 800 ~ 2,
-      TRUE ~ 3
+      row_number() != 1 & AMT == 800 ~ 3,
+      row_number() != 1 & AMT == 200 ~ 2,
+      TRUE ~ 4
     )
   ) %>%
   ungroup()
+# I change the label of maintenance dose
+# 400mg 1 200mg 2 800mg 3 and the rest
 
 # Rearrange the dataset
 Fluc_dosing_events<-arrange(Fluc_dosing_events, ID, TIME)
@@ -2209,14 +2212,50 @@ View(distinctID_maintenance_dose)
 # First option, assign 3 as maintenance_dose of all these patients
 Fluc_dosing_events <- Fluc_dosing_events %>%
   mutate(
-    maintenance_dose = ifelse(ID %in% distinctID_maintenance_dose, 3, maintenance_dose)
+    maintenance_dose = ifelse(ID %in% distinctID_maintenance_dose, 4, maintenance_dose)
   )
-# Also need to assign 3 to all missing maintenance_dose_interval
-Fluc_dosing_events$maintenance_dose[is.na(Fluc_dosing_events$maintenance_dose)]<-3
+# Also need to assign 4 to all missing maintenance_dose_interval
+Fluc_dosing_events$maintenance_dose[is.na(Fluc_dosing_events$maintenance_dose)]<-4
 
 # Then assign real_flag based on dosing_interval of both loading and maintenance doses
 # In order to do so, check how many unique combinations between loading and maintenance dose
 unique(Fluc_dosing_events[c("loading_dose","maintenance_dose")])
+
+# Use table 1 to see how many ID per each combination
+table1(~ID|loading_dose+maintenance_dose,data = Fluc_dosing_events%>%group_by(ID)%>%slice(1)%>%ungroup()) #slice function helps select the first row
+
+# a lot of weird combination, need to check the interval as well
+unique(Fluc_dosing_events[c("loading_dose","loading_dose_interval","maintenance_dose","maintenance_dose_interval")])
+
+# Check the number of IDs falling into these different combinations 
+distinct_flag_ID <- Fluc_dosing_events %>%
+  group_by(loading_dose, loading_dose_interval, maintenance_dose, maintenance_dose_interval) %>%
+  summarize(num_patients = n_distinct(ID))
+View(distinct_flag_ID)
+
+# based on distinct_flag_ID, we create like this
+Fluc_dosing_events$dose_and_interval <- with(Fluc_dosing_events, ifelse(
+  loading_dose == 2 & loading_dose_interval == 1 & maintenance_dose == 1 & maintenance_dose_interval == 1, 1,
+  ifelse(loading_dose == 1 & loading_dose_interval == 1 & maintenance_dose == 1 & maintenance_dose_interval == 1, 2, 3)))
+# 2 1 1 1: 1 - 400 mg every 24 hours LD, 400 mg every 24 hours MD
+# 1 1 1 1: 2 - 800 mg every 24 hours LD, 400 mg every 24 hours MD
+# 3: the rest
+
+# create distinct ID
+dose_and_interval_1<-Fluc_dosing_events %>% filter(dose_and_interval==1) %>% 
+  distinct(ID)
+dose_and_interval_2<-Fluc_dosing_events %>% filter(dose_and_interval==2) %>% 
+  distinct(ID)
+
+# Check dose_and_interval column
+table1(~ID|dose_and_interval,data = Fluc_dosing_events%>%group_by(ID)%>%slice(1)%>%ungroup())
+
+# Will create a flag dosing_interval_flag which equals 1 if loading_dose_interval == 1 & maintenance_dose_interval == 1, and equals 2 otherwise.
+Fluc_dosing_events$dosing_interval_flag<-ifelse(Fluc_dosing_events$loading_dose_interval==1 & Fluc_dosing_events$maintenance_dose_interval==1,1,0)
+
+# distinct ID for dosing_interval_flag
+distinctID_dosing_interval<-Fluc_dosing_events %>% filter(dosing_interval_flag==1) %>% 
+  distinct(ID)
 
 ```
 
@@ -3198,12 +3237,19 @@ PTA_noCRRT_01$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_01$DV >= 80, PTA_noCRRT_01$DAY
 # Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
 PTA_noCRRT_01$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_01$fAUC >= 200, PTA_noCRRT_01$DAY, PTA_noCRRT_01$BW, FUN = mean)
 
+# Calculate percentage of fAUC >= 400 per DAY per BW (PTA_fAUC_400) #Isabel'comment on simulating for MIC of 4 mg/L
+PTA_noCRRT_01$PTA_fAUC_400 <- 100 * ave(PTA_noCRRT_01$fAUC >= 400, PTA_noCRRT_01$DAY, PTA_noCRRT_01$BW, FUN = mean)
+
 # Create PTA_noCRRT_01_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
-PTA_noCRRT_01_overall <- unique(PTA_noCRRT_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
+PTA_noCRRT_01_overall <- unique(PTA_noCRRT_01[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200","PTA_fAUC_400", "DAY", "BW")])
 
 # Export PTA_noCRRT_dos_01 dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
 write.csv(PTA_noCRRT_01_overall, "PTA_noCRRT_dos_01.csv",quote=F,row.names = FALSE)
+
+# Export BW_noCRRT_dos_01.csv for future use
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim")
+write.csv(BW_noCRRT_dos_01, "BW_noCRRT_dos_01.csv",quote=F,row.names = FALSE)
 
 ```
 
@@ -3239,6 +3285,12 @@ PTA_noCRRT_02$PTA_Cmin_80 <- 100 * ave(PTA_noCRRT_02$DV >= 80, PTA_noCRRT_02$DAY
 
 # Calculate percentage of fAUC >= 200 per DAY per BW (PTA_fAUC_200)
 PTA_noCRRT_02$PTA_fAUC_200 <- 100 * ave(PTA_noCRRT_02$fAUC >= 200, PTA_noCRRT_02$DAY, PTA_noCRRT_02$BW, FUN = mean)
+
+# Calculate percentage of fAUC >= 400 per DAY per BW (PTA_fAUC_400) #Isabel'comment on simulating for MIC of 4 mg/L
+PTA_noCRRT_02$PTA_fAUC_400 <- 100 * ave(PTA_noCRRT_02$fAUC >= 400, PTA_noCRRT_02$DAY, PTA_noCRRT_02$BW, FUN = mean)
+
+# Create PTA_noCRRT_02_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
+PTA_noCRRT_02_overall <- unique(PTA_noCRRT_02[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200","PTA_fAUC_400", "DAY", "BW")])
 
 # Create PTA_noCRRT_02_overall dataset with unique values of PTA_Cmin, PTA_fAUC, DAY, and BW
 PTA_noCRRT_02_overall <- unique(PTA_noCRRT_02[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fAUC_200", "DAY", "BW")])
@@ -3926,14 +3978,14 @@ grid_CKDEPI <- plot_grid(PTA_NOCRRT200_DAY1, PTA_NOCRRT200_DAY2, PTA_NOCRRT200_D
 
 title <- ggdraw() + 
   #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
-  draw_label("Probability of target attainment across the range of CKDEPI in non CRRT patients", fontface = "bold", size = 12)
+  draw_label("Non-CRRT", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1))
 
 # Export the combined plots
-#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_CKDEPI.png", grid_CKDEPI, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -3959,7 +4011,7 @@ grid_CKDEPI <- plot_grid(PTA_NOCRRT200_DAY1, PTA_NOCRRT200_DAY2, PTA_NOCRRT200_D
 
 title <- ggdraw() + 
   #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
-  draw_label("Probability of target attainment across the range of CKDEPI in non CRRT patients", fontface = "bold", size = 12)
+  draw_label("Non-CRRT", fontface = "bold", size = 12)
 
 # Arrange the title and grid using plot_grid()
 grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1),align = "v")
@@ -3968,8 +4020,8 @@ grid_CKDEPI <- plot_grid(title, grid_CKDEPI, ncol = 1, rel_heights = c(0.02, 1),
 grid_CKDEPI_common <- plot_grid(grid_CKDEPI,common_legend, nrow = 1, rel_widths = c(1, 0.2))
 
 # Export the common legend - combined plots
-#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/CKDEPI_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_CKDEPI_commonlegend.png", grid_CKDEPI_common, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -4187,6 +4239,212 @@ ggsave("grid_BW_CRRT.png", grid_BW_CRRT, dpi = 300, width = 16, height = 8.27)
 
 ```
 
+```{r grid plot for fAUC of 400 mg/h.L}
+
+## Day 1
+
+# Create PTA_BW_CRRT dataset from above
+
+# Define the labels and colors
+
+dosing_labels_day12 <- c("800 mg q24h LD / 400 mg q24h MD",
+                    "1000 mg q24h LD / 800 mg q24h MD",
+                   "1200 mg q24h LD / 800 mg q24h MD",
+                   "1400 mg q24h LD / 800 mg q24h MD",
+                   "1600 mg q24h LD / 800 mg q24h MD",
+                   "1800 mg q24h LD / 800 mg q24h MD")
+
+dosing_labels_day714 <- c("400 mg q24h MD",
+                   "600 mg q24h MD",
+                   "800 mg q24h MD")
+
+dosing_colors_day12 <- c("#fde725",
+                   "#90d743",
+                   "#35b779",
+                   "#21918c",
+                   "#31688e",
+                   "#443983")
+
+dosing_colors_day714 <- c("#fde725",
+                         "#440154",
+                   "#90d743")
+
+## Plotting day 1 and 2
+# Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
+# I also enforce limits on vertical lines here
+
+# Firstly, create dataset with BW, Regimen and PTA on day 1 
+BW_Reg <- data.frame( #BW and Regimen dataset
+  BW = c(60, 80, 100, 120, 140),
+  Regimen = c(3, 4, 5, 6,7)
+)
+
+# Then, make a dataset of PTA on Day 1 per BW per Regimen
+BW_PTA_DaY1<-BW_Reg %>%
+  left_join(
+    PTA_BW_CRRT %>% filter(DAY == 1),
+    by = c("BW", "Regimen")
+  )
+
+# Similarly for day 2
+BW_PTA_DaY2<-BW_Reg %>%
+  left_join(
+    PTA_BW_CRRT %>% filter(DAY == 2),
+    by = c("BW", "Regimen")
+  )
+
+# Then making PTA_BW_noCRRT200_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
+PTA_BW_CRRT400_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
+                     labels = dosing_labels_day12) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_segment(
+    data = BW_PTA_DaY1,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_400  # Ending at the corresponding PTA_fAUC_400 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
+PTA_BW_CRRT400_DAY1
+
+## Day 2
+PTA_BW_CRRT400_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 2") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
+                     labels = dosing_labels_day12) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_segment(
+    data = BW_PTA_DaY2,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_400  # Ending at the corresponding PTA_fAUC_400 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
+PTA_BW_CRRT400_DAY2
+
+## Day 7
+PTA_BW_CRRT400_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT400_DAY7
+
+## Day 14
+PTA_BW_CRRT400_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_CRRT400_DAY14
+
+## Combining these DAY 1 & 2 into 1
+
+# Define common legend for both plots
+common_legend_CRRT400_DAY12 <- get_legend(PTA_BW_CRRT400_DAY1)
+
+# Remove legends from individual plots
+PTA_BW_CRRT400_DAY1 <- PTA_BW_CRRT400_DAY1 + theme(legend.position = "none")
+PTA_BW_CRRT400_DAY2 <- PTA_BW_CRRT400_DAY2 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+PTA_BW_CRRT400_DAY12 <- plot_grid(PTA_BW_CRRT400_DAY1, PTA_BW_CRRT400_DAY2,common_legend_CRRT400_DAY12,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+
+# Then combining day 7 & 14
+
+# Define common legend for both plots
+common_legend_CRRT400_DAY714 <- get_legend(PTA_BW_CRRT400_DAY7)
+
+# Remove legends from individual plots
+PTA_BW_CRRT400_DAY7 <- PTA_BW_CRRT400_DAY7 + theme(legend.position = "none")
+PTA_BW_CRRT400_DAY14 <- PTA_BW_CRRT400_DAY14 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+PTA_BW_CRRT400_DAY714 <- plot_grid(PTA_BW_CRRT400_DAY7, PTA_BW_CRRT400_DAY14,common_legend_CRRT400_DAY714,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+
+## Then combining these 4 plots
+grid_BW_CRRT_400 <- plot_grid(PTA_BW_CRRT400_DAY12, PTA_BW_CRRT400_DAY714, nrow = 2, align = "v")
+
+title_CRRT_400 <- ggdraw() + 
+  draw_label("Probability of fAUC 400 mgxh/L target attainment", fontface = "bold", size = 12)
+#draw_label("Probability of target attainment across the range of body weight in CRRT patients", fontface = "bold", size = 12)
+
+# Arrange the title and grid using plot_grid()
+grid_BW_CRRT_400 <- plot_grid(title_CRRT_400, grid_BW_CRRT_400, ncol = 1, rel_heights = c(0.02, 1))
+grid_BW_CRRT_400
+
+# Export grid_BW_noCRRT_rearranged plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+ggsave("grid_BW_CRRT_400.png", grid_BW_CRRT_400, dpi = 300, width = 16, height = 8.27)
+
+```
+
+
 ##### BW - no CRRT
 
 ```{r PTA_noCRRT_dos_02 to PTA_noCRRT_dos_06 datasets, warning=FALSE}
@@ -4364,6 +4622,212 @@ grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT, ncol = 1, rel_heights = c(0.0
 # Export the combined plots
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
 ggsave("grid_BW_noCRRT.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.27)
+
+```
+
+```{r grid plot for fAUC of 400 mg/h.L}
+
+# Adapting the code of rearrange BW_CRRT 200 below - 201123
+# PTA_BW_noCRRT created above
+## Day 1
+
+# Create PTA_BW_noCRRT dataset from above
+
+# Define the labels and colors
+
+dosing_labels_day12 <- c("800 mg q24h LD / 400 mg q24h MD",
+                         "1000 mg q24h LD / 400 mg q24h MD",
+                   "1200 mg q24h LD / 400 mg q24h MD",
+                   "1400 mg q24h LD / 400 mg q24h MD",
+                   "1600 mg q24h LD / 400 mg q24h MD",
+                   "1800 mg q24h LD / 400 mg q24h MD")
+
+dosing_labels_day714 <- c("200 mg q24h MD","400 mg q24h MD")
+
+dosing_colors_day12 <- c("#fde725",
+                        "#90d743",
+                   "#35b779",
+                   "#21918c",
+                   "#31688e",
+                   "#440154")
+
+dosing_colors_day714 <- c("#443983","#fde725")
+
+
+## Plotting day 1 and 2
+# Here we use Colorblind-Friendly Palette - scale_colour_viridis_d()
+# I also enforce limits on vertical lines here
+
+# Firstly, create dataset with BW, Regimen and PTA on day 1 
+BW_Reg <- data.frame( #BW and Regimen dataset
+  BW = c(60, 80, 100, 120, 140),
+  Regimen = c(2, 3, 4, 5, 6)
+)
+
+# Then, make a dataset of PTA on Day 1 per BW per Regimen
+BW_PTA_DaY1<-BW_Reg %>%
+  left_join(
+    PTA_BW_noCRRT %>% filter(DAY == 1),
+    by = c("BW", "Regimen")
+  )
+
+# Similarly for day 2
+BW_PTA_DaY2<-BW_Reg %>%
+  left_join(
+    PTA_BW_noCRRT %>% filter(DAY == 2),
+    by = c("BW", "Regimen")
+  )
+
+# Then making PTA_BW_noCRRT400_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
+PTA_BW_noCRRT400_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 1") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
+                     labels = dosing_labels_day12) +
+   geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_segment(
+    data = BW_PTA_DaY1,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_400  # Ending at the corresponding PTA_fAUC_400 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
+PTA_BW_noCRRT400_DAY1
+
+## Day 2
+PTA_BW_noCRRT400_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 2") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+ scale_color_manual(values = dosing_colors_day12, name = "Dosing regimen",
+                     labels = dosing_labels_day12) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1) +
+  geom_segment(
+    data = BW_PTA_DaY2,
+    aes(
+      x = BW,
+      xend = BW,
+      y = 0,  # Starting from the x-axis
+      yend = PTA_fAUC_400  # Ending at the corresponding PTA_fAUC_400 value
+    ),
+    linetype = "dashed",
+    color = "gray50",
+    size = 1
+  )
+PTA_BW_noCRRT400_DAY2
+
+## Day 7
+PTA_BW_noCRRT400_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_noCRRT$Regimen<3,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 7") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT400_DAY7
+
+## Day 14
+PTA_BW_noCRRT400_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
+  geom_line(size=1) +
+  scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  theme_minimal() +
+        ggtitle("Day 14") +
+  theme(legend.position = "right") +
+  theme(plot.title = element_text(hjust = 0.5, size = 11,face="bold"),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 9),
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 8),
+        panel.grid.major = element_line(colour = "gray85"),
+        panel.grid.minor = element_blank()) +
+  labs(color = "Regimen") +
+  scale_color_manual(values = dosing_colors_day714, name = "Dosing regimen",
+                     labels = dosing_labels_day714) +
+geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
+PTA_BW_noCRRT400_DAY14
+
+## Combining these DAY 1 & 2 into 1
+
+# Define common legend for both plots
+common_legend_noCRRT400_DAY12 <- get_legend(PTA_BW_noCRRT400_DAY1)
+
+# Remove legends from individual plots
+PTA_BW_noCRRT400_DAY1 <- PTA_BW_noCRRT400_DAY1 + theme(legend.position = "none")
+PTA_BW_noCRRT400_DAY2 <- PTA_BW_noCRRT400_DAY2 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+grid_BW_noCRRT400_DAY12 <- plot_grid(PTA_BW_noCRRT400_DAY1, PTA_BW_noCRRT400_DAY2,common_legend_noCRRT400_DAY12,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+grid_BW_noCRRT400_DAY12
+
+# Then combining day 7 & 14
+
+# Define common legend for both plots
+common_legend_noCRRT400_DAY714 <- get_legend(PTA_BW_noCRRT400_DAY7)
+
+# Remove legends from individual plots
+PTA_BW_noCRRT400_DAY7 <- PTA_BW_noCRRT400_DAY7 + theme(legend.position = "none")
+PTA_BW_noCRRT400_DAY14 <- PTA_BW_noCRRT400_DAY14 + theme(legend.position = "none")
+
+# Combine these 2 plots into 1
+
+grid_BW_noCRRT400_DAY714 <- plot_grid(PTA_BW_noCRRT400_DAY7, PTA_BW_noCRRT400_DAY14,common_legend_noCRRT400_DAY714,rel_widths = c(1,1,0.35),nrow = 1, align = "h")
+grid_BW_noCRRT400_DAY714
+
+## Then combining these 4 plots
+grid_BW_noCRRT_400 <- plot_grid(grid_BW_noCRRT400_DAY12, grid_BW_noCRRT400_DAY714, nrow = 2, align = "v")
+
+title_noCRRT_400 <- ggdraw() + 
+  draw_label("Probability of fAUC 400 mgxh/L target attainment", fontface = "bold", size = 12)
+#draw_label("Probability of target attainment across the range of body weight in non CRRT patients", fontface = "bold", size = 12)
+
+# Arrange the title and grid using plot_grid()
+grid_BW_noCRRT_400 <- plot_grid(title_noCRRT_400, grid_BW_noCRRT_400, ncol = 1, rel_heights = c(0.02, 1))
+grid_BW_noCRRT_400
+
+# Export grid_BW_noCRRT_rearranged plot
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+ggsave("grid_BW_noCRRT_400.png", grid_BW_noCRRT_400, dpi = 300, width = 16, height = 8.27)
 
 ```
 
@@ -4561,15 +5025,15 @@ grid_BW_noCRRT <- plot_grid(grid_BW_noCRRT_DAY12, grid_BW_noCRRT_DAY714, nrow = 
 
 title <- ggdraw() + 
   #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
-draw_label("Probability of target attainment across the range of body weight in non CRRT patients", fontface = "bold", size = 12)
+draw_label("Non-CRRT", fontface = "bold", size = 12,hjust=1.7)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT, ncol = 1, rel_heights = c(0.02, 1))
 grid_BW_noCRRT
 
 # Export grid_BW_noCRRT_rearranged plot
-#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_BW_noCRRT_rearranged.png", grid_BW_noCRRT, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -4767,15 +5231,15 @@ grid_BW_CRRT <- plot_grid(PTA_BW_CRRT200_DAY12, PTA_BW_CRRT200_DAY714, nrow = 2,
 
 title <- ggdraw() + 
   #draw_label("Probability of fAUC 200 mgxh/L target attainment", fontface = "bold", size = 12)
-draw_label("Probability of target attainment across the range of body weight in CRRT patients", fontface = "bold", size = 12)
+draw_label("CRRT", fontface = "bold", size = 12,hjust=2.7)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_CRRT <- plot_grid(title, grid_BW_CRRT, ncol = 1, rel_heights = c(0.02, 1))
 grid_BW_CRRT
 
 # Export grid_BW_noCRRT_rearranged plot
-#setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/BW_Sim/PTA plots")
+#setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
 ggsave("grid_BW_CRRT_rearranged.png", grid_BW_CRRT, dpi = 300, width = 16, height = 8.27)
 
 ```
@@ -6734,3 +7198,14 @@ percentage<- successful_run/200
 summary(percentage)
 
 ```
+
+### Manuscript report
+
+```{r table1}
+
+#Report missing between and within dosing interval of CKDEPI
+table1(~ CREAT + CREAT3 + CREAT_DOS_INT|HOSPITAL, data=FlucTotIV_clean,render.continuous=
+               c(.="Median [Q1-Q3]"))
+
+```
+

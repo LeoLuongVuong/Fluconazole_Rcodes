@@ -2264,12 +2264,11 @@ for(i in Number_of_bins:1){
 #### This will be done using a piping function in which we select only the data from the first replicate to save some time. 
 #### Hence, the population prediction will be equal for each replicate since we did not incorporate any parameter uncertainty in the simulation.
 
-## ADD dosing_interval_flag to Obs_mod_pooled
+## ADD dosing_interval_flag to dataframe_simulations_mod_pooled
 dataframe_simulations_mod_pooled <- dataframe_simulations_mod_pooled %>%
   mutate(
     dosing_interval_flag = ifelse(ID %in% distinctID_dosing_interval$ID, 1, 0)
   )
-
 
 ########## From here onward analysing flag == 1 ###########
 
@@ -2536,13 +2535,13 @@ CI_VPC_lin_mod_pooled_flag1 <- ggplot() +
                            expand = c(0.01,0)) +
   
         ## Add title and subtitle
-        ggtitle("Dosing interval 01") +
+        #ggtitle("Dosing interval 01") +
         
         
         ####### Set ggplot2 theme and settings
         theme_bw()+
         theme(axis.title=element_text(size=12),
-              plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
+              #plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
               axis.text = element_text(size = 10))+
         theme(strip.background = element_blank(),
               strip.text.x = element_blank(),legend.position="none") +
@@ -2588,10 +2587,14 @@ CI_VPC_lin_mod_pooled_flag0 <- ggplot() +
   scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
                      expand = c(0.01,0)) +
   
+  ### Add title and subtitle
+  #ggtitle("Dosing interval 02") +
+  
   
   ####### Set ggplot2 theme and settings
   theme_bw()+
   theme(axis.title=element_text(size=12),
+        #plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
         axis.text = element_text(size = 10))+
   theme(strip.background = element_blank(),
         strip.text.x = element_blank(),legend.position="none") +
@@ -2606,20 +2609,230 @@ CI_VPC_lin_mod_pooled_flag0 <- ggplot() +
 #scale_x_continuous(expand=c(0.01,0))#+
 
 
-## Add title and subtitle
-#ggtitle("VPC 01")
+### Adding panel title and combining the two plots
+
+# Create common title
+title_flag1 <- ggdraw() + 
+  draw_label("Dosing interval 01", fontface = "bold", size = 14) 
+
+title_flag0 <- ggdraw() + 
+  draw_label("Dosing interval 02", fontface = "bold", size = 14) 
+
+# Arrange the title and grid using plot_grid()
+
+CI_VPC_lin_mod_pooled_flag1 <- plot_grid(title_flag1, CI_VPC_lin_mod_pooled_flag1, ncol = 1, rel_heights = c(0.04, 1))
+
+CI_VPC_lin_mod_pooled_flag0 <- plot_grid(title_flag0, CI_VPC_lin_mod_pooled_flag0, ncol = 1, rel_heights = c(0.04, 1))
+
+CI_VPC_lin_mod_pooled_flag1_a <-grid.arrange(textGrob("(a)", x = 0.05, y = 0.9, just = c("left", "top"), gp = gpar(fontsize = 14)), CI_VPC_lin_mod_pooled_flag1, ncol = 1, heights = c(0, 1))
+
+CI_VPC_lin_mod_pooled_flag0_b<-grid.arrange(textGrob("(b)", x = 0.05, y = 0.9, just = c("left", "top"), gp = gpar(fontsize = 14)), CI_VPC_lin_mod_pooled_flag0, ncol = 1, heights = c(0, 1))
+
+CI_VPC_lin_mod_pooled_stratified_interval <- plot_grid(CI_VPC_lin_mod_pooled_flag1_a, CI_VPC_lin_mod_pooled_flag0_b, ncol = 2, align = "h")
 
 ### save vpc overall
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_pooled/2l.method")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Plots/vpc.2lpan/vpc_overall")
 # When I test the alternative approach
 #setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/vpc_plots/vpc_pooled/2l.method/test")
-ggsave("pooled_vpc_refined.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 12, height = 7)
+ggsave("dosing_interval_stratified.png", CI_VPC_lin_mod_pooled_stratified_interval, dpi = 300, width = 12, height = 7)
 
-### save vpc overall for my PAGE poster 100623
-#setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/working documents/PAGE 2023/Poster/Plots")
-#ggsave("pooled_vpc.png", CI_VPC_lin_mod_pooled, dpi = 300, width = 26, height = 13.44,units = "cm", limitsize = FALSE)
 
-###################### Adjusting overall VPC 200623 #################################
+#################### Dose_and_interval analysis ################################
+
+## ADD dose_and_interval to dataframe_simulations_mod_pooled
+dataframe_simulations_mod_pooled <- dataframe_simulations_mod_pooled %>%
+  mutate(
+    dose_and_interval = ifelse(ID %in% dose_and_interval_1$ID, 1, ifelse(ID %in% dose_and_interval_2$ID, 1,2))
+  )
+
+########## Dose_and_interval == 1 ###########
+
+sim_mod_pooled_flag1<-dataframe_simulations_mod_pooled%>%filter(dose_and_interval==1)
+
+## Calculate median PRED per bin 
+PRED_BIN_mod_pooled_flag1 <- sim_mod_pooled_flag1[sim_mod_pooled_flag1$replicate ==1,] %>%
+  group_by(BIN) %>% # Calculate the PRED per bin
+  summarize(PREDBIN = median(PRED))
+
+## We can then merge this with our simulated dataset and calculate the prediction corrected simulated observations (PCDV).
+
+sim_mod_pooled_flag1 <- merge(sim_mod_pooled_flag1,PRED_BIN_mod_pooled_flag1,by='BIN')
+
+## Calculate prediction corrected simulated observations (PCDV)
+
+sim_mod_pooled_flag1$PCDV <- sim_mod_pooled_flag1$DV *(sim_mod_pooled_flag1$PREDBIN/sim_mod_pooled_flag1$PRED)
+
+## Rearrange the dataset
+
+sim_mod_pooled_flag1 <- sim_mod_pooled_flag1[order(sim_mod_pooled_flag1$replicate,sim_mod_pooled_flag1$ID,sim_mod_pooled_flag1$TAD),]
+
+
+## We use this PCDV to calculate the prediction intervals and the confidence intervals 
+## as we have previously done which are the final calculations after which we have our simulated dataset ready.
+
+sim_PI_mod_pooled_flag1 <- NULL
+
+
+## Calculate predictions intervals per bin
+for(i in Replicate_vector_mod_pooled){
+  
+  
+  # Run this for each replicate
+  sim_vpc_ci_mod_pooled_flag1 <- sim_mod_pooled_flag1 %>%
+    filter(replicate %in% i) %>% # Select an individual replicate
+    group_by(BIN) %>% # Calculate everything per bin
+    summarize(C_median = median(PCDV), C_lower = quantile(PCDV, perc_PI[1]), C_upper = quantile(PCDV, perc_PI[2])) %>% # Calculate prediction intervals
+    mutate(replicate = i) # Include replicate number
+  
+  
+  sim_PI_mod_pooled_flag1 <- rbind(sim_PI_mod_pooled_flag1, sim_vpc_ci_mod_pooled_flag1)
+}
+
+## Calculate confidence intervals around these prediction intervals calculated with each replicate
+
+
+sim_CI_mod_pooled_flag1 <- sim_PI_mod_pooled_flag1 %>%
+  group_by(BIN) %>%
+  summarize(C_median_CI_lwr = quantile(C_median, perc_CI[1]), C_median_CI_upr = quantile(C_median, perc_CI[2]), # Median
+            C_low_lwr = quantile(C_lower, perc_CI[1]), C_low_upr = quantile(C_lower, perc_CI[2]), # Lower percentages
+            C_up_lwr = quantile(C_upper, perc_CI[1]), C_up_upr = quantile(C_upper, perc_CI[2]) # High percentages
+  )
+
+
+## Set bin boundaries in dataset
+sim_CI_mod_pooled_flag1$x1 <- NA
+sim_CI_mod_pooled_flag1$x2 <- NA
+
+
+for(i in 1:Number_of_bins){
+  sim_CI_mod_pooled_flag1$x1[sim_CI_mod_pooled_flag1$BIN == i] <-bin_times[i]
+  sim_CI_mod_pooled_flag1$x2[sim_CI_mod_pooled_flag1$BIN == i] <-bin_times[i+1]
+}
+
+
+#### Our observations dataset can be loaded as a .csv file after which we select only the observations (CMT == 2 in this case).
+
+#### In order to calculate the PCDV, we also need to apply the correction to our observations. 
+#### For this, we need to have the PRED at each observation. 
+#### We can do this by selecting the rows of the dataframe_simulations (row 1 until the number of observations in the original dataset).
+
+############################################################
+######### Read dataset with original observations
+working.directory_mod_pooled<-'C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets/Imputed_dos_int_datasets/2l method/2l.pan/vpc/2l.pan/vpc_overall'
+observations_tablefile_mod_pooled <- paste0(working.directory_mod_pooled, '/vpc_original_overall_refined.npctab.dta') #refined dataset
+Obs_mod_pooled <- read_nonmem_table(observations_tablefile_mod_pooled)
+Obs_mod_pooled<- Obs_mod_pooled[Obs_mod_pooled$MDV == 0,]
+
+
+#### We then add the bin numbers to the dataset, merge the population prediction per bin and calculate the PCDV.
+
+#########################################
+######### Create bins in original dataset
+
+### Set bins by backward for loop
+for(i in Number_of_bins:1){
+  Obs_mod_pooled$BIN[Obs_mod_pooled$TAD <= bin_times[i+1]] <-i
+}
+
+### ADD dose_and_interval to Obs_mod_pooled
+Obs_mod_pooled <- Obs_mod_pooled %>%
+  mutate(
+    dose_and_interval = ifelse(ID %in% dose_and_interval_1$ID, 1, ifelse(ID %in% dose_and_interval_2$ID, 1,2))
+  )
+
+########## dose_and_interval == 1 - obs ###########
+
+Obs_mod_pooled_flag1 <- Obs_mod_pooled %>% filter(dose_and_interval==1)
+
+## ADD PRED BIN TO OBSERVATIONS
+Obs_mod_pooled_flag1 <- merge(Obs_mod_pooled_flag1,PRED_BIN_mod_pooled_flag1,by='BIN')
+
+## Calculate PCDV
+Obs_mod_pooled_flag1$PCDV <- Obs_mod_pooled_flag1$DV *(Obs_mod_pooled_flag1$PREDBIN/Obs_mod_pooled_flag1$PRED)
+
+## We can use the PCDV for the calculation of the percentiles which are going to compare with the simulated distributions.
+
+## Calculate confidence intervals of the observations
+obs_vpc_mod_pooled_flag1 <- Obs_mod_pooled_flag1 %>%
+  group_by(BIN) %>% ## Set the stratification identifiers (e.g. TIME, DOSE, CMT, BIN)
+  summarize(C_median = median(PCDV, na.rm = T), C_lower = quantile(PCDV, perc_PI[1], na.rm = T), C_upper = quantile(PCDV, perc_PI[2], na.rm = T))
+
+## Get median TAD of each bin of observations for plotting purposes
+bin_middle_mod_pooled_flag1 <- Obs_mod_pooled_flag1 %>%
+  group_by(BIN) %>%
+  summarize(bin_middle = median(TAD, na.rm = T))
+
+## As a vector
+bin_middle_mod_pooled_flag1 <- bin_middle_mod_pooled_flag1$bin_middle
+
+obs_vpc_mod_pooled_flag1$TAD <- bin_middle_mod_pooled_flag1
+
+#### We now have all the data we need to generate our pcVPC :).
+
+#### The ggplot object that will be generated is actually the same as for the confidence interval VPC. 
+#### We have rectangles (shaded areas) for the distribution of the simulations, lines for the distribution of the data, and dots for the observed prediction corrected concentrations.
+
+### VPC on a linear scale
+
+### We create seperately for flag 1 and flag 0
+
+## First of all, CI_VPC_lin_mod_pooled_flag1
+
+CI_VPC_lin_mod_pooled_flag1 <- ggplot() +
+  
+  
+  ## Set bins
+  geom_rect(data=sim_CI_mod_pooled_flag1, mapping=aes(xmin=x1, xmax=x2, ymin=C_median_CI_lwr, ymax=C_median_CI_upr), fill='#fde725', alpha=0.25) +
+  geom_rect(data=sim_CI_mod_pooled_flag1, mapping=aes(xmin=x1, xmax=x2, ymin=C_low_lwr, ymax=C_low_upr), fill='#21918c', alpha=0.25) +
+  geom_rect(data=sim_CI_mod_pooled_flag1, mapping=aes(xmin=x1, xmax=x2, ymin=C_up_lwr, ymax=C_up_upr), fill='#21918c', alpha=0.25) +
+  
+  
+  # Lines of the observations
+  geom_line(data = obs_vpc_mod_pooled_flag1, aes(TAD, C_median), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod_pooled_flag1, aes(TAD, C_lower), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  geom_line(data = obs_vpc_mod_pooled_flag1, aes(TAD, C_upper), col = '#440154', linetype = 'dashed', linewidth = 1.25) +
+  
+  
+  ###### Add observations
+  geom_point(data = Obs_mod_pooled_flag1,aes(x=TAD,y=PCDV),color='#440154',alpha=0.3) +
+  
+  
+  ###### Set x & y axis limit, and their labels
+  #scale_x_continuous(limits = c(0, 72.24216), breaks = seq(0, 72.24216, by = 10), name = "Time since last dose (hours)", 
+  #expand = c(0.01,0)) +
+  #scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+  #expand = c(0.01,0)) +
+  scale_x_continuous(limits = c(0, 26), breaks = seq(0, 26, by = 5), name = "Time since last dose (hours)", #changes I made in 200623
+                     expand = c(0.01,0)) +
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 10), name = "Prediction-corrected fluconazole concentration (mg/L)", 
+                     expand = c(0.01,0)) +
+  
+  ## Add title and subtitle
+  #ggtitle("Dosing interval 01") +
+  
+  
+  ####### Set ggplot2 theme and settings
+  theme_bw()+
+  theme(axis.title=element_text(size=12),
+        #plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
+        axis.text = element_text(size = 10))+
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),legend.position="none") +
+  
+  
+  # Add vertical lines to indicate dosing
+  geom_vline(xintercept = 0, linetype="dashed", size=0.5,color='#440154') #+
+
+
+# Set axis
+#scale_y_log10(expand=c(0.01,0))+
+#scale_x_continuous(expand=c(0.01,0))#+
+
+#################### VPC stratified by study ################################
+
+
+
+###################### Adjusting overall VPC 200623 ############################
 
 High_conc<-Obs_mod_pooled%>%filter(TAD>=23&TAD<=25,PCDV>50) %>% select(ID,TAD,DV,PCDV) #all individuals with high PCDV
 View(High_conc)
@@ -2627,3 +2840,25 @@ High_conc$ID
 High_conc$TAD
 High_conc$DV
 # Eliminating concentrations beyond 25.5 hours
+
+
+###################### Some code to try out by RtutoAI ############################
+obs_vpc_mod_pooled <- list()
+# Loop through HOSPITAL values 2 to 8 
+for (hospital in 2:8) { # Filter Obs_mod_pooled for the current HOSPITAL value 
+  Obs_mod_pooled_flag <- Obs_mod_pooled %>% filter(HOSPITAL == hospital) 
+  # Merge with PRED_BIN_mod_pooled_flag using 'BIN' as the common column 
+  Obs_mod_pooled_flag <- merge(Obs_mod_pooled_flag, PRED_BIN_mod_pooled_flag, by = 'BIN') 
+  # Calculate PCDV 
+  Obs_mod_pooled_flag$PCDV <- Obs_mod_pooled_flag$DV * (Obs_mod_pooled_flag$PREDBIN / Obs_mod_pooled_flag$PRED) 
+  # Calculate summary statistics for each BIN 
+  obs_vpc_mod_pooled_flag <- Obs_mod_pooled_flag %>% group_by(BIN) %>% summarize( C_median = median(PCDV, na.rm = TRUE), C_lower = quantile(PCDV, perc_PI[1], na.rm = TRUE), C_upper = quantile(PCDV, perc_PI[2], na.rm = TRUE) ) 
+  # Calculate bin_middle 
+  bin_middle_mod_pooled_flag <- Obs_mod_pooled_flag %>% group_by(BIN) %>% summarize(bin_middle = median(TAD, na.rm = TRUE)) 
+  # Add bin_middle to obs_vpc_mod_pooled_flag 
+  obs_vpc_mod_pooled_flag$TAD <- bin_middle_mod_pooled_flag$bin_middle 
+  # Store the results for the current HOSPITAL value in the list 
+  obs_vpc_mod_pooled[[as.character(hospital)]] <- obs_vpc_mod_pooled_flag }
+  # Access the results for a specific HOSPITAL value, e.g., HOSPITAL == 3 
+obs_vpc_mod_pooled_flag3 <- obs_vpc_mod_pooled[["3"]] 
+  
