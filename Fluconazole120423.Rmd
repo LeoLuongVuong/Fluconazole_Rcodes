@@ -5956,11 +5956,13 @@ summary(percentage)
 #### Model diagnostic - GOF plots - appendix
 
 ##### First of all, base model
+
 ```{r setwd and read datafile, warning=FALSE}
 setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes/Model diagnostics")
 dat <- read.csv("sdtab000.csv")
 dat <- subset (dat, EVID==0)
 ```
+
 ```{r PRED vs CWRES plot, warning=FALSE}
 plot1<-ggplot (data = dat, aes(x=PRED, y=CWRES)) +
   #choose:
