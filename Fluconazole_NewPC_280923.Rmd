@@ -4293,7 +4293,7 @@ BW_PTA_DaY2<-BW_Reg %>%
     by = c("BW", "Regimen")
   )
 
-# Then making PTA_BW_noCRRT200_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
+# Then making PTA_BW_noCRRT400_DAY1 plot, which I use geom_segment to enforce restriction on vertical lines, using newly created BW_PTA_DaY1 dataset
 PTA_BW_CRRT400_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
@@ -4431,8 +4431,8 @@ PTA_BW_CRRT400_DAY714 <- plot_grid(PTA_BW_CRRT400_DAY7, PTA_BW_CRRT400_DAY14,com
 grid_BW_CRRT_400 <- plot_grid(PTA_BW_CRRT400_DAY12, PTA_BW_CRRT400_DAY714, nrow = 2, align = "v")
 
 title_CRRT_400 <- ggdraw() + 
-  draw_label("Probability of fAUC 400 mgxh/L target attainment", fontface = "bold", size = 12)
-#draw_label("Probability of target attainment across the range of body weight in CRRT patients", fontface = "bold", size = 12)
+  #draw_label("Probability of fAUC 400 mgxh/L target attainment", fontface = "bold", size = 12)
+draw_label("CRRT", fontface = "bold", size = 12,hjust=2.7)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_CRRT_400 <- plot_grid(title_CRRT_400, grid_BW_CRRT_400, ncol = 1, rel_heights = c(0.02, 1))
@@ -4818,8 +4818,8 @@ grid_BW_noCRRT400_DAY714
 grid_BW_noCRRT_400 <- plot_grid(grid_BW_noCRRT400_DAY12, grid_BW_noCRRT400_DAY714, nrow = 2, align = "v")
 
 title_noCRRT_400 <- ggdraw() + 
-  draw_label("Probability of fAUC 400 mgxh/L target attainment", fontface = "bold", size = 12)
-#draw_label("Probability of target attainment across the range of body weight in non CRRT patients", fontface = "bold", size = 12)
+  #draw_label("Probability of fAUC 400 mgxh/L target attainment", fontface = "bold", size = 12)
+draw_label("Non-CRRT", fontface = "bold", size = 12,hjust=1.7)
 
 # Arrange the title and grid using plot_grid()
 grid_BW_noCRRT_400 <- plot_grid(title_noCRRT_400, grid_BW_noCRRT_400, ncol = 1, rel_heights = c(0.02, 1))
@@ -5297,7 +5297,7 @@ PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Reg
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
-  ylab(TeX(r"($Probability/ of/ /textit{f}AUC_{0-24}/ /geq 200 /, /mg /times h/L/ (/%)$)")) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -5331,7 +5331,7 @@ PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$R
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
-  ylab(TeX(r"($Probability/ of/ /textit{f}AUC_{0-24}/ /geq 200 /, /mg /times h/L/ (/%)$)")) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -5356,7 +5356,7 @@ PTA_BW_CRRT200_DAY114 <- plot_grid(PTA_BW_CRRT200_DAY1, PTA_BW_CRRT200_DAY14,nro
 
 # Create common title
 title <- ggdraw() + 
-draw_label("CRRT", fontface = "bold", size = 12) #
+draw_label("CRRT", fontface = "bold", size = 12,hjust=2.7) #
 
 # Arrange the title and grid using plot_grid()
 
@@ -5409,7 +5409,7 @@ PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noC
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
-  ylab(TeX(r"($Probability/ of/ /textit{f}AUC_{0-24}/ /geq 200 /, /mg /times h/L/ (/%)$)")) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -5443,7 +5443,7 @@ PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
-  ylab(TeX(r"($Probability/ of/ /textit{f}AUC_{0-24}/ /geq 200 /, /mg /times h/L/ (/%)$)")) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -5469,32 +5469,31 @@ grid_BW_noCRRT_DAY114
 
 # Create common title
 title <- ggdraw() + 
-draw_label("Non-CRRT", fontface = "bold", size = 12) #change title according to Erwin's comments
+draw_label("Non-CRRT", fontface = "bold", size = 12,hjust=1.7) #change title according to Erwin's comments
 
 # Arrange the title and grid using plot_grid()
 grid_BW_noCRRT <- plot_grid(title, grid_BW_noCRRT_DAY114, ncol = 1, rel_heights = c(0.04, 1))
 grid_BW_noCRRT
 
-## Finally, combine grid_BW_noCRRT & grid_BW_CRRT vertically
-
-#grid_BW_hybrid_DAY114 <- plot_grid(grid_BW_noCRRT, grid_BW_CRRT,nrow = 2, align = "v")
-#grid_BW_hybrid_DAY114 #comment out 161123 since it's not relevant anymore
-
 # Add panel titles
 
-PTA_Cmin80_c<-grid.arrange(textGrob("(c)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), PTA_Cmin80, ncol = 1, heights = c(0, 1))
+#PTA_Cmin80_c<-grid.arrange(textGrob("(c)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), PTA_Cmin80, ncol = 1, heights = c(0, 1))
 
 grid_BW_noCRRT_a<-grid.arrange(textGrob("(a)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), grid_BW_noCRRT, ncol = 1, heights = c(0, 1))
 
 grid_BW_CRRT_b<-grid.arrange(textGrob("(b)", x = 0.05, y = 0.95, just = c("left", "top"), gp = gpar(fontsize = 11)), grid_BW_CRRT, ncol = 1, heights = c(0, 1))
 
 # Add plot of Cmin<80 to the above two plots - 151123 #adding plot title 161123
-grid_BW_PTA_Toxic <- plot_grid(grid_BW_noCRRT_a, grid_BW_CRRT_b, PTA_Cmin80_c, nrow = 3, align = "v")
+#grid_BW_PTA_Toxic <- plot_grid(grid_BW_noCRRT_a, grid_BW_CRRT_b, PTA_Cmin80_c, nrow = 3, align = "v")
+
+## Finally, combine grid_BW_noCRRT & grid_BW_CRRT vertically
+
+grid_BW_hybrid_DAY114 <- plot_grid(grid_BW_noCRRT_a, grid_BW_CRRT_b,nrow = 2, align = "v")
 
 # Export grid_BW_hybrid_DAY114 plot
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Workshops and Conferences/ECCMID 2024")
-#ggsave("grid_BW_hybrid_DAY114.png", grid_BW_hybrid_DAY114, dpi = 300, width = 16, height = 8.27)
-ggsave("grid_BW_PTA_Toxic.png", grid_BW_PTA_Toxic, dpi = 300, width = 16, height = 11)
+ggsave("grid_BW_hybrid_DAY114.png", grid_BW_hybrid_DAY114, dpi = 300, width = 16, height = 8.27)
+#ggsave("grid_BW_PTA_Toxic.png", grid_BW_PTA_Toxic, dpi = 300, width = 16, height = 11)
 
 ```
 
