@@ -24,12 +24,13 @@ library(readr) #part of tidyr #data wrangling
 library(purrr) #to sample from a ecdf
 #library(ecdf) #to sample from a ecdf #not available - check later
 library(xpose) #for making vpcs
-#library(xpose4) #for making vpcs #having issues with lattice package
+library(xpose4) #for making vpcs #having issues with lattice package
 library(vpc) #for making vpcs
 library(PsNR) #for making vpcs
 library(ggtext) #create latex axis labels - does not work
 library(latex2exp) #to create latex label
 library(table1) #create descriptive statistic table1
+#library(chattr) #temporarily comment out
 
 ```
 
@@ -44,8 +45,10 @@ library(table1) #create descriptive statistic table1
 
 ```{r reading new FlucTotIV_clean dataset, warning=FALSE}
 
-setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets and R codes/Archived dataset")
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/My datasets/Archived dataset")
 FlucTotIV_clean <- read.csv("FlucTotIV_clean.csv", na.strings = "NA")
+#FlucTotIV_clean_test<-read_csv("FlucTotIV_clean.csv", na= "NA",col_select = c("ID","AMT"))
+# works 011223 - perfect!!!
 
 ```
 
@@ -123,7 +126,7 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AM
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
-predmat["CREAT_DOS_INT","ID"] <- -2
+["CREAT_DOS_INT","ID"] <- -2
 meth <- imp0$method
 meth["CREAT_DOS_INT"] <- "2l.pan"
 maxit <- 20
@@ -3886,8 +3889,10 @@ PTA_CKDEPI<-rbind(PTA_dos_02,PTA_dos_03,PTA_dos_04)
 # Plotting day 1 to day 14
 PTA_NOCRRT200_DAY1<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 1,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), expand = c(0,0)) +
+  xlab(TeX(r"($\eGFR_{CKD-EPI}\ (ml/min/1.73m^2)$)")) + #update xlabel 071223
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -3900,16 +3905,18 @@ PTA_NOCRRT200_DAY1<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 1,],aes(x = CKDEPI, y 
         panel.grid.minor = element_blank()) +
   labs(color = "Regimen") +
   scale_color_manual(values = c("#fde725", "#21918c", "#440154"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
-                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+                     labels = c("800 mg q24h LD / 400 mg q24h MD", "1000 mg q24h LD / 400 mg q24h MD",
+                                "1200 mg q24h LD / 400 mg q24h MD")) +
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_NOCRRT200_DAY1
 
 ## Day 2
 PTA_NOCRRT200_DAY2<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 2,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), expand = c(0,0)) +
+  xlab(TeX(r"($\eGFR_{CKD-EPI}\ (ml/min/1.73m^2)$)")) + #update xlabel 071223
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
@@ -3922,16 +3929,18 @@ PTA_NOCRRT200_DAY2<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 2,],aes(x = CKDEPI, y 
         panel.grid.minor = element_blank()) +
   labs(color = "Regimen") +
   scale_color_manual(values = c("#fde725", "#21918c", "#440154"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
-                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+                     labels = c("800 mg q24h LD / 400 mg q24h MD", "1000 mg q24h LD / 400 mg q24h MD",
+                                "1200 mg q24h LD / 400 mg q24h MD")) +
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_NOCRRT200_DAY2
 
 ## Day 7
 PTA_NOCRRT200_DAY7<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 7,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), expand = c(0,0)) +
+  xlab(TeX(r"($\eGFR_{CKD-EPI}\ (ml/min/1.73m^2)$)")) + #update xlabel 071223
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
@@ -3944,16 +3953,18 @@ PTA_NOCRRT200_DAY7<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 7,],aes(x = CKDEPI, y 
         panel.grid.minor = element_blank()) +
   labs(color = "Regimen") +
   scale_color_manual(values = c("#fde725", "#21918c", "#440154"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
-                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+                     labels = c("800 mg q24h LD / 400 mg q24h MD", "1000 mg q24h LD / 400 mg q24h MD",
+                                "1200 mg q24h LD / 400 mg q24h MD")) +
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_NOCRRT200_DAY7
 
 ## Day 14
 PTA_NOCRRT200_DAY14<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 14,],aes(x = CKDEPI, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
-  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), name = "CKDEPI (ml/min/1.73m2)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_x_continuous(limits = c(5, 215), breaks = seq(5, 215, by = 10), expand = c(0,0)) +
+  xlab(TeX(r"($\eGFR_{CKD-EPI}\ (ml/min/1.73m^2)$)")) + #update xlabel 071223
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -3966,8 +3977,8 @@ PTA_NOCRRT200_DAY14<-  ggplot(PTA_CKDEPI[PTA_CKDEPI$DAY == 14,],aes(x = CKDEPI, 
         panel.grid.minor = element_blank()) +
   labs(color = "Regimen") +
   scale_color_manual(values = c("#fde725", "#21918c", "#440154"),name = "Dosing regimen",
-                     labels = c("800 mg q24h (day 1)  / 400 mg q24h", "1000 mg q24h (day 1)  / 400 mg q24h",
-                                "1200 mg q24h (day 1)  / 400 mg q24h")) +
+                     labels = c("800 mg q24h LD / 400 mg q24h MD", "1000 mg q24h LD / 400 mg q24h MD",
+                                "1200 mg q24h LD / 400 mg q24h MD")) +
 geom_hline(yintercept = 90, linetype = "dashed", color = "gray50",size=1)
 PTA_NOCRRT200_DAY14
 
@@ -4297,7 +4308,8 @@ BW_PTA_DaY2<-BW_Reg %>%
 PTA_BW_CRRT400_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -4330,7 +4342,8 @@ PTA_BW_CRRT400_DAY1
 PTA_BW_CRRT400_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
@@ -4363,7 +4376,8 @@ PTA_BW_CRRT400_DAY2
 PTA_BW_CRRT400_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
@@ -4384,7 +4398,8 @@ PTA_BW_CRRT400_DAY7
 PTA_BW_CRRT400_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -4682,7 +4697,8 @@ BW_PTA_DaY2<-BW_Reg %>%
 PTA_BW_noCRRT400_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5),expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -4715,7 +4731,8 @@ PTA_BW_noCRRT400_DAY1
 PTA_BW_noCRRT400_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
@@ -4748,7 +4765,8 @@ PTA_BW_noCRRT400_DAY2
 PTA_BW_noCRRT400_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_noCRRT$Regimen<3,],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
@@ -4769,7 +4787,8 @@ PTA_BW_noCRRT400_DAY7
 PTA_BW_noCRRT400_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_400,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 400 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -4888,7 +4907,8 @@ BW_PTA_DaY2<-BW_Reg %>%
 PTA_BW_noCRRT200_DAY1<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 1 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -4921,7 +4941,8 @@ PTA_BW_noCRRT200_DAY1
 PTA_BW_noCRRT200_DAY2<- ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 2 & PTA_BW_noCRRT$Regimen>1,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
@@ -4954,7 +4975,8 @@ PTA_BW_noCRRT200_DAY2
 PTA_BW_noCRRT200_DAY7<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 7 & PTA_BW_noCRRT$Regimen<3,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
@@ -4975,7 +4997,8 @@ PTA_BW_noCRRT200_DAY7
 PTA_BW_noCRRT200_DAY14<-  ggplot(PTA_BW_noCRRT[PTA_BW_noCRRT$DAY == 14 & PTA_BW_noCRRT$Regimen<3, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -5096,7 +5119,8 @@ BW_PTA_DaY2<-BW_Reg %>%
 PTA_BW_CRRT200_DAY1<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 1 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 1") +
   theme(legend.position = "right") +
@@ -5129,7 +5153,8 @@ PTA_BW_CRRT200_DAY1
 PTA_BW_CRRT200_DAY2<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 2 & PTA_BW_CRRT$Regimen != 2,],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 2") +
   theme(legend.position = "right") +
@@ -5162,7 +5187,8 @@ PTA_BW_CRRT200_DAY2
 PTA_BW_CRRT200_DAY7<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 7 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 7") +
   theme(legend.position = "right") +
@@ -5183,7 +5209,8 @@ PTA_BW_CRRT200_DAY7
 PTA_BW_CRRT200_DAY14<-  ggplot(PTA_BW_CRRT[PTA_BW_CRRT$DAY == 14 & PTA_BW_CRRT$Regimen<4, ],aes(x = BW, y = PTA_fAUC_200,group = factor(Regimen), color = factor(Regimen))) +
   geom_line(size=1) +
   scale_x_continuous(limits = c(30, 150), breaks = seq(30, 150, by = 5), name = "Body weight (kg)" ,expand = c(0,0)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), name = "Probability (%)",expand = c(0,0)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 5), expand = c(0,0)) +
+  ylab(TeX(r"($Probability\ of\ \textit{f}AUC_{0-24}\ \geq 200 \, \mg \times h/L\ (\%)$)")) +
   theme_minimal() +
         ggtitle("Day 14") +
   theme(legend.position = "right") +
@@ -6473,96 +6500,18 @@ write.csv(FlucTotIV_clean_FFM, "Fluc_NONMEM_mul_impute_FFM01.csv",quote=F,row.na
 #### Creating optmised dosing virtual dataset
 
 ```{r read in datafile, warning=FALSE}
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation")
 dosing_CRRT<-read.csv("dosing_03.csv")
 
 ```
 
-```{r extract AMT 1200 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 1200
-selected_groups <- grouped_data %>% filter(any(AMT == 1200))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-#0  0.1  0.5   1.5    2    3    6   12   18   21   22   23 23.9 
-#13   13   13  13   13   13   13   13   13   13   13   13   13 
-
-# Eliminate TAD == 1 rows
-dosing_CRRT <- dosing_CRRT[dosing_CRRT$TAD != 1, ]
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.6, 1.5, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,13)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
-```{r extract AMT 1000 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 1000
-selected_groups <- grouped_data %>% filter(any(AMT == 1000))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-#0  0.1  0.6 1.25    2    3    6   12   18   21   22   23 23.9    
-#169  169  169  169  169  169  169  169  169  169  169  169  169   
-
-# Eliminate TAD == 24 rows
-dosing_CRRT <- dosing_CRRT[dosing_CRRT$TAD != 24, ]
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.6, 1.25, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,169)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
 ```{r create a dataset of 1000 patients from dosing_CRRT dataset}
+
 # Create a new dataset with only patient 13
 dosing_CRRT_13 <- dosing_CRRT[dosing_CRRT$ID == 13,]
 
-# Create 987 copies of the patient 13 dataset and assign IDs 14-1000
+# Create 12 copies of the patient 13 dataset and assign IDs 14-1000
 new_patients <- lapply(14:1000, function(id){
   new_df <- dosing_CRRT_13
   new_df$ID <- id
@@ -6579,29 +6528,45 @@ names(dosing_CRRT)[names(dosing_CRRT) == "FFM"] <- "BW"
 
 ```
 
-```{r read in FlucTotIV_clean dataset, warning=FALSE}
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/My datasets and R codes")
-FlucTotIV_clean<-read.csv("FlucTotIV_clean.csv")
+```{r assigning BW to the new dataset}
 
-```
-
-```{r sample BW of dosing_CRRT from the empirical distribution of BW in the original dataset}
+# for reproducibility
+set.seed(123)
 
 # Create the empirical cumulative distribution function (ECDF)
-ecdf_func <- ecdf(test$BW2)
+ecdf_BW <- ecdf(na.omit(FlucTotIV_clean$BW2))
 
 # Generate random values from the ECDF
 random_values <- runif(1000)
 
 # Map the random values to the empirical distribution using the inverse transform sampling method
-sampled_BW <- round(quantile(test$BW2, random_values), 1)
+sampled_BW <- round(quantile(na.omit(FlucTotIV_clean$BW2), random_values), 1)
 
 # Assign the sampled BW values to dosing_CRRT dataset
 dosing_CRRT$BW <- sampled_BW[match(dosing_CRRT$ID, 1:1000)]
 
 ```
 
-##### Creating my dosing_CRRT dataset with 9% full-time CRRT, and 9% part time CRRT (in which 51.5% DAYS on CRRT)
+```{r assigning CKDEPI to the new dataset}
+
+# for reproducibility
+set.seed(123)
+
+# Create the empirical cumulative distribution function (ECDF)
+ecdf_CKDEPI <- ecdf(na.omit(FlucTotIV_clean$CKDEPI))
+
+# Generate random values from the ECDF
+random_values <- runif(1000)
+
+# Map the random values to the empirical distribution using the inverse transform sampling method
+sampled_CKDEPI <- round(quantile(na.omit(FlucTotIV_clean$CKDEPI), random_values), 1)
+
+# Assign the sampled BW values to dosing_CRRT dataset
+dosing_CRRT$CKDEPI <- sampled_CKDEPI[match(dosing_CRRT$ID, 1:1000)]
+
+```
+
+###### I will create my dosing_CRRT dataset with 9% full-time CRRT, and 9% part time CRRT (in which 51.5% DAYS on CRRT)
 
 ```{r mimic the aforementioned characterictics for my dosing_CRRT}
 
@@ -6640,268 +6605,75 @@ colnames(dosing_CRRT)[colnames(dosing_CRRT) == "CRRT.y"] <- "CRRT"
 
 ```
 
-##### Updating dosing information
+###### Updating dosing information
 
 ```{r updating loading and maintenance dose for dosing_CRRT}
+
 dosing_CRRT <- dosing_CRRT %>%
   mutate(
     AMT = ifelse(TIME == 0 & BW > 120 & CRRT == 1, 1800,
            ifelse(TIME == 0 & BW <= 120 & BW > 100 & CRRT == 1, 1600,
            ifelse(TIME == 0 & BW <= 100 & BW > 80 & CRRT == 1, 1400,
-           ifelse(TIME == 0 & BW <= 80 & BW > 55 & CRRT == 1, 1200, 
-                  ifelse(TIME == 0 & BW <= 55 & CRRT == 1, 1000,
-                         ifelse(TIME == 0 & BW > 115 & CRRT == 0, 1600,
-                                ifelse(TIME == 0 & BW <= 115 & BW > 95 & CRRT == 0, 1400,
-                                       ifelse(TIME == 0 & BW <= 95 & BW > 75 & CRRT == 0, 1200,
-                                              ifelse(TIME == 0 & BW <= 75 & BW > 50 & CRRT == 0, 1000,
-                                                     ifelse(TIME == 0 & BW <= 50 & CRRT == 0, 800,
+           ifelse(TIME == 0 & BW <= 80 & BW > 60 & CRRT == 1, 1200, 
+                  ifelse(TIME == 0 & BW <= 60 & CRRT == 1, 1000,
+                         ifelse(TIME == 0 & BW > 140 & CRRT == 0, 1800,
+                                ifelse(TIME == 0 & BW <= 140 & BW > 120 & CRRT == 0, 1600,
+                                  ifelse(TIME == 0 & BW <= 120 & BW > 100 & CRRT == 0, 1400,
+                                       ifelse(TIME == 0 & BW <= 100 & BW > 80 & CRRT == 0, 1200,
+                                              ifelse(TIME == 0 & BW <= 80 & BW > 60 & CRRT == 0, 1000,
+                                                     ifelse(TIME == 0 & BW <= 60 & CRRT == 0, 800,
                                                             ifelse(TIME > 0 & MDV==1 & CRRT == 1, 800,
                                                                    ifelse(TIME > 0 & MDV==1 & CRRT == 0, 400,0
                                                             
                   ))))
   )))
 ))))))
+)
 
 ```
 
-##### Updating TIME and TAD
+###### Updating TIME and TAD
 
-```{r extract AMT 1600 data}
+```{r dataset for conc time curve opt dosing}
 
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
+# Repeat the 2nd row of each ID per DAY 14 times
 
-# Filter the groups that have at least one row with AMT == 1600
-selected_groups <- grouped_data %>% filter(any(AMT == 1600))
+rows= seq(2,41999,by=3)
+times = 14
+dosing_CRRT_repeated<-dosing_CRRT[rep(rows, times),]
 
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
+# Update the TAD values in dosing_CRRT 
+dosing_CRRT_combined<-rbind(dosing_CRRT,dosing_CRRT_repeated)
 
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
+# Rearrange the dataset
+dosing_CRRT_combined<-arrange(dosing_CRRT_combined, ID, DAY,TAD,TIME)
 
 # Define the desired TAD values
-desired_tad <- c(0,0.1, 1, 2, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
+desired_tad <- c(0, 0.1, 0.25, 0.5, 0.6, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 21, 22.5, 23.9)
 
-selected_rows$TAD<-rep(desired_tad,79)
+dosing_CRRT_combined$TAD<-rep(desired_tad,14000)
 
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
+# Reset row names
+rownames(dosing_CRRT_combined) <- 1:238000
 
-# View the updated dosing_CRRT
-View(dosing_CRRT)
+# Exclude trough and PEAK dataset
+dosing_CRRT_combined$PEAK<-NULL
+dosing_CRRT_combined$TROUGH<-NULL
 
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
+# Update TIME
+dosing_CRRT_combined$TIME<-(dosing_CRRT_combined$DAY-1)*24+dosing_CRRT_combined$TAD
 
-```
-
-```{r extract AMT 1400 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 1400
-selected_groups <- grouped_data %>% filter(any(AMT == 1400))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 1, 1.75, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,188)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
-```{r extract AMT 1200 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 1200
-selected_groups <- grouped_data %>% filter(any(AMT == 1200))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.6, 1.5, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,392)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
-```{r extract AMT 1000 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 1000
-selected_groups <- grouped_data %>% filter(any(AMT == 1000))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.6, 1.25, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,316)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
-```{r extract AMT 800 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 800
-selected_groups <- grouped_data %>% filter(any(AMT == 800))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.6, 1, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,1825)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
-```{r extract AMT 400 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 400
-selected_groups <- grouped_data %>% filter(any(AMT == 400))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.25, 0.5, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,11200)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-```
-
-```{r update TIME}
-dosing_CRRT$TIME<-24*(dosing_CRRT$OCC-1)+dosing_CRRT$TAD
-
-```
-
-```{r check TAD of dosing_CRRT}
-summary(as.factor(dosing_CRRT$TAD))
-dosing_CRRT$PEAK<-NULL
-
-# Rearrange dosing_CRRT according to ID, DAY, and TIME
-dosing_CRRT <- dosing_CRRT %>%
-  arrange(ID, DAY, TIME)
-
-# Move DAY after OCC
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(DAY, .after = OCC)
-
-```
-
-```{r export dosing_CRRT dataset, warning=FALSE}
-
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
-write.csv(dosing_CRRT,"pop_dosing.csv",quote=F,row.names=FALSE)
+# Export pop_opt_conc
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+write.csv(dosing_CRRT_combined,"pop_opt_conc.csv",quote=F,row.names=FALSE)
 
 ```
 
 #### Creating standard dosing virtual dataset
 
-```{r change into standard dosing}
-pop_dosing<-dosing_CRRT
+```{r dataset for conc time curve std dosing, warning=FALSE}
 
-dosing_CRRT <- dosing_CRRT %>%
+dosing_CRRT_std <- dosing_CRRT_combined %>%
   mutate(
     AMT = ifelse(TIME == 0, 800,
            ifelse(TIME >0 & TAD==0, 400,0
@@ -6909,88 +6681,9 @@ dosing_CRRT <- dosing_CRRT %>%
     )
   )
 
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-```
-
-```{r extract AMT 800 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 800
-selected_groups <- grouped_data %>% filter(any(AMT == 800))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.6, 1, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,1000)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-```
-
-```{r extract AMT 400 data}
-
-# Group the dataset by ID and DAY
-grouped_data <- dosing_CRRT %>% group_by(ID, DAY)
-
-# Filter the groups that have at least one row with AMT == 400
-selected_groups <- grouped_data %>% filter(any(AMT == 400))
-
-# Extract all rows from the selected groups
-selected_rows <- ungroup(selected_groups)
-
-# View the extracted rows
-summary(as.factor(selected_rows$TAD))
-
-# Define the desired TAD values
-desired_tad <- c(0,0.1, 0.25, 0.5, 3, 4, 6,8, 12, 18, 21, 22.5, 23.9)
-
-selected_rows$TAD<-rep(desired_tad,13000)
-
-# Update the TAD values in dosing_CRRT with selected_rows
-dosing_CRRT <- dosing_CRRT %>%
-  left_join(selected_rows[, c("ID", "TIME", "TAD")], by = c("ID", "TIME")) %>%
-  mutate(TAD = coalesce(TAD.y, TAD.x)) %>%
-  select(-c(TAD.x, TAD.y))
-
-# Move TAD after TIME
-dosing_CRRT <- dosing_CRRT %>%
-  relocate(TAD, .after = TIME)
-
-# View the updated dosing_CRRT
-View(dosing_CRRT)
-
-```
-
-```{r update TIME}
-dosing_CRRT$TIME<-24*(dosing_CRRT$OCC-1)+dosing_CRRT$TAD
-
-```
-
-```{r export dosing_CRRT dataset, warning=FALSE}
-
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
-write.csv(dosing_CRRT,"pop_dosing_std.csv",quote=F,row.names=FALSE)
+# Export pop_std_conc
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
+write.csv(dosing_CRRT_std,"pop_std_conc.csv",quote=F,row.names=FALSE)
 
 ```
 
@@ -7012,6 +6705,9 @@ pop_dos_std<-pop_dosing_std%>%filter(pop_dosing_std$TAD%in%c(0,23.9))
 ```
 
 ```{r adding CKDEPI column}
+
+# for reproducibility
+set.seed(123)
 
 # Create the empirical cumulative distribution function (ECDF)
 ecdf_func <- ecdf(na.omit(FlucTotIV_clean$CKDEPI))
@@ -7156,6 +6852,10 @@ PTA_pop_opt_overall <- unique(PTA_pop_opt[c("PTA_Cmin_75","PTA_Cmin_80", "PTA_fA
 # Export PTA_pop_opt_overall dataset
 setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim")
 write.csv(PTA_pop_opt_overall, "PTA_pop_opt_overall.csv",quote=F,row.names = FALSE)
+
+# Read PTA_pop_opt_overall when needed
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation/2l.method/2l.pan/Pop_Sim")
+PTA_pop_opt_overall<-read.csv("PTA_pop_opt_overall.csv")
 
 ```
 
@@ -7548,4 +7248,7 @@ ggsave("DV_TIME_HOSPITAL_plot.png", DV_TIME_HOSPITAL_plot, dpi = 300, width = 12
 
 
 ```
+
+
+
 

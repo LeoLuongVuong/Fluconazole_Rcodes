@@ -3026,9 +3026,9 @@ for (hosp in 2:8) { #Hospital 1 is an outlier, therefore I selected hospital 2 t
     ) +
     theme_bw() +
     theme(
-      axis.title = element_text(size = 12),
-      axis.text = element_text(size = 10),
-      plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
+      axis.title = element_text(size = 18), #increase the text size - 041223
+      axis.text = element_text(size = 15),
+      plot.title = element_text(hjust = 0.5, size = 21,face="bold"),
       strip.background = element_blank(),
       strip.text.x = element_blank(),
       legend.position = "none"
@@ -3201,11 +3201,11 @@ ggsave("vpc_per_study.png", combined_plot, dpi = 300, width = 30, height = 16)
     ggtitle("Van Daele et al.") +
     theme_bw() +
     theme(
-      axis.title = element_text(size = 12),
-      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 15),
       strip.background = element_blank(),
       strip.text.x = element_blank(),
-      plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
+      plot.title = element_text(hjust = 0.5, size = 21,face="bold"),
       legend.position = "none"
     ) +
     geom_vline(xintercept = 0, linetype = "dashed", size = 0.5, color = '#440154')
@@ -3401,9 +3401,9 @@ ggsave("vpc_per_study.png", combined_plot, dpi = 300, width = 30, height = 16)
       ) +
       theme_bw() +
       theme(
-        axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10),
-        plot.title = element_text(hjust = 0.5, size = 14,face="bold"),
+        axis.title = element_text(size = 24), #increase text size 041223
+        axis.text = element_text(size = 20),
+        plot.title = element_text(hjust = 0.5, size = 28,face="bold"),
         strip.background = element_blank(),
         strip.text.x = element_blank(),
         legend.position = "none"

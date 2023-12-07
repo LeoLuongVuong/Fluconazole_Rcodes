@@ -5086,18 +5086,18 @@ write.csv(dosing_21,"dosing_21.csv",quote=F,row.names=FALSE)
 ##### For optimised dosing
 
 ```{r read in datafile, warning=FALSE}
-setwd("D:/Projects/Fluconazole PoPPK KU Leuven/Fluconazol_project/Bootstrap and dosing simulation/BW_Simulations/Population_Simulations")
-dosing_CRRT<-read.csv("dosing_03.csv")
 
-library(dplyr)
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/Fluconazole PoPPK/Fluconazol_project/Bootstrap and dosing simulation")
+dosing_CRRT<-read.csv("dosing_03.csv")
 
 ```
 
 ```{r create a dataset of 1000 patients from dosing_CRRT dataset}
+
 # Create a new dataset with only patient 13
 dosing_CRRT_13 <- dosing_CRRT[dosing_CRRT$ID == 13,]
 
-# Create 12 copies of the patient 13 dataset and assign IDs 14-25
+# Create 12 copies of the patient 13 dataset and assign IDs 14-1000
 new_patients <- lapply(14:1000, function(id){
   new_df <- dosing_CRRT_13
   new_df$ID <- id
@@ -5115,6 +5115,7 @@ names(dosing_CRRT)[names(dosing_CRRT) == "FFM"] <- "BW"
 ```
 
 ```{r sample BW from the normal distribution}
+
 library(dplyr)
 test <- FlucTotIV_clean %>% ungroup() %>% select(ID, BW2,CRRT) %>% unique() %>% mutate(BW = log10(BW2/80))
 library(ggplot2)
@@ -5202,6 +5203,7 @@ sampled_BW <- round(quantile(test$BW2, random_values), 1)
 dosing_CRRT$BW <- sampled_BW[match(dosing_CRRT$ID, 1:1000)]
 
 ```
+
 
 ```{r comparing BW2 of CRRT vs non-CRRT}
 # comparing if CRRT vs non-CRRT patients have a different distribution
