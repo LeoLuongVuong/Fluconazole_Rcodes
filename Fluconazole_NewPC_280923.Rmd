@@ -30,7 +30,6 @@ library(PsNR) #for making vpcs
 library(ggtext) #create latex axis labels - does not work
 library(latex2exp) #to create latex label
 library(table1) #create descriptive statistic table1
-#library(chattr) #temporarily comment out
 
 ```
 
@@ -126,7 +125,7 @@ impute_CREAT_DOS_INT_nocrrt <- FlucTotIV_clean_nocrrt[, c("ID","TIME","RATE","AM
 set.seed(123)
 imp0 <- mice(impute_CREAT_DOS_INT_crrt, maxit=0)
 predmat <- imp0$predictorMatrix
-["CREAT_DOS_INT","ID"] <- -2
+predmat["CREAT_DOS_INT","ID"] <- -2
 meth <- imp0$method
 meth["CREAT_DOS_INT"] <- "2l.pan"
 maxit <- 20
@@ -2271,6 +2270,148 @@ totalID<-as.data.frame(unique(Fluc_dosing_events$ID))
 LDID<-FlucTotIV_clean%>%filter(TIME==0)
 setdiff(totalID$ID,LDID$ID)
 
+
+```
+
+###### Exploring Ceftriaxone dataset Dreesen 2022 JAC for my tutorial paper case study 260124
+
+```{r}
+
+setwd("C:/Users/u0164053/OneDrive - KU Leuven/PhD in KU Leuven/Projects/Multiple Imputation Tutorial in Pharmacometrics/References/Case study datasets & papers")
+
+Ceftriaxone<-read.csv("Ceftriaxone_mol_2.csv",header = TRUE)
+
+# Firstly, check how many unique ALB values are there
+
+length(unique(Ceftriaxone$ALB)) # 80 unique ALB values
+
+length(unique(Ceftriaxone$BM)) # 21 unique values, which means some patients had the same BM
+
+
+### This part is redundant now
+
+## Checking availability of ALB between dosing interval
+
+# First, extract the unique ID, TIME, AMT, and ALB combinations
+
+uniqueID<-Ceftriaxone%>%select(ID,REL_TIME,AMT,ALB)%>%distinct()
+
+# Check how many unique ALB per combination of ID, TIME, and AMT
+
+uniqueID%>%group_by(ID,REL_TIME,AMT)%>%summarize(n_distinct(ALB))
+
+# Add new column unique_ALB to my Ceftriaxone dataset, counting the number of unique ALB values per patient ID
+
+Ceftriaxone$unique_ALB<-with(Ceftriaxone, ave(ALB, ID, FUN = function(x) length(unique(x))))
+
+
+### My code starts from here
+
+## Plot ALB over REL_TIME, color by OCC, facet by ID, lineplot, make 3 plots for 3 groups of 11 IDs, instead of current 33 IDs in my Ceftriaxone dataset
+
+# Probably group_by ID, OCC, and ALB, then slice the first row of each group, then ungroup, select the distinct values of ID, OCC, REL_TIME and ALB
+
+ALB<-Ceftriaxone%>%group_by(ID,OCC,ALB)%>%slice(1)%>%ungroup()%>%select(ID,OCC,REL_TIME,ALB)%>%distinct()
+
+# Convert ID and OCC to factor, REL_TIME and ALB to numeric
+
+ALB$ID<-as.factor(ALB$ID)
+
+ALB$OCC<-as.factor(ALB$OCC)
+
+ALB$REL_TIME<-as.numeric(ALB$REL_TIME)
+
+ALB$ALB<-as.numeric(ALB$ALB)
+
+# Sort ALB by ID, OCC and REL_TIME
+
+ALB<-ALB%>%arrange(ID,OCC,REL_TIME)
+
+# For ID from 7 to 19
+
+ALB%>%filter(ID %in% c(7:19))%>%
+  ggplot(aes(x=REL_TIME,y=ALB,color=OCC,shape=OCC)) + geom_line(size=1.5) + geom_point(size=3) + scale_colour_viridis_d(option="A") + facet_wrap(~ID,scales="free")  + theme_bw() # 12 dose intervals with imputation
+
+# For ID from 20 to 33
+
+ALB%>%filter(ID %in% c(20:33))%>%
+  ggplot(aes(x=REL_TIME,y=ALB,color=OCC,shape=OCC)) + geom_line(size=1.5) + geom_point(size=3) + scale_colour_viridis_d(option="A") + facet_wrap(~ID,scales="free")  + theme_bw() # 5 dose intervals with imputation
+
+# For ID from 34 to 45
+
+ALB%>%filter(ID %in% c(34:45))%>%
+  ggplot(aes(x=REL_TIME,y=ALB,color=OCC,shape=OCC)) + geom_line(size=1.5) + geom_point(size=3) + scale_colour_viridis_d(option="A") + facet_wrap(~ID,scales="free")  + theme_bw() # 8 dose intervals with imputation
+
+# From my Ceftriaxone dataset, count the number of dosing intervals, by summing the maximum of OCC per ID, then minus the number of ID
+
+OCC<-Ceftriaxone%>%group_by(ID)%>%summarize(maxOCC=max(OCC))
+
+sum(OCC$maxOCC)-length(unique(Ceftriaxone$ID)) # 78 dosing intervals # 111 dosing intervals
+
+# percentage of imputation
+
+25/78 # 36%
+
+25/111 #  23%
+
+## Do similarly for between days imputation
+
+# First, create a new column DAY in my Ceftriaxone dataset, by dividing REL_TIME by 24, and get the integer part
+
+Ceftriaxone$DAY<-floor((Ceftriaxone$REL_TIME/24)+1)
+
+# Then, group_by ID, DAY, and ALB, then slice the first row of each group, then ungroup, select the distinct values of ID, DAY, REL_TIME and ALB
+
+ALB<-Ceftriaxone%>%group_by(ID,DAY,ALB)%>%slice(1)%>%ungroup()%>%select(ID,DAY,REL_TIME,ALB)%>%distinct()
+
+# Convert ID and DAY to factor, REL_TIME and ALB to numeric
+
+ALB$ID<-as.factor(ALB$ID)
+
+ALB$DAY<-as.factor(ALB$DAY)
+
+ALB$REL_TIME<-as.numeric(ALB$REL_TIME)
+
+ALB$ALB<-as.numeric(ALB$ALB)
+
+# Sort ALB by ID, DAY and REL_TIME
+
+ALB<-ALB%>%arrange(ID,DAY,REL_TIME)
+
+# For ID from 7 to 19
+
+ALB%>%filter(ID %in% c(7:19))%>%
+  ggplot(aes(x=REL_TIME,y=ALB,color=DAY,shape=DAY)) + geom_line(size=1.5) + geom_point(size=3) + scale_colour_viridis_d(option="A") + facet_wrap(~ID,scales="free")  + theme_bw() # 8 days with imputation
+
+# For ID from 20 to 33
+
+ALB%>%filter(ID %in% c(20:33))%>%
+  ggplot(aes(x=REL_TIME,y=ALB,color=DAY,shape=DAY)) + geom_line(size=1.5) + geom_point(size=3) + scale_colour_viridis_d(option="A") + facet_wrap(~ID,scales="free")  + theme_bw() # 6 days with imputation
+
+# For ID from 34 to 45
+
+ALB%>%filter(ID %in% c(34:45))%>%
+  ggplot(aes(x=REL_TIME,y=ALB,color=DAY,shape=DAY)) + geom_line(size=1.5) + geom_point(size=3) + scale_colour_viridis_d(option="A") + facet_wrap(~ID,scales="free")  + theme_bw() # 8 days with imputation
+
+# From my Ceftriaxone dataset, count the number of days, by summing the maximum of DAY per ID
+
+DAY<-Ceftriaxone%>%group_by(ID)%>%summarize(maxDAY=max(DAY))
+
+sum(DAY$maxDAY) # 107 days
+
+# percentage of imputation
+
+22/107 # 21%
+
+#### Checking IHD after meeting with Isabel 260124
+
+# Counting how many rows having missing IHD in my FlucTotIV_clean dataset
+
+sum(is.na(FlucTotIV_clean$IHD))
+
+# the percentage missing
+
+sum(is.na(FlucTotIV_clean$IHD))/nrow(FlucTotIV_clean) # 60.5%
 
 ```
 
@@ -6914,12 +7055,68 @@ summary(percentage)
 
 ```
 
-### Manuscript report
+### Manuscript report - 300124
+
+```{r read in dataset, warning=FALSE}
+
+# Read in dataset from above
+
+# When IHD == 1, converts CRRT == 1, otherwise remains
+
+FlucTotIV_clean$CRRT[FlucTotIV_clean$IHD==1]<-1
+
+# Convert AMT == 0 back into NA
+
+FlucTotIV_clean$AMT[FlucTotIV_clean$AMT==0]<-NA
+
+# Convert DV == 0 back into NA
+
+FlucTotIV_clean$DV[FlucTotIV_clean$DV==0]<-NA
+
+# Convert TAD and RATE == 0 back into NA
+
+FlucTotIV_clean$TAD[FlucTotIV_clean$TAD==0]<-NA
+
+FlucTotIV_clean$RATE[FlucTotIV_clean$RATE==0]<-NA
+
+```
 
 ```{r table1}
 
-#Report missing between and within dosing interval of CKDEPI
-table1(~ CREAT + CREAT3 + CREAT_DOS_INT|HOSPITAL, data=FlucTotIV_clean,render.continuous=
+## Create CRRT2 that it equals 1 if at least one observation per patient ID has CRRT == 1, otherwise 0
+
+FlucTotIV_clean$CRRT2<-ave(FlucTotIV_clean$CRRT, FlucTotIV_clean$ID, FUN=function(x) ifelse(sum(x, na.rm=TRUE)>0, 1, 0))
+
+# Change SEX and CRRT2 into factor
+
+FlucTotIV_clean$SEX<-as.factor(FlucTotIV_clean$SEX)
+
+FlucTotIV_clean$CRRT2<-as.factor(FlucTotIV_clean$CRRT2)
+
+## Then, summarise APACHE + AGE + SEX + CRRT2 with table1 at a patient level
+
+# Extract data that each ID has only 1 observation
+
+FlucTotIV_clean2<-FlucTotIV_clean[!duplicated(FlucTotIV_clean$ID),]
+
+# Now summarise APACHE + AGE + SEX + CRRT2 with table1 at a patient level
+
+table1(~ APACHE + AGE + SEX + CRRT2|HOSPITAL, data=FlucTotIV_clean2,render.continuous=
+               c(.="Median [Q1-Q3]"))
+
+## CKDEPI off CRRT
+
+summary(FlucTotIV_clean$CKDEPI[FlucTotIV_clean$CRRT == 0]) # still remains as in the former version
+
+## Creat CREAT_WITH so that it equals 1 if CREAT_DOS_INT is missing or CREAT is not missing, otherwise equals NA
+
+# CREAT_WITH is the missing CREAT within dosing interval
+
+FlucTotIV_clean$CREAT_WITH<-ifelse(is.na(FlucTotIV_clean$CREAT_DOS_INT)|!is.na(FlucTotIV_clean$CREAT),1,NA)
+
+## Next, summarise AMT + DV + BW2 + CKDEPI + CREAT_DOS_INT + CREAT_WITH with table1 at the observation level
+
+table1(~ AMT + DV + BW2 + CKDEPI + CREAT_DOS_INT + CREAT_WITH|HOSPITAL, data=FlucTotIV_clean,render.continuous=
                c(.="Median [Q1-Q3]"))
 
 ```
